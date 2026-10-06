@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest==8.*
+# Embedded PostgreSQL for local dev when no Postgres/Docker is installed (used by run.py)
+pgserver==0.1.*

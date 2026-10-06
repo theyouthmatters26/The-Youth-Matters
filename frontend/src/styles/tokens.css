@@ -1,0 +1,67 @@
+/*
+  TYM design tokens: "obsidian" monochrome.
+  Black carries the brand (nav bar, hero, footer, key bands); white and soft grey carry reading.
+  No accent colour. Photography is graded near-monochrome so it never adds colour.
+  References: Apple (photography-first, near-invisible UI, black/light tile rhythm) and
+  Airbnb (soft radii, one shadow tier, warm human pacing). See docs/DESIGN.md.
+*/
+:root {
+  /* Ink: text and solid controls on light surfaces */
+  --ink: #0b0b0c;
+  --ink-soft: #232326;
+  --slate: #3c3c41;
+  --muted: #5f5f66;
+  --faint: #8e8e95;
+
+  /* Light surfaces */
+  --chalk: #f4f4f5;        /* page background */
+  --paper: #ffffff;
+  --sunken: #ececee;
+  --line: #e2e2e5;
+  --line-soft: #ebebed;
+  --tint: #e7e7ea;
+
+  /* Dark surfaces */
+  --night: #09090a;
+  --night-2: #111113;
+  --night-3: #19191c;
+  --night-line: rgba(255, 255, 255, 0.09);
+  --on-ink: #f5f5f6;
+  --on-ink-muted: rgba(245, 245, 246, 0.62);
+  --on-ink-faint: rgba(245, 245, 246, 0.42);
+
+  --danger: #a12b2b;
+
+  /* Type */
+  --font-display: 'Newsreader', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --step--2: 0.75rem;      /* 12 */
+  --step--1: 0.875rem;     /* 14 */
+  --step-0: 1rem;          /* 16 body: reading pace, not scanning */
+  --step-1: 1.125rem;      /* 18 */
+  --step-2: 1.5rem;        /* 24 */
+  --step-3: clamp(1.875rem, 1.4rem + 1.8vw, 2.875rem);
+  --step-4: clamp(2.5rem, 1.5rem + 3.6vw, 4.5rem);
+
+  /* Spacing (8pt) */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px; --s-5: 24px;
+  --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px;
+  --section: clamp(72px, 9vw, 128px);
+
+  /* Shape: soft and human. Inner elements tighter, containers softer. */
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 22px;
+  /* One shadow tier (Airbnb-style): hairline + soft lift. Used on hover and floating surfaces only. */
+  --shadow: 0 0 0 1px rgba(9, 9, 10, 0.04), 0 2px 6px rgba(9, 9, 10, 0.04), 0 8px 20px rgba(9, 9, 10, 0.07);
+  /* Photography resting on a surface (Apple-style), never on UI chrome */
+  --shadow-lg: 0 24px 60px -28px rgba(9, 9, 10, 0.45);
+
+  --container: 1240px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --header-h: 56px;        /* the sticky black nav bar */
+  /* Weighty ease-out: things settle rather than slide */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}

@@ -1,0 +1,82 @@
+/* Avatar: initials on a quiet fill. Mentors get a thin ink ring, staff/AI are solid ink. */
+.avatar {
+  display: inline-grid; place-items: center; flex-shrink: 0;
+  border-radius: 50%; font-weight: 500; letter-spacing: 0.01em;
+  background: var(--tint); color: var(--slate);
+}
+.avatar-mentor { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.avatar-admin, .avatar-bot { background: var(--ink); color: var(--on-ink); font-family: var(--font-mono); }
+/* Portraits are graded to the site's monochrome; mentors keep their ring as an outline */
+.avatar-photo { object-fit: cover; object-position: center 25%; filter: grayscale(1) contrast(1.04); background: var(--sunken); }
+.avatar-photo.avatar-mentor { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--ink); }
+
+/* Badges: one style, differences carried by icon + label */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 20px; padding: 0 7px; border-radius: 6px;
+  font-size: 0.6875rem; font-weight: 500; line-height: 1;
+  background: var(--sunken); color: var(--slate);
+}
+.badge-mentor { background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); }
+.badge-admin { background: var(--ink); color: var(--on-ink); }
+
+/* Votes */
+.vote { display: grid; justify-items: center; gap: 2px; color: var(--faint); }
+.vote-row { display: inline-flex; align-items: center; gap: 0; padding: 2px; border-radius: 999px; background: var(--chalk); border: 1px solid var(--line-soft); }
+.vote button {
+  display: grid; place-items: center; width: 30px; height: 30px;
+  border: 0; border-radius: 999px; background: none; color: inherit; transition: background 0.2s, color 0.2s;
+}
+.vote button:hover { background: var(--paper); color: var(--ink); }
+.vote button[aria-pressed='true'] { color: var(--ink); }
+.vote-score { color: var(--ink); font-weight: 500; min-width: 3ch; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* Segmented tabs */
+.tabs { display: inline-flex; gap: 2px; max-width: 100%; padding: 3px; overflow-x: auto; scrollbar-width: none; background: var(--sunken); border-radius: 999px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs button { flex-shrink: 0; }
+.tabs button {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 14px; border: 0; border-radius: 999px;
+  background: none; color: var(--muted); font-weight: 500; font-size: var(--step--1);
+  transition: background 0.2s, color 0.2s;
+}
+.tabs button:hover { color: var(--ink); }
+.tabs button[aria-selected='true'] { background: var(--paper); color: var(--ink); box-shadow: var(--shadow); }
+
+/* Gate: members-only content fades out under a panel that invites visitors in.
+   Black panel on light pages, white on dark bands. Side by side when the column is wide. */
+.gate { position: relative; container-type: inline-size; }
+.gate-preview {
+  max-height: 240px; overflow: hidden; pointer-events: none; user-select: none; filter: blur(2px); opacity: 0.75;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 88%); mask-image: linear-gradient(to bottom, #000 0%, transparent 88%);
+}
+.gate-panel {
+  position: relative; display: grid; justify-items: center; gap: var(--s-3); margin-top: -96px;
+  padding: var(--s-7) var(--s-6); border-radius: var(--radius-lg); text-align: center;
+  background: var(--night); color: var(--on-ink); box-shadow: var(--shadow-lg);
+}
+.gate-panel h3 { font-size: var(--step-2); font-weight: 400; line-height: 1.2; text-wrap: balance; }
+.gate-panel > p { max-width: 42ch; font-size: var(--step--1); color: var(--on-ink-muted); }
+.gate-faces { display: flex; margin-bottom: var(--s-1); }
+.gate-faces > * { margin-left: -8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--night); }
+.gate-faces > :first-child { margin-left: 0; }
+.gate-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--s-3) var(--s-5); margin-top: var(--s-2); }
+.gate-login { font-size: var(--step--1); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(255, 255, 255, 0.4); }
+.gate-login:hover { text-decoration-color: currentColor; }
+.gate-panel > .gate-note { font-size: var(--step--2); color: var(--on-ink-faint); }
+@container (min-width: 600px) {
+  .gate-panel {
+    grid-template-columns: minmax(0, 1fr) auto; justify-items: start; align-items: center; column-gap: var(--s-7);
+    padding: var(--s-6) var(--s-7); text-align: left;
+  }
+  .gate-panel > :not(.gate-actions) { grid-column: 1; }
+  .gate-actions { grid-column: 2; grid-row: 1 / span 4; flex-direction: column; margin: 0; }
+  .gate-actions .btn { width: 100%; }
+}
+/* On a dark band the panel turns light */
+.gate-dark .gate-panel { background: var(--paper); color: var(--ink); }
+.gate-dark .gate-panel > p { color: var(--muted); }
+.gate-dark .gate-panel > .gate-note { color: var(--faint); }
+.gate-dark .gate-faces > * { box-shadow: 0 0 0 2px var(--paper); }
+.gate-dark .gate-login { text-decoration-color: var(--line); }

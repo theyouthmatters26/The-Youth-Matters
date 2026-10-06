@@ -1,0 +1,133 @@
+import { useEffect, useRef, useState } from 'react'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { KeyRound, Menu, Search, UserPlus, X } from 'lucide-react'
+import Avatar from '../ui/Avatar'
+import { useAuth } from '../../lib/auth'
+import './layout.css'
+
+// Same items and order as the client's template.
+export const NAV = [
+  { to: '/', label: 'Home', end: true },
+  { to: '/about', label: 'About TYM' },
+  { to: '/community', label: 'Community ChatRoom' },
+  { to: '/ai', label: 'Ask TYM AI', highlight: true },
+  { to: '/mentors', label: 'TYM Mentors' },
+  { to: '/faq', label: 'FAQ' },
+  { to: '/case-studies', label: 'Case Studies' },
+  { to: '/blogs', label: 'Blogs' },
+]
+
+function SearchDialog({ onClose }) {
+  const navigate = useNavigate()
+  const input = useRef(null)
+  useEffect(() => {
+    input.current.focus()
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const submit = (e) => {
+    e.preventDefault()
+    const q = input.current.value.trim()
+    if (q) { navigate(`/search?q=${encodeURIComponent(q)}`); onClose() }
+  }
+
+  return (
+    <div className="search-dialog" role="dialog" aria-modal="true" aria-label="Search" onClick={onClose}>
+      <form className="search-panel" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
+        <Search size={20} strokeWidth={1.6} aria-hidden />
+        <label htmlFor="global-search" className="visually-hidden">Search</label>
+        <input id="global-search" ref={input} placeholder="Search discussions, communities, mentors" autoComplete="off" />
+        <kbd>Esc</kbd>
+      </form>
+    </div>
+  )
+}
+
+export default function Header() {
+  const { user, account } = useAuth()
+  const [menu, setMenu] = useState(false)
+  const [search, setSearch] = useState(false)
+  const { pathname } = useLocation()
+
+  useEffect(() => setMenu(false), [pathname])
+  useEffect(() => {
+    document.body.style.overflow = menu || search ? 'hidden' : ''
+  }, [menu, search])
+
+  return (
+    <>
+      {/* Masthead: logo left, account links top right (client template) */}
+      <div className="masthead">
+        <div className="container masthead-inner">
+          <Link to="/" className="brand" aria-label="The Youth Matters, home">
+            <img src="/logo.png" alt="" width="44" height="46" />
+            <span className="brand-name">The Youth Matters</span>
+          </Link>
+
+          <div className="account">
+            {user ? (
+              <Link to="/my" className="account-me">
+                <Avatar user={user} size={30} />
+                <span>My TYM</span>
+              </Link>
+            ) : account ? (
+              <Link to="/register" className="account-link account-auth"><UserPlus size={15} strokeWidth={1.7} /> Finish sign-up</Link>
+            ) : (
+              <>
+                <Link to="/login" className="account-link account-auth"><KeyRound size={15} strokeWidth={1.7} /> Log in</Link>
+                <Link to="/register" className="account-link account-auth"><UserPlus size={15} strokeWidth={1.7} /> Register</Link>
+              </>
+            )}
+            <button className="account-link" onClick={() => setSearch(true)}><Search size={15} strokeWidth={1.7} /> Search</button>
+            <button className="menu-toggle" aria-expanded={menu} aria-controls="mobile-menu"
+              aria-label={menu ? 'Close menu' : 'Open menu'} onClick={() => setMenu(!menu)}>
+              {menu ? <X size={22} strokeWidth={1.6} /> : <Menu size={22} strokeWidth={1.6} />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Black nav bar (client template), sticky */}
+      <nav className="navbar" aria-label="Main">
+        <ul className="container navbar-inner">
+          {NAV.map((item) => (
+            <li key={item.to}>
+              <NavLink to={item.to} end={item.end} className={`nav-link ${item.highlight ? 'nav-ai' : ''}`}>
+                {item.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {menu && (
+        <div id="mobile-menu" className="mobile-menu">
+          <div className="container">
+            <nav aria-label="Mobile">
+              {NAV.map((item) => (
+                <NavLink key={item.to} to={item.to} end={item.end} className="mobile-link">
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+            {account && !user && (
+              <div className="mobile-actions">
+                <Link to="/register" className="btn btn-light">Finish sign-up</Link>
+              </div>
+            )}
+            {!account && (
+              <div className="mobile-actions">
+                <Link to="/login" className="btn btn-glass">Log in</Link>
+                <Link to="/register" className="btn btn-light">Register</Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {search && <SearchDialog onClose={() => setSearch(false)} />}
+    </>
+  )
+}

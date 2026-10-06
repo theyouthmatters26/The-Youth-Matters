@@ -1,0 +1,50 @@
+# AI tooling / local assistants (Claude Code, MCP servers, skills, browser automation)
+.claude/
+.claude-*/
+CLAUDE.md
+CLAUDE.local.md
+**/CLAUDE.md
+AGENTS.md
+.agents/
+.mcp.json
+*.mcp.json
+mcp.json
+.cursor/
+skills-lock.json
+.playwright-mcp/
+
+# Documents: the client's brief (doc/) and the AI-written design and API notes (docs/)
+doc/
+docs/
+
+# Secrets: every .env in any folder stays local; only the template is shared
+.env
+**/.env
+.env.*
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+# backend/instance: face-model files and private ID uploads in development
+instance/
+
+# Node
+node_modules/
+dist/
+*.log
+
+# Local database data
+.pgdata/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

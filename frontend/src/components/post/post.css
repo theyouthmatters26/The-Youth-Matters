@@ -1,0 +1,18 @@
+.comment-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-6); }
+.comment-list.nested { margin-top: var(--s-5); padding-left: var(--s-5); border-left: 1px solid var(--line); gap: var(--s-5); }
+.comment { display: grid; gap: var(--s-2); }
+.comment-head { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; font-size: var(--step--1); }
+.comment-author { font-weight: 500; }
+.comment-body { padding-left: 38px; line-height: 1.7; max-width: 72ch; }
+.comment-actions { display: flex; align-items: center; gap: var(--s-4); padding-left: 38px; }
+.comment.is-ai > .comment-body {
+  margin-left: 38px; padding: var(--s-4) var(--s-5);
+  background: var(--chalk); border: 1px solid var(--line-soft); border-radius: var(--radius);
+}
+.reply-form { display: grid; gap: var(--s-2); padding-left: 38px; }
+
+@media (max-width: 600px) {
+  .comment-list.nested { padding-left: var(--s-3); }
+  .comment-body, .comment-actions, .reply-form { padding-left: 0; }
+  .comment.is-ai > .comment-body { margin-left: 0; }
+}

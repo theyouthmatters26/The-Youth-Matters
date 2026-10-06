@@ -1,0 +1,7 @@
+# Change the domain below if the site moves
+User-agent: *
+Disallow: /my
+Disallow: /notifications
+Allow: /
+
+Sitemap: https://theyouthmatters.org/sitemap.xml
