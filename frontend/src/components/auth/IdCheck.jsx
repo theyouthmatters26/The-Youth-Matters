@@ -14,8 +14,8 @@ const SOURCES = { mrz: 'the machine-readable lines', label: 'the date of birth f
 const formatDate = (iso) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
-// Step 3 of sign-up: a photo of an ID. The server reads the date of birth (OCR) and keeps the
-// face on it to compare with the selfie in the next step.
+// Last step of sign-up: a photo of an ID. The server reads the date of birth (OCR); 18 or over
+// verifies the account straight away. The photo is never stored.
 export default function IdCheck({ onDone }) {
   const [docType, setDocType] = useState('passport')
   const [photo, setPhoto] = useState(null)
@@ -113,7 +113,7 @@ export default function IdCheck({ onDone }) {
           <span className="verify-result-note">Read from {SOURCES[result.source]} on your {doc.label.toLowerCase()}.</span>
           <div className="verify-actions">
             <button className="btn btn-primary" onClick={() => onDone(result.user)}>
-              Continue to selfie <span className="btn-arrow" aria-hidden><ArrowRight size={15} /></span>
+              Continue <span className="btn-arrow" aria-hidden><ArrowRight size={15} /></span>
             </button>
             <button className="btn-text" onClick={retake}>Not right? Retake</button>
           </div>
@@ -138,7 +138,7 @@ export default function IdCheck({ onDone }) {
         </div>
       )}
 
-      <p className="verify-privacy"><Lock size={14} aria-hidden /> Your ID photo is deleted as soon as you are verified.</p>
+      <p className="verify-privacy"><Lock size={14} aria-hidden /> We read the date and discard the photo. Your ID is never stored.</p>
     </div>
   )
 }

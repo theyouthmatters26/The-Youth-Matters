@@ -1,72 +1,114 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, ChevronRight } from 'lucide-react'
-import PostCard from '../components/feed/PostCard'
+import { ArrowUpRight, Bot, Check, MessagesSquare, PenLine, Plus } from 'lucide-react'
+import Composer from '../components/feed/Composer'
+import PostList from '../components/feed/PostList'
 import RoomCard from '../components/feed/RoomCard'
-import Gate from '../components/ui/Gate'
-import { countries, posts, rooms, subjects } from '../data/sample'
-import { formatCount } from '../lib/format'
-import { useAuth } from '../lib/auth'
+import SortTabs from '../components/ui/SortTabs'
+import { subjects } from '../data/sample'
+import { api, useApi } from '../lib/api'
+import { useAuth, useMemberGuard } from '../lib/auth'
+import { plural } from '../lib/format'
+import { useMeta } from '../lib/meta'
+import '../components/feed/feed.css'
 
-const PREVIEW = 2
+// One country community in the strip: tap to open it, join without leaving the page.
+function CommunityTile({ c }) {
+  const guard = useMemberGuard()
+  const [following, setFollowing] = useState(c.following)
+  const [members, setMembers] = useState(c.members)
+  useEffect(() => { setFollowing(c.following); setMembers(c.members) }, [c])
 
-// Community ChatRoom: Subject -> Country -> Chat rooms & discussions.
-export default function CommunityHub() {
-  const { user } = useAuth()
-  const [subject, setSubject] = useState('study-abroad')
-  const active = subjects.find((s) => s.slug === subject)
-  const latest = [...posts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  const toggle = async () => {
+    if (!guard()) return
+    const next = !following
+    setFollowing(next)
+    setMembers((m) => m + (next ? 1 : -1))
+    try {
+      await api(`/communities/${c.id}/follow`, { method: next ? 'POST' : 'DELETE' })
+    } catch {
+      setFollowing(!next)
+      setMembers((m) => m + (next ? -1 : 1))
+    }
+  }
 
   return (
-    <div className="container page">
-      <header className="page-head">
-        <h1>Community ChatRoom</h1>
-        <p>Pick a subject, then a country. Each community has live chat rooms, discussions and mentors who have been there.</p>
+    <li className="hub-tile">
+      <Link to={`/c/${c.country.slug}`} className="hub-tile-link">
+        <img src={`/images/city-${c.country.slug}.jpg`} alt="" loading="lazy" />
+        <span className="hub-tile-text">
+          <strong>{c.country.name}</strong>
+          <span>{plural(c.questions, 'question')} · {plural(members, 'member')}</span>
+        </span>
+      </Link>
+      <button className={`hub-join${following ? ' is-on' : ''}`} aria-pressed={following} onClick={toggle}
+        aria-label={following ? `Leave ${c.country.name}` : `Join ${c.country.name}`}>
+        {following ? <><Check size={13} /> Joined</> : <><Plus size={13} /> Join</>}
+      </button>
+    </li>
+  )
+}
+
+// Community ChatRoom: every country's questions in one feed, live rooms on the side.
+export default function CommunityHub() {
+  const { user } = useAuth()
+  useMeta({ title: 'Community ChatRoom', description: 'Ask questions, answer others and chat live with students heading to the UK, US, Canada, Australia, Ireland and Germany.', path: '/community' })
+  const communities = useApi('/subjects/study-abroad/communities')
+  const rooms = useApi('/chat/rooms')
+  const [sort, setSort] = useState('hot')
+  const [fresh, setFresh] = useState([])
+  const soon = subjects.filter((s) => !s.isActive)
+  const query = sort === 'unanswered' ? 'sort=new&unanswered=1' : `sort=${sort}`
+
+  return (
+    <div className="container page hub">
+      <header className="dash-head">
+        <div>
+          <p className="eyebrow">Study Abroad</p>
+          <h1>Community ChatRoom</h1>
+          <p className="muted">Ask anything, answer what you know, and talk live with students heading where you are.</p>
+        </div>
+        <Link to="/ask" className="btn btn-primary"><PenLine size={15} /> Ask a question</Link>
       </header>
 
-      <div className="subject-tabs" role="tablist" aria-label="Subjects">
-        {subjects.map((s) => (
-          <button key={s.slug} role="tab" aria-selected={subject === s.slug} disabled={!s.isActive}
-            onClick={() => setSubject(s.slug)}>
-            {s.name}{!s.isActive && <em>Soon</em>}
-          </button>
-        ))}
-      </div>
+      <ul className="hub-strip" aria-label="Country communities">
+        {communities.data
+          ? communities.data.map((c) => <CommunityTile key={c.id} c={c} />)
+          : Array.from({ length: 6 }, (_, i) => <li key={i} className="hub-tile is-loading" aria-hidden />)}
+      </ul>
 
-      <p className="crumbs" aria-label="Where you are">
-        <span>{active.name}</span> <ChevronRight size={14} /> <span className="faint">Choose a country</span>
-      </p>
+      <div className="layout-2 dash-grid hub-grid">
+        <section aria-labelledby="feed-title">
+          {user && <Composer onPosted={(post) => setFresh([post, ...fresh])} />}
+          <div className="feed-head">
+            <h2 id="feed-title" className="col-title dash-feed-title">Latest from every country</h2>
+            <SortTabs value={sort} onChange={setSort} />
+          </div>
+          <PostList query={query} fresh={fresh} gateText="Free members can read, ask and answer in every community."
+            empty={<div className="card empty"><h2 className="display">Nothing here yet</h2><p className="muted">Every question has an answer. Try another tab.</p></div>} />
+        </section>
 
-      <div className="community-grid">
-        {countries.map((c) => (
-          <Link key={c.slug} to={`/c/${c.slug}`} className="community-card">
-            <img src={`/images/city-${c.slug}.jpg`} alt="" loading="lazy" />
-            <span className="community-name">{c.name}</span>
-            <span className="community-meta">{formatCount(c.members)} members</span>
-            <span className="community-arrow" aria-hidden><ArrowUpRight size={16} /></span>
+        <aside className="stack sticky dash-rail hub-rail">
+          <div className="card card-pad">
+            <h3 className="section-title"><MessagesSquare size={16} aria-hidden /> Live chat rooms</h3>
+            <div className="room-list">
+              {(rooms.data || []).map((r) => <RoomCard key={r.slug} room={r} />)}
+              {rooms.loading && <p className="muted dash-small">Loading rooms...</p>}
+            </div>
+            {!user && <Link to="/register" className="btn btn-ghost btn-sm btn-block hub-rail-cta">Sign up free to chat</Link>}
+          </div>
+
+          <Link to="/ai" className="card card-pad hub-ai">
+            <Bot size={20} aria-hidden />
+            <span><strong>Ask TYM AI</strong><span>Private answers on SOPs, visas and shortlists, any time.</span></span>
+            <ArrowUpRight size={16} aria-hidden />
           </Link>
-        ))}
-      </div>
 
-      <div className="live-grid" style={{ marginTop: 'var(--s-8)' }}>
-        <section aria-labelledby="disc-title">
-          <h2 id="disc-title" className="col-title">Latest discussions</h2>
-          <div className="feed-list">{(user ? latest : latest.slice(0, PREVIEW)).map((p) => <PostCard key={p.id} post={p} />)}</div>
-          {!user && (
-            <Gate title="Read every discussion" text="Free members can read, ask and answer in every community.">
-              <div className="feed-list">{latest.slice(PREVIEW, PREVIEW + 2).map((p) => <PostCard key={p.id} post={p} />)}</div>
-            </Gate>
-          )}
-        </section>
-        <section aria-labelledby="rooms-title">
-          <h2 id="rooms-title" className="col-title">Chat rooms</h2>
-          <div className="room-list">{(user ? rooms : rooms.slice(0, PREVIEW)).map((r) => <RoomCard key={r.slug} room={r} />)}</div>
-          {!user && (
-            <Gate title="Join every chat room" text="Sign up to chat live with students heading the same way.">
-              <div className="room-list">{rooms.slice(PREVIEW).map((r) => <RoomCard key={r.slug} room={r} />)}</div>
-            </Gate>
-          )}
-        </section>
+          <div className="card card-pad hub-soon">
+            <h3 className="section-title">More subjects soon</h3>
+            <p className="muted dash-small">{soon.map((s) => s.name).join(', ')}. Same community, new topics.</p>
+          </div>
+        </aside>
       </div>
     </div>
   )

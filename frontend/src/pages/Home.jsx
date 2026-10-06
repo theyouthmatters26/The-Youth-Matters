@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, BadgeCheck, Star } from 'lucide-react'
 import Hero from '../components/home/Hero'
-import PostCard from '../components/feed/PostCard'
+import PostCard, { PostSkeleton } from '../components/feed/PostCard'
 import RoomCard from '../components/feed/RoomCard'
 import Avatar from '../components/ui/Avatar'
 import Gate from '../components/ui/Gate'
-import { blogs, caseStudies, countries, posts, rooms, subjects } from '../data/sample'
+import { blogs, caseStudies, countries, subjects } from '../data/sample'
 import { useApi } from '../lib/api'
 import { formatCount, formatMoney } from '../lib/format'
 import { useAuth } from '../lib/auth'
@@ -72,11 +72,27 @@ function Destinations() {
   )
 }
 
+// The four best discussions this week from the API; visitors see two and the invitation
+function TopPosts() {
+  const { user } = useAuth()
+  const { data } = useApi('/posts?sort=top')
+  if (!data) return <div className="feed-list"><PostSkeleton /><PostSkeleton /></div>
+  const top = data.items
+  return (
+    <>
+      <div className="feed-list">{top.slice(0, user ? 4 : PREVIEW).map((p) => <PostCard key={p.id} post={p} />)}</div>
+      {!user && (
+        <Gate title="Read every discussion" text="Create a free account to see all questions, answer them and follow the countries you care about.">
+          <div className="feed-list">{top.slice(PREVIEW, PREVIEW + 2).map((p) => <PostCard key={p.id} post={p} />)}</div>
+        </Gate>
+      )}
+    </>
+  )
+}
+
 function LiveCommunity() {
   const { user } = useAuth()
-  const top = [...posts].sort((a, b) => b.score - a.score)
-  const visiblePosts = user ? top.slice(0, 4) : top.slice(0, PREVIEW)
-  const visibleRooms = user ? rooms : rooms.slice(0, PREVIEW)
+  const rooms = useApi('/chat/rooms').data || []
 
   return (
     <section className="section" id="feed" aria-labelledby="live-title">
@@ -92,21 +108,12 @@ function LiveCommunity() {
         <div className="live-grid">
           <div>
             <h3 className="col-title">Top discussions</h3>
-            <div className="feed-list">{visiblePosts.map((p) => <PostCard key={p.id} post={p} />)}</div>
-            {!user && (
-              <Gate title="Read every discussion" text="Create a free account to see all questions, answer them and follow the countries you care about.">
-                <div className="feed-list">{top.slice(PREVIEW, PREVIEW + 2).map((p) => <PostCard key={p.id} post={p} />)}</div>
-              </Gate>
-            )}
+            <TopPosts />
           </div>
           <div>
             <h3 className="col-title">Chat rooms</h3>
-            <div className="room-list">{visibleRooms.map((r) => <RoomCard key={r.slug} room={r} />)}</div>
-            {!user && (
-              <Gate title="Join the conversation" text="Members can read and post in every chat room.">
-                <div className="room-list">{rooms.slice(PREVIEW).map((r) => <RoomCard key={r.slug} room={r} />)}</div>
-              </Gate>
-            )}
+            <div className="card card-pad room-list">{rooms.map((r) => <RoomCard key={r.slug} room={r} />)}</div>
+            {!user && <Link to="/register" className="btn btn-ghost btn-sm btn-block hub-rail-cta">Sign up free to chat</Link>}
           </div>
         </div>
       </div>

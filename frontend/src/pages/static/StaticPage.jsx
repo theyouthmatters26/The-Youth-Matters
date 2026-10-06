@@ -36,7 +36,7 @@ const PAGES = {
     'Mentor sessions are agreements between you and the mentor; TYM processes the payment.',
   ]],
   '/privacy': ['Privacy statement', 'What we collect, why, and how we protect it.', [
-    'To confirm every member is 18 or over, we read the date of birth from a photo ID and match the face on it to a live selfie, on our own servers. The ID photo is deleted once you are verified; we keep the date of birth, not the document. A selfie is only kept if a person needs to review your check, and is then visible only to our verification team.',
+    'To confirm every member is 18 or over, we read the date of birth from a photo ID on our own servers. The photo is read in memory and never stored; we keep the date of birth and which kind of document you used, not the document itself.',
     'We follow the Indian IT Act and GDPR principles. You can ask us to export or delete your data at any time.',
   ]],
   '/cookies': ['Cookie policy', 'The cookies we use and how to control them.', [

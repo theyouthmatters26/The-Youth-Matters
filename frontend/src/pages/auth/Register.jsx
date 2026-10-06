@@ -6,13 +6,12 @@ import {
   DevCode, FormError, GoogleButton, OtpInput, PasswordField, PasswordMeter, SubmitButton, useCountdown,
 } from '../../components/auth/fields'
 import IdCheck from '../../components/auth/IdCheck'
-import SelfieCheck from '../../components/auth/SelfieCheck'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 
-// Sign-up (Module 1): account -> email code -> photo ID (date of birth, 18+) -> live selfie.
+// Sign-up (Module 1): account -> email code -> photo ID (date of birth read by OCR, 18+).
 // The step comes from the account itself, so leaving halfway and logging in later resumes here.
-const STEPS = ['Account', 'Email', 'Photo ID', 'Selfie']
+const STEPS = ['Account', 'Email', 'Photo ID']
 
 function AccountStep({ onSent, onSession }) {
   const [password, setPassword] = useState('')
@@ -134,7 +133,7 @@ function Finished({ account, from, logout }) {
   if (account.verification === 'review') {
     return (
       <AuthLayout kicker="Almost there" title="A person will take a quick look" aside={<WhyWeCheck />}
-        subtitle={`Your selfie did not match your ID automatically, which is usually the light or the angle. Someone on our team will check it within 24 hours and email ${account.email}.`}>
+        subtitle={`Someone on our team is checking your details and will email ${account.email} within 24 hours.`}>
         <Link to="/" className="btn btn-primary btn-block">Back to home</Link>
         <p className="auth-switch"><button className="btn-text" onClick={logout}>Log out</button></p>
       </AuthLayout>
@@ -157,14 +156,13 @@ export default function Register() {
   const [arrivedVerified] = useState(account?.verification === 'verified')
 
   if (arrivedVerified) return <Navigate to={from} replace />
-  const step = !account ? (sent ? 1 : 0) : { document: 2, selfie: 3 }[account.verification]
+  const step = !account ? (sent ? 1 : 0) : { document: 2 }[account.verification]
   if (step === undefined) return <Finished account={account} from={from} logout={logout} />
 
   const [title, subtitle] = [
     ['Create your account', 'Free for students. About two minutes from start to finish.'],
     ['Check your inbox', <>We sent a 6-digit code to <strong>{sent?.email}</strong>. It expires in 10 minutes.</>],
-    ['Confirm you are 18 or over', 'Take a photo of an ID. We read the date of birth from it, so there is nothing to type.'],
-    ['Now, a quick selfie', 'We match it to the photo on your ID. Look at the camera, then turn your head when asked.'],
+    ['Confirm you are 18 or over', 'Take a photo of an ID or upload one. We read the date of birth from it, so there is nothing to type.'],
   ][step]
 
   return (
@@ -173,7 +171,6 @@ export default function Register() {
       {step === 0 && <AccountStep onSent={setSent} onSession={signIn} />}
       {step === 1 && <EmailStep sent={sent} onBack={() => setSent(null)} onSession={signIn} />}
       {step === 2 && <IdCheck onDone={setAccount} />}
-      {step === 3 && <SelfieCheck onDone={setAccount} />}
 
       {step === 0 && (
         <p className="auth-switch">Already a member? <Link to="/login" state={location.state} className="link">Log in</Link></p>

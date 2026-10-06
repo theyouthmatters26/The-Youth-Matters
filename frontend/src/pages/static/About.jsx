@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 const VALUES = [
   ['Honest over polished', 'Answers come from students who have filed the same forms, paid the same deposits and missed the same deadlines.'],
-  ['Safe by design', 'Every member is 18 or older, checked against a photo ID and a live selfie. Abuse is filtered automatically and reviewed by people.'],
+  ['Safe by design', 'Every member is 18 or older, checked against a photo ID. Abuse is filtered automatically and reviewed by people.'],
   ['Free where it counts', 'Questions, answers, chatrooms and the AI Counsellor cost nothing. Mentors are optional.'],
 ]
 

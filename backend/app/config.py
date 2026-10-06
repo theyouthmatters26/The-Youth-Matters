@@ -39,7 +39,11 @@ class Config:
     MAIL_FROM = os.getenv("MAIL_FROM", "The Youth Matters <no-reply@theyouthmatters.org>")
     CONTACT_EMAIL = os.getenv("CONTACT_EMAIL") or "hello@theyouthmatters.org"  # contact form and mentor applications
 
-    MAX_CONTENT_LENGTH = 12 * 1024 * 1024  # ID photos and selfies
+    # TYMAi (Ask TYM AI and @TYMAi in chat rooms). Without a key it answers from the community instead.
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+    AI_MODEL = os.getenv("AI_MODEL") or "claude-opus-5-5"
+
+    MAX_CONTENT_LENGTH = 12 * 1024 * 1024  # photo ID uploads
     MIN_AGE = 18
     AI_FALLBACK_AFTER_HOURS = 6
 

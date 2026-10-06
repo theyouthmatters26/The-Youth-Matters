@@ -33,7 +33,7 @@ structure: **Subject → Country → Chat rooms and discussions → Mentors and 
 | **Country pages** | A page per destination with its discussions, live chatroom, mentors who studied there and a link to the official visa rules. |
 | **Chatrooms** | Live rooms per country, with `@TYMAi` for quick answers. Members only. |
 | **AI Lounge** | Private one-to-one help with SOPs, visas and shortlists. Members only. |
-| **Sign-up and 18+ check** | Email and password with a 6-digit email code, or Google. The date of birth is read from a photo ID (OCR) and the face on it is matched to a live selfie. |
+| **Sign-up and 18+ check** | Email and password with a 6-digit email code, or Google. The date of birth is read from a photo ID (OCR); 18 or over verifies the account. The photo is never stored. |
 | **Mentors** | Profiles with photos, topics, languages and reviews. A booking calendar shows times in your own time zone. |
 | **Payments** | Razorpay checkout with a 15 minute slot hold, signature verification, webhook confirmation, refunds on cancellation and receipts. |
 | **My TYM** | Your profile, questions and answers, plus upcoming and past mentor sessions (join link, add to calendar, cancel, review). |
@@ -50,7 +50,7 @@ responsive from 320px phones to wide desktops.
 | Website | React 18, Vite, React Router, plain CSS with design tokens, lucide-react icons |
 | API | Python 3.12, Flask, Flask-SQLAlchemy, Flask-Migrate (Alembic), Flask-JWT-Extended, Flask-SocketIO, Flask-Limiter |
 | Database | PostgreSQL (full-text search, partial unique indexes), Redis for rate limits and sockets in production |
-| Identity check | RapidOCR (ONNX) for the date of birth, OpenCV YuNet + SFace for face detection and matching |
+| Age check | RapidOCR (ONNX) reads the date of birth from a photo ID |
 | Payments | Razorpay (Orders API, Checkout, webhooks, refunds) |
 | Email | Resend |
 | Files | DigitalOcean Spaces (S3 compatible), local folder in development |
@@ -105,6 +105,7 @@ committed.
 | `GOOGLE_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID` | Google sign-in (same OAuth client ID in both). |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Razorpay API keys. Test keys (`rzp_test_...`) work end to end. |
 | `RAZORPAY_WEBHOOK_SECRET` | Secret of the Razorpay webhook (see [Deployment](#deployment)). |
+| `ANTHROPIC_API_KEY`, `AI_MODEL` | Claude API key for TYMAi (Ask TYM AI and `@TYMAi` in chat rooms). Without a key, TYMAi answers from what the community already said. The model defaults to `claude-opus-5-5`. |
 
 ## Project structure
 
@@ -115,7 +116,7 @@ backend/                     Flask API
                              (auth, verify, posts, comments, mentors, bookings, contact, ...)
     models/                  SQLAlchemy models, one file per domain
     services/                Business logic
-      identity.py              OCR date of birth + face match + liveness
+      identity.py              Reads the date of birth from a photo ID (OCR)
       payments.py              Razorpay orders, signatures, refunds
       availability.py          Weekly hours -> bookable slots (time zone and DST safe)
       ranking.py, moderation.py, storage.py, mailer.py
@@ -141,12 +142,11 @@ docker-compose.yml           Optional local PostgreSQL + Redis
 
 ## How the key flows work
 
-**Sign-up and age verification.** Account → 6-digit email code → photo ID → live selfie. The API reads the
-date of birth from the ID (passport machine-readable zone first, then the date-of-birth field) and refuses
-under-18s. The selfie is two frames, looking straight and then turned: the face is matched to the ID photo,
-and the head turn shows it is a real person, not a printed photo. The ID photo is deleted as soon as the check
-passes. After three failed matches the check goes to a person for review. The account stays limited until
-verification passes.
+**Sign-up and age verification.** Account → 6-digit email code → photo ID. The member takes a photo of
+their passport, driving licence or national ID, or uploads one. The API reads the date of birth (passport
+machine-readable zone first, then the date-of-birth field), refuses under-18s and verifies everyone else
+straight away. The photo is only read in memory and never stored; the account keeps the date of birth. The
+account stays limited until this step is done.
 
 **Members-only access.** Visitors can read the home page, country pages (first two discussions), mentor
 profiles, the blog and the help pages. The AI Lounge, chatrooms, asking questions, notifications and booking
@@ -170,7 +170,7 @@ All routes are under `/api`. Response shapes are defined once in `backend/app/ap
 |---|---|
 | Health | `GET /health` |
 | Auth | `POST /auth/register`, `/auth/resend-code`, `/auth/verify-email`, `/auth/login`, `/auth/google`, `/auth/refresh`, `/auth/forgot-password`, `/auth/reset-password`, `GET /auth/me` |
-| Identity check | `POST /verify/document` (photo ID), `POST /verify/selfie` (two frames) |
+| Age check | `POST /verify/document` (photo ID, verifies the account when 18+) |
 | Communities | `GET /subjects`, `GET /subjects/<subject>/communities`, `GET /subjects/<subject>/communities/<country>`, `GET /categories` |
 | Posts | `GET /posts?sort=hot\|top\|new&subject=&country=&category=&page=`, `GET /posts/<id>`, `GET /posts/<id>/comments` |
 | Search | `GET /search?q=` |
@@ -226,7 +226,7 @@ Conventions:
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Structure, database schema, API skeleton, full public website | Done |
-| 2 | Accounts (email code, Google, photo ID + selfie 18+ check) | Done |
+| 2 | Accounts (email code, Google, photo ID 18+ check) | Done |
 | 2 | Posting questions and answers, voting, following, feed, notifications on the API | Next |
 | 3 | Admin panel: analytics, verification reviews, bans, reports queue, categories | Planned |
 | 4 | Real-time chat, AI Lounge, `@TYMAi`, 6-hour AI fallback, AI moderation, 3-strike system | Planned |

@@ -19,3 +19,7 @@ gevent-websocket==0.10.*
 rapidocr_onnxruntime==1.4.*
 # Time zone data for zoneinfo (Windows has none built in); mentor hours are in their local time
 tzdata
+# Post pictures and profile photos: checked, resized, re-saved without EXIF
+Pillow
+# TYMAi (Ask TYM AI and @TYMAi in chat rooms): the Claude API
+anthropic>=1.11,<2

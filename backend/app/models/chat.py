@@ -24,7 +24,10 @@ class ChatMessage(Model):
     room_id = db.Column(db.Integer, db.ForeignKey("chat_rooms.id", ondelete="CASCADE"), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     body = db.Column(db.String(2000), nullable=False)
+    sources = db.Column(db.JSON)  # TYMAi replies: [{"postId", "title"}] community questions it drew on
     is_deleted = db.Column(db.Boolean, nullable=False, default=False)
+
+    author = db.relationship("User")
 
 
 class AiConversation(Model):
@@ -42,3 +45,4 @@ class AiMessage(Model):
                                 nullable=False)
     role = db.Column(enum("user", "assistant", name="ai_role"), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    sources = db.Column(db.JSON)  # [{"postId", "title"}] community questions the answer drew on

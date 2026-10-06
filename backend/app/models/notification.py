@@ -15,3 +15,6 @@ class Notification(Model):
     comment_id = db.Column(db.Integer, db.ForeignKey("comments.id", ondelete="CASCADE"))
     message = db.Column(db.String(255))
     is_read = db.Column(db.Boolean, nullable=False, default=False)
+
+    actor = db.relationship("User", foreign_keys=[actor_id])
+    post = db.relationship("Post")

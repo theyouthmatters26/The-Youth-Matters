@@ -29,6 +29,7 @@
 }
 .vote button:hover { background: var(--paper); color: var(--ink); }
 .vote button[aria-pressed='true'] { color: var(--ink); }
+.vote.is-up .vote-score, .vote.is-down .vote-score { font-weight: 700; }
 .vote-score { color: var(--ink); font-weight: 500; min-width: 3ch; text-align: center; font-variant-numeric: tabular-nums; }
 
 /* Segmented tabs */

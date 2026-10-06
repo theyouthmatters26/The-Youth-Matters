@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { KeyRound, Menu, Search, UserPlus, X } from 'lucide-react'
+import { Bell, Bookmark, CalendarCheck, ChevronDown, GraduationCap, KeyRound, LayoutDashboard, LogOut, Menu, Search, Settings, User, UserPlus, X } from 'lucide-react'
 import Avatar from '../ui/Avatar'
+import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import './layout.css'
 
@@ -45,8 +46,81 @@ function SearchDialog({ onClose }) {
   )
 }
 
+// Unread count, refreshed every minute, on page changes and when notifications are read
+function NotificationBell() {
+  const [count, setCount] = useState(0)
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const load = () => api('/notifications/unread').then((r) => setCount(r.unread)).catch(() => {})
+    load()
+    const timer = setInterval(load, 60000)
+    window.addEventListener('tym:notifications', load)
+    return () => { clearInterval(timer); window.removeEventListener('tym:notifications', load) }
+  }, [pathname])
+  return (
+    <Link to="/notifications" className="account-link bell" aria-label={count ? `Notifications, ${count} unread` : 'Notifications'}>
+      <Bell size={17} strokeWidth={1.7} />
+      {count > 0 && <span className="bell-count">{count > 9 ? '9+' : count}</span>}
+    </Link>
+  )
+}
+
+// Avatar menu: everything about your own account, including the way out
+function AccountMenu({ user }) {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+  const { pathname, search } = useLocation()
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => setOpen(false), [pathname, search])
+  useEffect(() => {
+    if (!open) return undefined
+    const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false) }
+    const esc = (e) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', esc) }
+  }, [open])
+
+  const profile = `/u/${user.username}`
+  const links = [
+    ['/my', LayoutDashboard, 'My TYM'],
+    [profile, User, 'Your profile'],
+    [`${profile}?tab=Saved`, Bookmark, 'Saved questions'],
+    [`${profile}?tab=Sessions`, CalendarCheck, 'Your sessions'],
+    ['/settings', Settings, 'Profile settings'],
+    user.role === 'student' && ['/mentors/register', GraduationCap, 'Become a mentor'],
+  ].filter(Boolean)
+
+  return (
+    <div className="account-menu" ref={ref}>
+      <button className="account-me" aria-haspopup="menu" aria-expanded={open} aria-label="Your account" onClick={() => setOpen(!open)}>
+        <Avatar user={user} size={30} />
+        <span>My TYM</span>
+        <ChevronDown size={14} aria-hidden className="account-caret" />
+      </button>
+      {open && (
+        <div className="account-pop" role="menu">
+          <Link to={profile} className="account-pop-head" role="menuitem">
+            <Avatar user={user} size={40} />
+            <span><strong>{user.displayName}</strong><span>@{user.username}</span></span>
+          </Link>
+          {links.map(([to, Icon, label]) => (
+            <Link key={to} to={to} role="menuitem"><Icon size={16} strokeWidth={1.7} aria-hidden /> {label}</Link>
+          ))}
+          <button role="menuitem" className="account-pop-out" onClick={() => { setOpen(false); logout(); navigate('/') }}>
+            <LogOut size={16} strokeWidth={1.7} aria-hidden /> Log out
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Header() {
-  const { user, account } = useAuth()
+  const { user, account, logout } = useAuth()
+  const navigate = useNavigate()
   const [menu, setMenu] = useState(false)
   const [search, setSearch] = useState(false)
   const { pathname } = useLocation()
@@ -59,7 +133,7 @@ export default function Header() {
   return (
     <>
       {/* Masthead: logo left, account links top right (client template) */}
-      <div className="masthead">
+      <div className={`masthead${user ? ' is-member' : ''}`}>
         <div className="container masthead-inner">
           <Link to="/" className="brand" aria-label="The Youth Matters, home">
             <img src="/logo.png" alt="" width="44" height="46" />
@@ -67,11 +141,9 @@ export default function Header() {
           </Link>
 
           <div className="account">
+            {user && <NotificationBell />}
             {user ? (
-              <Link to="/my" className="account-me">
-                <Avatar user={user} size={30} />
-                <span>My TYM</span>
-              </Link>
+              <AccountMenu user={user} />
             ) : account ? (
               <Link to="/register" className="account-link account-auth"><UserPlus size={15} strokeWidth={1.7} /> Finish sign-up</Link>
             ) : (
@@ -112,6 +184,12 @@ export default function Header() {
                 </NavLink>
               ))}
             </nav>
+            {user && (
+              <div className="mobile-actions">
+                <Link to="/settings" className="btn btn-glass">Profile settings</Link>
+                <button className="btn btn-light" onClick={() => { logout(); navigate('/') }}>Log out</button>
+              </div>
+            )}
             {account && !user && (
               <div className="mobile-actions">
                 <Link to="/register" className="btn btn-light">Finish sign-up</Link>

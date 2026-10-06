@@ -1,4 +1,10 @@
-"""Universal search (Module 6) across posts, users, country hubs and mentors."""
+"""Universal search (Module 6) across posts, users, country hubs and mentors.
+
+    GET /search?q=          everything matching the words
+    GET /search?q=&any=1    posts matching any word, for "Already asked?" suggestions
+"""
+import re
+
 from flask import Blueprint, jsonify, request
 
 from ..extensions import db
@@ -16,6 +22,10 @@ def search():
         return jsonify(posts=[], users=[], communities=[], mentors=[])
     like = f"%{term}%"
     tsquery = db.func.websearch_to_tsquery("english", term)
+    if request.args.get("any"):
+        # "Already asked?" while typing: any of the meaningful words, best matches first
+        words = [w for w in re.findall(r"[a-z0-9]+", term.lower()) if len(w) > 3][:10]
+        tsquery = db.func.to_tsquery("english", " | ".join(words) or "''")
 
     posts = db.session.scalars(
         db.select(Post)

@@ -11,11 +11,14 @@ from pathlib import Path
 import bcrypt
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
-from app.models import (BlogPost, Category, ChatRoom, Comment, Community, Country,  # noqa: E402
-                        MentorProfile, MentorReview, Post, Subject, User)
+from app.models import (BlogPost, Category, ChatMessage, ChatRoom, Comment, Community, Country,  # noqa: E402
+                        Follow, MentorProfile, MentorReview, Post, Subject, User)
+from demo_chat import seed_chat  # noqa: E402
+from demo_posts import seed_posts  # noqa: E402
 
 PHOTOS = Path(__file__).resolve().parents[1] / "frontend" / "public" / "images" / "people"
 
@@ -41,6 +44,9 @@ CATEGORIES = [
 ]
 
 
+MODELS = {"Category": Category, "ChatMessage": ChatMessage, "ChatRoom": ChatRoom, "Comment": Comment,
+          "Community": Community, "Post": Post, "Subject": Subject, "User": User}
+
 # Local demo accounts only (example.com addresses), e.g. aisha.k@example.com
 DEMO_PASSWORD = "tym-demo-2026"
 
@@ -60,27 +66,44 @@ def user(username, name, role="student", **kw):
                 date_of_birth=kw.pop("dob", date(2002, 4, 12)), **kw)
 
 
-def ensure_user(username, name, role="student", bio=None):
+def ensure_user(username, name, role="student", bio=None, **profile):
     """Demo member by username, created if missing. Gets their portrait if one is in the site."""
     u = db.session.scalar(db.select(User).where(User.username == username))
     if not u:
         u = user(username, name, role=role)
         db.session.add(u)
     u.display_name, u.role, u.bio = name, role, bio or u.bio
+    for field, value in profile.items():
+        setattr(u, field, value)
     if (PHOTOS / f"{username}.jpg").exists():
         u.avatar_url = f"/images/people/{username}.jpg"
     return u
 
 
+# username, name, bio, destination, study level, university, course, intake
 STUDENTS = [
-    ("aisha.k", "Aisha Khan", "MSc Marketing offer from Leeds. Sorting out my visa file."),
-    ("rohan.m", "Rohan Mehta", "Undergrad, CS. Manchester or Glasgow, still deciding."),
-    ("meera.n", "Meera Nair", "Applying for Fall intake in the US."),
-    ("kavya.r", "Kavya Reddy", "Accepted at Humber College for January."),
-    ("ishaan.g", "Ishaan Gupta", "Master of IT offer from Monash."),
-    ("varun.p", "Varun Pillai", "Applying to TU Munich and RWTH for the winter intake."),
-    ("neha.j", "Neha Joshi", "Starting an MSc at Trinity College Dublin in September."),
-    ("aditya.v", "Aditya Verma", "MSc Computer Science at Trinity. Moved to Dublin in 2025."),
+    ("aisha.k", "Aisha Khan", "MSc Marketing offer from Leeds. Sorting out my visa file.", "uk", "postgraduate",
+     "University of Leeds", "MSc Marketing", "September 2026"),
+    ("rohan.m", "Rohan Mehta", "Undergrad, CS. Manchester or Glasgow, still deciding.", "uk", "undergraduate",
+     "University of Manchester", "BSc Computer Science", "September 2026"),
+    ("meera.n", "Meera Nair", "Applying for Fall intake in the US.", "usa", "postgraduate",
+     None, "MS Data Analytics", "Fall 2027"),
+    ("kavya.r", "Kavya Reddy", "Accepted at Humber College for January.", "canada", "postgraduate",
+     "Humber College", "Graduate Certificate, Project Management", "January 2027"),
+    ("ishaan.g", "Ishaan Gupta", "Master of IT offer from Monash.", "australia", "postgraduate",
+     "Monash University", "Master of Information Technology", "February 2027"),
+    ("varun.p", "Varun Pillai", "Applying to TU Munich and RWTH for the winter intake.", "germany", "postgraduate",
+     None, "MSc Mechanical Engineering", "Winter 2026"),
+    ("neha.j", "Neha Joshi", "Starting an MSc at Trinity College Dublin in September.", "ireland", "postgraduate",
+     "Trinity College Dublin", "MSc Business Analytics", "September 2026"),
+    ("aditya.v", "Aditya Verma", "MSc Computer Science at Trinity. Moved to Dublin in 2025.", "ireland",
+     "postgraduate", "Trinity College Dublin", "MSc Computer Science", "September 2025"),
+    ("tanvi.d", "Tanvi Deshpande", "Admitted to RWTH Aachen for an MSc in Robotics.", "germany", "postgraduate",
+     "RWTH Aachen University", "MSc Robotics", "Winter 2026"),
+    ("farhan.a", "Farhan Ali", "MS Computer Science offer from Arizona State.", "usa", "postgraduate",
+     "Arizona State University", "MS Computer Science", "Fall 2026"),
+    ("sneha.k", "Sneha Kulkarni", "Starting a Master of Public Health in Sydney.", "australia", "postgraduate",
+     "University of Sydney", "Master of Public Health", "February 2027"),
 ]
 
 # Weekly hours are in each mentor's own time zone, picked to land in Indian evenings and weekends.
@@ -180,8 +203,13 @@ def seed_people():
     """Demo students and mentors with full profiles, weekly hours and reviews. Re-run safe."""
     communities = {c.country.slug: c for c in db.session.scalars(db.select(Community))
                    if c.subject.slug == "study-abroad"}
-    for username, name, bio in STUDENTS:
-        ensure_user(username, name, bio=bio)
+    countries = {c.slug: c for c in db.session.scalars(db.select(Country))}
+    for username, name, bio, country, level, university, course, intake in STUDENTS:
+        u = ensure_user(username, name, bio=bio, target_country=countries[country], study_level=level,
+                        university=university, course=course, intake=intake)
+        db.session.flush()
+        if not db.session.scalar(db.select(Follow.id).filter_by(user_id=u.id, community_id=communities[country].id)):
+            db.session.add(Follow(user_id=u.id, community_id=communities[country].id))  # joined where they are going
     now = datetime.now(timezone.utc)
     for spec in MENTORS:
         u = ensure_user(spec["username"], spec["name"], role="mentor",
@@ -207,6 +235,8 @@ def seed_people():
 def run():
     if db.session.scalar(db.select(Subject).limit(1)):
         seed_people()
+        seed_posts(db, MODELS)
+        seed_chat(db, MODELS)
         demo_logins()
         print("Already seeded; demo people and mentors are up to date.")
         return
@@ -227,38 +257,14 @@ def run():
     db.session.add_all([bot, team, aisha, rohan, priya])
 
     now = datetime.now(timezone.utc)
-    p1 = Post(author=aisha, community=abroad["uk"], category=cats["visas"],
-              title="How much money do I need to show for a UK student visa outside London?",
-              body="<p>My course is in Leeds and starts in September. Do I need 9 months of funds "
-                   "and how long must it sit in my account?</p>",
-              score=42, upvotes=45, downvotes=3, comment_count=2, created_at=now - timedelta(hours=5))
-    p2 = Post(author=rohan, community=abroad["uk"], category=cats["accommodation"],
-              title="Private halls or a shared house for first year in Manchester?",
-              body="<p>Budget is around 650 GBP a month. Which one worked better for you?</p>",
-              score=18, upvotes=19, downvotes=1, created_at=now - timedelta(hours=20))
-    db.session.add_all([p1, p2])
-    db.session.flush()
-
-    a1 = Comment(post=p1, author=priya, body="<p>Outside London it is 1,171 GBP per month for up to "
-                 "9 months, plus any unpaid tuition. The money has to be held for 28 consecutive days.</p>",
-                 score=31)
-    db.session.add(a1)
-    db.session.flush()
-    db.session.add(Comment(post=p1, author=aisha, parent_id=a1.id, depth=1,
-                           body="<p>That clears it up, thank you.</p>", score=4))
-
-    db.session.add_all([
-        ChatRoom(slug="study-abroad", name="Study Abroad", subject=subjects["study-abroad"],
-                 description="Open room for every destination."),
-        ChatRoom(slug="uk", name="United Kingdom", subject=subjects["study-abroad"], community=abroad["uk"],
-                 description="Everything about studying in the UK."),
-    ])
     db.session.add(BlogPost(slug="uk-visa-funds-explained", subject=subjects["study-abroad"], author=team,
                             title="UK student visa funds, explained in plain English",
                             excerpt="How much you need, how long it must sit in the account, and the mistakes that get applications refused.",
                             body="<p>Draft body.</p>", published_at=now - timedelta(days=2)))
     db.session.commit()
     seed_people()
+    seed_posts(db, MODELS)
+    seed_chat(db, MODELS)
     demo_logins()
     print("Seeded.")
 

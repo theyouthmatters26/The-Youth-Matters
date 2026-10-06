@@ -44,8 +44,8 @@ export function MemberQuote() {
 
 const PROMISES = [
   ['Everyone here is 18 or over', 'We read your date of birth from your ID, so nobody can simply type one in.'],
-  ['A quick selfie proves it is you', 'It is matched to your ID photo by our own system. Nothing is shared with anyone.'],
-  ['Your ID is deleted once you are verified', 'We keep the date of birth, not the document.'],
+  ['Done in a few seconds', 'Take a photo of your passport, driving licence or national ID, or upload one.'],
+  ['Your ID is never stored', 'We read the date of birth and discard the photo. Nothing is shared with anyone.'],
 ]
 
 export function WhyWeCheck() {

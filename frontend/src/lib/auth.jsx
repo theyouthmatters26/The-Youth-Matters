@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { api, session } from './api'
 
 // `account` is whoever is signed in. `user` is only set once their identity check has passed,
@@ -44,4 +44,17 @@ export function RequireAuth({ children }) {
   if (!account) return <Navigate to="/login" replace state={{ from }} />
   if (!user) return <Navigate to="/register" replace state={{ from }} />
   return children
+}
+
+// For buttons that need a member (vote, save, reply): returns false and sends visitors to log in,
+// or half-finished sign-ups to finish, coming back to this page afterwards.
+export function useMemberGuard() {
+  const { user, account } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  return () => {
+    if (user) return true
+    navigate(account ? '/register' : '/login', { state: { from: location.pathname + location.search } })
+    return false
+  }
 }

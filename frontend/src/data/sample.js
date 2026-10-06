@@ -214,7 +214,7 @@ export const notifications = [
 
 export const faqs = [
   ['Is The Youth Matters free?', 'Yes. Asking questions, answering, the community hubs, the Study Abroad chatroom and the AI Counsellor are free. Only one-to-one sessions with TYM Mentors are paid.'],
-  ['Why do you ask for a photo ID and a selfie?', 'The community is for adults only, so every member must be 18 or older. We read the date of birth from your passport, driving licence or national ID, then match the photo on it to a quick live selfie. It all happens on our own servers. The ID photo is deleted as soon as you are verified.'],
+  ['Why do you ask for a photo ID?', 'The community is for adults only, so every member must be 18 or older. We read the date of birth from your passport, driving licence or national ID on our own servers. The photo is never stored: we keep the date of birth, not the document.'],
   ['Who are TYM Mentors?', 'Current students and recent graduates of universities abroad. Each one is verified by our team before they can take bookings.'],
   ['What is TYMAi?', 'Our study abroad assistant. It answers questions that have had no reply for six hours, joins chatrooms when you type @TYMAi, and offers private counselling in the AI Lounge. It can be wrong, so check official sources for visa rules.'],
   ['What happens if someone is abusive?', 'Offensive words are hidden automatically. Repeat behaviour leads to a warning, then a 24 hour mute, then suspension. You can also report any post or user and block people you do not want to hear from.'],

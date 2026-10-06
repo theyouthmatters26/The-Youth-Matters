@@ -29,10 +29,15 @@ class User(Model):
 
     date_of_birth = db.Column(db.Date)  # read from the photo ID during verification
     display_name = db.Column(db.String(80), nullable=False)
-    avatar_url = db.Column(db.String(255))  # public image (CDN or site path); uploads land here in phase 2
+    avatar_url = db.Column(db.String(255))  # profile photo: a site path or /api/media/... for uploads
+    cover_url = db.Column(db.String(255))   # wide banner on the profile page
     bio = db.Column(db.String(500))
     target_country_id = db.Column(db.Integer, db.ForeignKey("countries.id"))
     study_level = db.Column(enum(*STUDY_LEVELS, name="study_level"))
+    # Where they are going: shown on their profile so answers can be specific
+    university = db.Column(db.String(120))
+    course = db.Column(db.String(120))
+    intake = db.Column(db.String(40))  # e.g. "September 2026"
 
     last_seen_at = db.Column(db.DateTime(timezone=True), default=utcnow)
 
@@ -47,12 +52,8 @@ class User(Model):
 
 
 class IdentityVerification(Model):
-    """Age + identity check at onboarding (services/identity.py): the date of birth is read from a
-    photo ID and the face on it is matched to a live selfie.
-
-    Privacy: the ID photo is kept only while the check is open; the selfie only if it goes to a
-    person for review. Both are deleted once a decision is made. id_face is the face embedding
-    (512 bytes) carried from the ID step to the selfie step, cleared at the end too."""
+    """Age check at onboarding (api/verify.py): the date of birth is read from a photo ID.
+    Privacy: the photo itself is never stored, only which document was used and how the date was read."""
     __tablename__ = "identity_verifications"
 
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
@@ -61,11 +62,6 @@ class IdentityVerification(Model):
                        nullable=False, default="pending")
     document_type = db.Column(enum(*DOCUMENT_TYPES, name="document_type"))
     dob_source = db.Column(enum("mrz", "label", "date", name="dob_source"))
-    id_face = db.Column(db.LargeBinary)
-    document_key = db.Column(db.String(255))
-    selfie_key = db.Column(db.String(255))
-    face_score = db.Column(db.Float)
-    attempts = db.Column(db.Integer, nullable=False, default=0)
     note = db.Column(db.String(255))
     decided_at = db.Column(db.DateTime(timezone=True))
     reviewed_by_id = db.Column(db.Integer, db.ForeignKey("users.id"))

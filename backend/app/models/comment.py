@@ -17,7 +17,7 @@ class Comment(Model):
     downvotes = db.Column(db.Integer, nullable=False, default=0)
     score = db.Column(db.Integer, nullable=False, default=0)
     is_deleted = db.Column(db.Boolean, nullable=False, default=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    updated_at = db.Column(db.DateTime(timezone=True), default=utcnow)  # set only when the author edits
 
     author = db.relationship("User")
-    post = db.relationship("Post")
+    post = db.relationship("Post", foreign_keys=[post_id])

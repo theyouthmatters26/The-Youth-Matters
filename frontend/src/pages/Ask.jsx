@@ -1,52 +1,31 @@
 import { useLocation } from 'react-router-dom'
-import { ImagePlus } from 'lucide-react'
-import { categories, countries } from '../data/sample'
+import { CheckCircle2 } from 'lucide-react'
+import Composer from '../components/feed/Composer'
+import { useMeta } from '../lib/meta'
+
+const TIPS = [
+  'Ask one clear question in the title, like you would ask a friend.',
+  'Say your course, university and intake, so answers fit your situation.',
+  'Mention what you already tried or read. People can then skip the basics.',
+  'Never share passport numbers, bank details or phone numbers.',
+]
 
 export default function Ask() {
   const location = useLocation() // "Ask a question" on a country page pre-selects that country
+  useMeta({ title: 'Ask the community', path: '/ask' })
   return (
-    <div className="container page narrow">
+    <div className="container page ask-page">
       <header className="page-head">
         <h1>Ask the community</h1>
-        <p>Good questions get answers faster. Say where you are applying, when you start, and what you have already tried.</p>
+        <p>Students who made the move last year answer most questions within a few hours.</p>
       </header>
-
-      <form className="card card-pad stack" onSubmit={(e) => e.preventDefault()}>
-        <div className="field">
-          <label htmlFor="title">Question</label>
-          <input id="title" className="input" maxLength={300} required
-            placeholder="How much money do I need to show for a UK student visa?" />
-        </div>
-        <div className="grid-2">
-          <div className="field">
-            <label htmlFor="country">Destination</label>
-            <select id="country" className="select" required defaultValue={location.state?.country || 'uk'}>
-              {countries.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="category">Topic</label>
-            <select id="category" className="select" defaultValue="">
-              <option value="" disabled>Choose a topic</option>
-              {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className="field">
-          <label htmlFor="body">Details</label>
-          <textarea id="body" className="textarea" placeholder="Course, university, intake, budget, anything that helps someone answer." />
-          <span className="hint">Do not share passport numbers or bank details.</span>
-        </div>
-        <label className="upload">
-          <ImagePlus size={18} />
-          <span>Add images <span className="faint">(PNG or JPG, up to 4)</span></span>
-          <input type="file" accept="image/png,image/jpeg" multiple className="visually-hidden" />
-        </label>
-        <div className="form-actions">
-          <button type="button" className="btn btn-ghost">Save draft</button>
-          <button className="btn btn-primary">Post question</button>
-        </div>
-      </form>
+      <div className="ask-grid">
+        <Composer full country={location.state?.country} />
+        <aside className="ask-tips card card-pad" aria-label="Tips for a good question">
+          <h2 className="section-title">Get a good answer faster</h2>
+          <ul>{TIPS.map((t) => <li key={t}><CheckCircle2 size={16} aria-hidden /> {t}</li>)}</ul>
+        </aside>
+      </div>
     </div>
   )
 }

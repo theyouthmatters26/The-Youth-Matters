@@ -1,51 +1,53 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import PostCard from '../components/feed/PostCard'
+import PostCard, { PostSkeleton } from '../components/feed/PostCard'
 import Avatar from '../components/ui/Avatar'
-import { blogs, countries, mentors, posts, users } from '../data/sample'
+import { blogs } from '../data/sample'
+import { useApi } from '../lib/api'
+import { useMeta } from '../lib/meta'
 
-// Phase 2: GET /api/search?q=
+// Questions, people, communities and mentors come from the API (Postgres full-text search);
+// articles are matched here because they ship with the website.
 export default function Search() {
   const [params] = useSearchParams()
-  const q = (params.get('q') || '').toLowerCase()
+  const term = (params.get('q') || '').trim()
+  useMeta({ title: term ? `Search: ${term}` : 'Search', path: '/search' })
+  const { data, loading } = useApi(term.length >= 2 ? `/search?q=${encodeURIComponent(term)}` : null)
+  const q = term.toLowerCase()
   const has = (s) => s.toLowerCase().includes(q)
-
-  const found = {
-    posts: posts.filter((p) => has(p.title) || has(p.body)),
-    people: Object.values(users).filter((u) => has(u.displayName) || has(u.username)),
-    hubs: countries.filter((c) => has(c.name)),
-    mentors: mentors.filter((m) => has(m.university) || has(m.course) || has(m.user.displayName)),
-    articles: blogs.filter((b) => has(b.title) || has(b.excerpt) || b.keywords.some(has)),
-  }
-  const total = Object.values(found).reduce((n, l) => n + l.length, 0)
+  const articles = q ? blogs.filter((b) => has(b.title) || has(b.excerpt) || b.keywords.some(has)) : []
+  const r = data || { posts: [], users: [], communities: [], mentors: [] }
+  const total = r.posts.length + r.users.length + r.communities.length + r.mentors.length + articles.length
 
   return (
     <div className="container page">
       <header className="page-head">
-        <h1>{q ? <>Results for "{params.get('q')}"</> : 'Search the community'}</h1>
-        <p>{q ? `${total} ${total === 1 ? 'result' : 'results'} across questions, articles, destinations, mentors and people.` : 'Use the search bar at the top of the page.'}</p>
+        <h1>{term ? <>Results for “{term}”</> : 'Search the community'}</h1>
+        <p>{!term ? 'Use the search in the top bar.' : loading ? 'Searching...' : `${total} ${total === 1 ? 'result' : 'results'} across questions, articles, communities, mentors and people.`}</p>
       </header>
 
-      {q && (
+      {term && (
         <div className="layout-2">
           <section className="stack" aria-label="Questions">
             <h2 className="section-title">Questions</h2>
-            {found.posts.length ? found.posts.map((p) => <PostCard key={p.id} post={p} />)
-              : <p className="muted">No questions match. <Link to="/ask" className="link">Ask it yourself.</Link></p>}
+            {loading && <div className="feed-list"><PostSkeleton /><PostSkeleton /></div>}
+            {!loading && (r.posts.length
+              ? <div className="feed-list">{r.posts.map((p) => <PostCard key={p.id} post={p} />)}</div>
+              : <p className="muted">No questions match. <Link to="/ask" className="link">Ask it yourself.</Link></p>)}
           </section>
           <aside className="stack">
             {[
-              ['Articles', found.articles.map((b) => ({ key: b.slug, to: `/blogs/${b.slug}`, title: b.title, sub: `${b.topic} · ${b.readMins} min read` }))],
-              ['Destinations', found.hubs.map((c) => ({ key: c.slug, to: `/c/${c.slug}`, title: c.name, sub: c.description }))],
-              ['Mentors', found.mentors.map((m) => ({ key: m.id, to: `/mentors/${m.id}`, title: m.user.displayName, sub: m.university, user: m.user }))],
-              ['People', found.people.map((u) => ({ key: u.username, to: `/u/${u.username}`, title: u.displayName, sub: `@${u.username}`, user: u }))],
+              ['Articles', articles.map((b) => ({ key: b.slug, to: `/blogs/${b.slug}`, title: b.title, sub: `${b.topic} · ${b.readMins} min read` }))],
+              ['Communities', r.communities.map((c) => ({ key: c.id, to: `/c/${c.country.slug}`, title: c.country.name, sub: c.description }))],
+              ['Mentors', r.mentors.map((m) => ({ key: m.id, to: `/mentors/${m.id}`, title: m.user.displayName, sub: m.university, user: m.user }))],
+              ['People', r.users.map((u) => ({ key: u.username, to: `/u/${u.username}`, title: u.displayName, sub: `@${u.username}`, user: u }))],
             ].map(([label, rows]) => rows.length > 0 && (
               <div key={label} className="card card-pad">
                 <h2 className="section-title">{label}</h2>
                 <div className="mini-list">
-                  {rows.map((r) => (
-                    <Link key={r.key} to={r.to} className="mini-row">
-                      {r.user && <Avatar user={r.user} size={32} />}
-                      <div><strong>{r.title}</strong><span>{r.sub}</span></div>
+                  {rows.map((row) => (
+                    <Link key={row.key} to={row.to} className="mini-row">
+                      {row.user && <Avatar user={row.user} size={32} />}
+                      <div><strong>{row.title}</strong><span>{row.sub}</span></div>
                     </Link>
                   ))}
                 </div>

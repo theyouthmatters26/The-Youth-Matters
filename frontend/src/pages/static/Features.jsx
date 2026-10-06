@@ -7,7 +7,7 @@ const FEATURES = [
   { Icon: MessagesSquare, title: 'Live chatrooms', text: 'Free public rooms by country. Find flatmates, compare CAS timelines, ask quick questions.', to: '/chat', cta: 'Open chatrooms' },
   { Icon: Bot, title: 'AI Counsellor', text: 'Private help with SOPs, visa steps and shortlists. Type @TYMAi in any chatroom for a quick answer.', to: '/ai', cta: 'Try the AI Lounge' },
   { Icon: Vote, title: 'Verified mentors', text: 'Book a paid one-to-one with a student at the university you want, at a time that suits you.', to: '/mentors', cta: 'Browse mentors' },
-  { Icon: ShieldCheck, title: 'A safer community', text: 'Every member is checked with a photo ID and a live selfie, abuse is filtered automatically, and there is a three-strike policy and one-click reporting.', to: '/faq', cta: 'How moderation works' },
+  { Icon: ShieldCheck, title: 'A safer community', text: 'Every member is 18+ and checked with a photo ID, abuse is filtered automatically, and there is a three-strike policy and one-click reporting.', to: '/faq', cta: 'How moderation works' },
 ]
 
 export default function Features() {

@@ -4,9 +4,11 @@ import Avatar from '../ui/Avatar'
 import { formatMoney } from '../../lib/format'
 import './mentors.css'
 
-export default function MentorCard({ m }) {
+// preview: the same card, not a link (the mentor application shows applicants how they will look)
+export default function MentorCard({ m, preview = false }) {
+  const Tag = preview ? 'div' : Link
   return (
-    <Link to={`/mentors/${m.id}`} className="mcard">
+    <Tag {...(preview ? {} : { to: `/mentors/${m.id}` })} className="mcard">
       <div className="mcard-photo">
         {m.user.avatar ? <img src={m.user.avatar} alt="" loading="lazy" decoding="async" /> : <Avatar user={m.user} size={96} />}
         <span className="mcard-price">{formatMoney(m.priceMinor, m.currency)} · {m.sessionMinutes} min</span>
@@ -20,7 +22,7 @@ export default function MentorCard({ m }) {
           <span className="faint">{m.community.country.name}</span>
         </footer>
       </div>
-    </Link>
+    </Tag>
   )
 }
 

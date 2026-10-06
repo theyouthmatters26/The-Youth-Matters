@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify
 
-from . import (auth, blogs, bookings, chat, comments, contact, communities, feed, mentors, moderation, notifications,
-               posts, search, users, verify, votes)
+from . import (ai, auth, blogs, bookings, chat, comments, contact, communities, feed, media, mentor_applications,
+               mentors, moderation,
+               notifications, posts, search, users, verify, votes)
 
 health_bp = Blueprint("health", __name__)
 
@@ -14,7 +15,8 @@ def health():
 BLUEPRINTS = [
     health_bp,
     auth.bp, users.bp, communities.bp, posts.bp, comments.bp, votes.bp, feed.bp, search.bp,
-    notifications.bp, moderation.bp, chat.bp, mentors.bp, bookings.bp, blogs.bp, verify.bp, contact.bp,
+    notifications.bp, moderation.bp, chat.bp, mentors.bp, bookings.bp, blogs.bp, verify.bp, contact.bp, media.bp,
+    ai.bp, mentor_applications.bp,
 ]
 
 

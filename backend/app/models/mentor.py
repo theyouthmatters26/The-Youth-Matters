@@ -102,3 +102,36 @@ class MentorReview(Model):
 
     author = db.relationship("User")
     booking = db.relationship("Booking", back_populates="review")
+
+
+class MentorApplication(Model):
+    """Everything a mentor profile needs, held for the team to review. Approving it creates the
+    MentorProfile (api/mentor_applications.py). CV and proof of study are private files."""
+    __tablename__ = "mentor_applications"
+
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = db.Column(enum("pending", "approved", "rejected", name="mentor_application_status"),
+                       nullable=False, default="pending")
+    community_id = db.Column(db.Integer, db.ForeignKey("communities.id"), nullable=False)
+    university = db.Column(db.String(120), nullable=False)
+    course = db.Column(db.String(120), nullable=False)
+    graduation_year = db.Column(db.SmallInteger, nullable=False)
+    graduated = db.Column(db.Boolean, nullable=False, default=False)
+    headline = db.Column(db.String(160), nullable=False)
+    about = db.Column(db.Text, nullable=False)
+    experience = db.Column(db.String(255))
+    topics = db.Column(db.JSON, nullable=False)
+    languages = db.Column(db.JSON, nullable=False)
+    linkedin = db.Column(db.String(255))
+    price_minor = db.Column(db.Integer, nullable=False)
+    session_minutes = db.Column(db.SmallInteger, nullable=False)
+    timezone = db.Column(db.String(64), nullable=False)
+    weekly_hours = db.Column(db.JSON, nullable=False)
+    cv_key = db.Column(db.String(255), nullable=False)
+    proof_key = db.Column(db.String(255), nullable=False)
+    note = db.Column(db.String(500))  # the team's reason when they turn an application down
+    decided_at = db.Column(db.DateTime(timezone=True))
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+    user = db.relationship("User", foreign_keys=[user_id])
+    community = db.relationship("Community")

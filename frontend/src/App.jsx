@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Footer from './components/layout/Footer'
+import Dashboard from './pages/Dashboard'
+import Settings from './pages/Settings'
 import Header from './components/layout/Header'
 import { RequireAuth, useAuth } from './lib/auth'
 import AiLounge from './pages/AiLounge'
@@ -49,13 +51,6 @@ function PageEffects() {
   return null
 }
 
-// "My TYM" in the header: the member's own profile for now (the full personal area is Phase 2).
-function MyTym() {
-  const { user } = useAuth()
-  const { search } = useLocation()
-  return <Navigate to={user ? `/u/${user.username}${search}` : '/login'} replace />
-}
-
 export default function App() {
   return (
     <div className="app">
@@ -72,7 +67,8 @@ export default function App() {
           <Route path="/search" element={<Search />} />
           <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
           <Route path="/u/:username" element={<Profile />} />
-          <Route path="/my" element={<MyTym />} />
+          <Route path="/my" element={<RequireAuth><Dashboard /></RequireAuth>} />
+          <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
 
           <Route path="/chat" element={<RequireAuth><Chatrooms /></RequireAuth>} />
           <Route path="/chat/:room" element={<RequireAuth><Chatrooms /></RequireAuth>} />

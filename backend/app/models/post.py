@@ -17,7 +17,7 @@ class Post(Model):
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))
 
     title = db.Column(db.String(300), nullable=False)
-    body = db.Column(db.Text, nullable=False, default="")  # sanitised HTML
+    body = db.Column(db.Text, nullable=False, default="")  # plain text, see services/content.py
 
     # Denormalised counters, updated in the same transaction as the vote/comment.
     upvotes = db.Column(db.Integer, nullable=False, default=0)
@@ -28,7 +28,9 @@ class Post(Model):
     is_pinned = db.Column(db.Boolean, nullable=False, default=False)
     is_deleted = db.Column(db.Boolean, nullable=False, default=False)
     ai_answered_at = db.Column(db.DateTime(timezone=True))  # TYMAi 6-hour fallback marker
-    updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    # The answer the asker marked as the one that helped; shown first with a badge
+    helpful_comment_id = db.Column(db.Integer, db.ForeignKey("comments.id", ondelete="SET NULL", use_alter=True, name="fk_posts_helpful_comment"))
+    updated_at = db.Column(db.DateTime(timezone=True), default=utcnow)  # set only when the author edits
 
     search_vector = db.Column(
         TSVECTOR,

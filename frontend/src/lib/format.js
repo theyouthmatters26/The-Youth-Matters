@@ -14,3 +14,7 @@ export const formatMoney = (minor, currency = 'INR') =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(minor / 100)
 
 export const formatPrice = (rupees) => formatMoney(rupees * 100)
+
+export const fullDate = (iso) => new Date(iso).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+
+export const plural = (n, word, many = `${word}s`) => `${n.toLocaleString('en-IN')} ${n === 1 ? word : many}`

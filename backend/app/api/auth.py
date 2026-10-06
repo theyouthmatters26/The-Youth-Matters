@@ -1,7 +1,7 @@
 """Accounts (Module 1): email + password confirmed with a 6-digit email code, Google sign-in, JWT.
 
 Sign-up order: register -> verify-email (returns a session) -> identity check (api/verify.py),
-which reads the date of birth from a photo ID and matches it to a live selfie. Until that passes
+which reads the date of birth from a photo ID and checks the member is 18 or over. Until that passes
 the account status stays "pending".
 """
 import hashlib

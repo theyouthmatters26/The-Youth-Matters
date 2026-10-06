@@ -1,69 +1,177 @@
-import { useState } from 'react'
-import { NavLink, useParams } from 'react-router-dom'
-import { Send, ShieldCheck } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { BookOpen, Send, ShieldCheck, Trash2 } from 'lucide-react'
+import RichText from '../components/feed/RichText'
+import RoomCard from '../components/feed/RoomCard'
 import Avatar from '../components/ui/Avatar'
 import RoleBadge from '../components/ui/RoleBadge'
-import { roomMessages, rooms } from '../data/sample'
-import { timeAgo } from '../lib/format'
+import { FormError } from '../components/auth/fields'
+import { api, useApi } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { timeAgo } from '../lib/format'
+import { useMeta } from '../lib/meta'
+import '../components/auth/auth.css'
 
-// Members only (RequireAuth in App.jsx). Phase 4: messages arrive over SocketIO (backend/app/sockets/chat.py).
+const POLL_MS = 4000
+const GROUP_MS = 5 * 60 * 1000 // messages from one person within 5 minutes share one header
+const ASKS_TYMAI = /(^|[^\w@])@tymai\b/i
+
+export function Sources({ items }) {
+  if (!items?.length) return null
+  return (
+    <div className="chat-sources">
+      <span><BookOpen size={13} aria-hidden /> From the community</span>
+      {items.map((s) => <Link key={s.postId} to={`/p/${s.postId}`}>{s.title}</Link>)}
+    </div>
+  )
+}
+
+export function Typing({ name = 'TYMAi' }) {
+  return <p className="chat-typing" role="status"><span aria-hidden><i /><i /><i /></span> {name} is typing</p>
+}
+
+// Members only (RequireAuth in App.jsx). New messages arrive by polling every few seconds.
 export default function Chatrooms() {
   const { room = 'study-abroad' } = useParams()
   const { user } = useAuth()
-  const current = rooms.find((r) => r.slug === room) || rooms[0]
-  const [messages, setMessages] = useState(roomMessages)
+  const rooms = useApi('/chat/rooms')
+  const current = rooms.data?.find((r) => r.slug === room)
+  useMeta({ title: current ? `${current.name} chat room` : 'Chat rooms', path: `/chat/${room}` })
+  const [messages, setMessages] = useState(null)
   const [draft, setDraft] = useState('')
+  const [thinking, setThinking] = useState(false)
+  const [error, setError] = useState('')
+  const log = useRef(null)
+  const lastId = useRef(0)
+  const stick = useRef(true) // follow new messages unless the reader scrolled up
 
-  const send = (e) => {
+  const merge = (rows) => {
+    if (!rows.length) return
+    lastId.current = Math.max(lastId.current, ...rows.map((m) => m.id))
+    setMessages((prev) => {
+      const seen = new Set((prev || []).map((m) => m.id))
+      return [...(prev || []).filter((m) => !m.pending), ...rows.filter((m) => !seen.has(m.id))]
+    })
+  }
+
+  useEffect(() => {
+    let live = true
+    setMessages(null)
+    setError('')
+    lastId.current = 0
+    stick.current = true
+    const load = async () => {
+      if (document.hidden && lastId.current) return
+      try {
+        const rows = await api(`/chat/rooms/${room}/messages${lastId.current ? `?after=${lastId.current}` : ''}`)
+        if (!live) return
+        if (!lastId.current) setMessages(rows)
+        merge(rows)
+      } catch (err) {
+        if (live && !lastId.current) { setMessages([]); setError(err.message) }
+      }
+    }
+    load()
+    const timer = setInterval(load, POLL_MS)
+    return () => { live = false; clearInterval(timer) }
+  }, [room])
+
+  useEffect(() => {
+    if (stick.current && log.current) log.current.scrollTop = log.current.scrollHeight
+  }, [messages, thinking])
+
+  const onScroll = () => {
+    const el = log.current
+    stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+  }
+
+  const send = async (e) => {
     e.preventDefault()
-    if (!draft.trim()) return
-    setMessages([...messages, { id: Date.now(), author: user, body: draft.trim(), createdAt: new Date().toISOString() }])
+    const body = draft.trim()
+    if (!body) return
     setDraft('')
+    setError('')
+    stick.current = true
+    const temp = { id: `t${Date.now()}`, pending: true, author: user, body, sources: [], createdAt: new Date().toISOString() }
+    setMessages((prev) => [...(prev || []), temp])
+    setThinking(ASKS_TYMAI.test(body))
+    try {
+      merge(await api(`/chat/rooms/${room}/messages`, { method: 'POST', body: { body } }))
+    } catch (err) {
+      setMessages((prev) => prev.filter((m) => m.id !== temp.id))
+      setDraft(body)
+      setError(err.message)
+    } finally {
+      setThinking(false)
+    }
+  }
+
+  const remove = async (m) => {
+    if (!window.confirm('Delete this message for everyone?')) return
+    setMessages((prev) => prev.filter((x) => x.id !== m.id))
+    try { await api(`/chat/messages/${m.id}`, { method: 'DELETE' }) } catch { setMessages((prev) => [...prev, m].sort((a, b) => a.id - b.id)) }
   }
 
   return (
     <div className="container page">
       <div className="chat-shell card">
-        <aside className="chat-rooms">
+        <aside className="chat-rooms" aria-label="Chat rooms">
           <p className="eyebrow">Study Abroad rooms</p>
-          {rooms.map((r) => (
-            <NavLink key={r.slug} to={`/chat/${r.slug}`} className={() => (r.slug === current.slug ? 'active' : '')}>
-              <strong># {r.name}</strong>
-              <span>{r.online} online</span>
-            </NavLink>
-          ))}
+          <div className="room-list">
+            {(rooms.data || []).map((r) => <RoomCard key={r.slug} room={r} active={r.slug === room} />)}
+          </div>
         </aside>
 
-        <section className="chat-main" aria-label={`${current.name} chat`}>
+        <section className="chat-main" aria-label={`${current?.name || 'Chat'} room`}>
           <header className="chat-head">
             <div>
-              <h1 className="chat-title"># {current.name}</h1>
-              <p className="muted" style={{ fontSize: 'var(--step--1)' }}>{current.description}</p>
+              <h1 className="chat-title"># {current?.name || 'Chat room'}</h1>
+              <p className="muted chat-desc">
+                {current?.description}
+                {current?.activeToday > 0 && <> · {current.activeToday} talking today</>}
+              </p>
             </div>
             <span className="chip"><ShieldCheck size={14} /> Moderated</span>
           </header>
 
-          <ol className="chat-log">
-            {messages.map((m) => (
-              <li key={m.id} className={m.author.role === 'bot' ? 'is-ai' : ''}>
-                <Avatar user={m.author} size={32} />
-                <div>
-                  <p className="chat-meta">
-                    <strong>{m.author.displayName}</strong> <RoleBadge role={m.author.role} />
-                    <span className="faint mono">{timeAgo(m.createdAt)}</span>
-                  </p>
-                  <p>{m.body}</p>
-                </div>
-              </li>
-            ))}
+          <ol className="chat-log" ref={log} onScroll={onScroll} aria-live="polite">
+            {messages === null && <li className="chat-note">Loading messages...</li>}
+            {messages?.length === 0 && !error && (
+              <li className="chat-note">No messages yet. Say hello, or ask @TYMAi anything about studying abroad.</li>
+            )}
+            {messages?.map((m, i) => {
+              const prev = messages[i - 1]
+              const grouped = prev && prev.author.id === m.author.id && new Date(m.createdAt) - new Date(prev.createdAt) < GROUP_MS
+              const mine = m.author.id === user.id
+              return (
+                <li key={m.id} className={`${m.author.role === 'bot' ? 'is-ai' : ''}${grouped ? ' is-grouped' : ''}${m.pending ? ' is-pending' : ''}`}>
+                  {grouped ? <span aria-hidden /> : <Link to={`/u/${m.author.username}`} aria-label={m.author.displayName}><Avatar user={m.author} size={32} /></Link>}
+                  <div>
+                    {!grouped && (
+                      <p className="chat-meta">
+                        <Link to={`/u/${m.author.username}`}><strong>{m.author.displayName}</strong></Link>
+                        <RoleBadge role={m.author.role} />
+                        <time className="faint mono" dateTime={m.createdAt}>{m.pending ? 'sending' : timeAgo(m.createdAt)}</time>
+                      </p>
+                    )}
+                    <RichText text={m.body} className="chat-text" />
+                    <Sources items={m.sources} />
+                  </div>
+                  {mine && !m.pending && (
+                    <button className="chat-delete" onClick={() => remove(m)} aria-label="Delete message"><Trash2 size={14} /></button>
+                  )}
+                </li>
+              )
+            })}
+            {thinking && <li className="is-ai"><span aria-hidden /><Typing /></li>}
           </ol>
 
           <form className="chat-input" onSubmit={send}>
+            <FormError>{error}</FormError>
             <label htmlFor="chat-msg" className="visually-hidden">Message</label>
-            <input id="chat-msg" className="input" value={draft} onChange={(e) => setDraft(e.target.value)}
-              placeholder={`Message #${current.name}. Type @TYMAi to ask the assistant.`} />
-            <button className="btn btn-primary" aria-label="Send"><Send size={16} /></button>
+            <input id="chat-msg" className="input" value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={1000}
+              placeholder={`Message #${current?.name || room}. Type @TYMAi to ask the assistant.`} autoComplete="off" />
+            <button className="btn btn-primary" aria-label="Send" disabled={!draft.trim()}><Send size={16} /></button>
           </form>
         </section>
       </div>

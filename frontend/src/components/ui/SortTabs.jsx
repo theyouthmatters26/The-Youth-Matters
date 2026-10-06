@@ -1,10 +1,11 @@
-import { Clock, Flame, TrendingUp } from 'lucide-react'
+import { Clock, Flame, HelpCircle, TrendingUp } from 'lucide-react'
 import './ui.css'
 
 const SORTS = [
   { key: 'hot', label: 'Hot', Icon: Flame },
   { key: 'top', label: 'Top', Icon: TrendingUp },
   { key: 'new', label: 'New', Icon: Clock },
+  { key: 'unanswered', label: 'Unanswered', Icon: HelpCircle },
 ]
 
 export default function SortTabs({ value, onChange }) {
