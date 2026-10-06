@@ -28,7 +28,7 @@ class Config:
     SPACES_REGION = os.getenv("SPACES_REGION")
     SPACES_KEY = os.getenv("SPACES_KEY")
     SPACES_SECRET = os.getenv("SPACES_SECRET")
-    SPACES_BUCKET = os.getenv("SPACES_BUCKET", "tym-media")
+    SPACES_BUCKET = os.getenv("SPACES_BUCKET") or "tym-media"
 
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     # Razorpay: test keys (rzp_test_...) work end to end without real money
@@ -36,7 +36,7 @@ class Config:
     RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
     RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
     RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-    MAIL_FROM = os.getenv("MAIL_FROM", "The Youth Matters <no-reply@theyouthmatters.org>")
+    MAIL_FROM = os.getenv("MAIL_FROM") or "The Youth Matters <no-reply@theyouthmatters.org>"
     CONTACT_EMAIL = os.getenv("CONTACT_EMAIL") or "hello@theyouthmatters.org"  # contact form and mentor applications
 
     # TYMAi (Ask TYM AI and @TYMAi in chat rooms). Without a key it answers from the community instead.

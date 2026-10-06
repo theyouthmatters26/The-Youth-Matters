@@ -43,6 +43,9 @@ dist/
 # Local database data
 .pgdata/
 
+# One-command local runner: kept on each developer's machine, not in the repo
+/run.py
+
 # OS / editor
 .DS_Store
 Thumbs.db
