@@ -383,7 +383,7 @@ export default function MentorApply() {
           </div>
         </Section>
 
-        <Section n={5} title="Weekly hours" text={`Pick when sessions can start, in ${form.timezone.replace(/_/g, ' ')} time. Students see them in their own time zone, and you can change them later.`}>
+        <Section n={5} title="Weekly hours" text={`Pick when sessions can start, in ${form.timezone.replace(/_/g, ' ')} time. Students see them in their own time zone. They are set when the team approves your application; to change them afterwards, write to support@theyouthmatters.org.`}>
           <WeekGrid value={form.weeklyHours} update={(fn) => setForm((f) => ({ ...f, weeklyHours: fn(f.weeklyHours) }))} />
         </Section>
 

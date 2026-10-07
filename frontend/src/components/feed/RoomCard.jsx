@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { MessagesSquare } from 'lucide-react'
 import { timeAgo } from '../../lib/format'
+import Photo from '../ui/Photo'
 import '../home/home.css'
 
 // One chat room in a list, like a messages inbox: room, latest message and when it was sent.
@@ -10,7 +11,7 @@ export default function RoomCard({ room, active = false }) {
   return (
     <Link to={`/chat/${room.slug}`} className={`room-row${active ? ' is-active' : ''}`} aria-current={active ? 'page' : undefined}>
       <span className="room-thumb" aria-hidden>
-        {room.country ? <img src={`/images/city-${room.country}.jpg`} alt="" loading="lazy" /> : <MessagesSquare size={18} strokeWidth={1.7} />}
+        {room.country ? <Photo src={`/images/city-${room.country}.jpg`} sizes="48px" /> : <MessagesSquare size={18} strokeWidth={1.7} />}
       </span>
       <span className="room-body">
         <span className="room-top">

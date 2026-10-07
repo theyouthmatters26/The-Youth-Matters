@@ -3,9 +3,12 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowUpRight, Check, ChevronLeft, Link2 } from 'lucide-react'
 import ArticleBody, { Contents, Inline } from '../components/blog/ArticleBody'
 import Avatar from '../components/ui/Avatar'
-import { blogs, users } from '../data/sample'
+import { Spinner } from '../components/auth/fields'
+import { users } from '../data/sample'
+import { useArticle, useArticles } from '../lib/blog'
 import { SITE, siteUrl, useMeta } from '../lib/meta'
 import NotFound from './NotFound'
+import Photo from '../components/ui/Photo'
 import '../components/blog/blog.css'
 
 const longDate = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -56,13 +59,15 @@ function CopyLink() {
 
 export default function BlogPost() {
   const { slug } = useParams()
-  const post = blogs.find((b) => b.slug === slug)
+  const { post, missing, error } = useArticle(slug)
+  const { articles } = useArticles()
   const jsonLd = useMemo(() => post && structuredData(post), [post])
   useMeta(post ? { title: post.seoTitle || post.title, description: post.description, path: `/blogs/${post.slug}`, image: post.image, type: 'article', jsonLd } : {})
-  if (!post) return <NotFound />
+  if (missing) return <NotFound />
+  if (!post) return <div className="container page post-loading">{error ? error.message : <><Spinner /> Loading the article</>}</div>
 
   const author = authorOf(post)
-  const related = blogs.filter((b) => b.slug !== slug)
+  const related = articles.filter((b) => b.slug !== slug).slice(0, 3)
 
   return (
     <article className="post">
@@ -86,7 +91,7 @@ export default function BlogPost() {
       </header>
 
       <figure className="container post-cover">
-        <img src={post.image} alt={post.imageAlt || ''} width="1600" height="900" />
+        <Photo src={post.image} alt={post.imageAlt || ''} width="1600" height="900" sizes="(max-width: 920px) 92vw, 880px" priority />
       </figure>
 
       <div className="container post-grid">
@@ -142,7 +147,7 @@ export default function BlogPost() {
           <div className="related-grid">
             {related.map((b) => (
               <Link key={b.slug} to={`/blogs/${b.slug}`} className="related-card">
-                <div className="related-photo"><img src={b.image} alt="" loading="lazy" /></div>
+                <div className="related-photo"><Photo src={b.image} sizes="(max-width: 720px) 92vw, 380px" /></div>
                 <span className="blog-meta">{b.topic} · {b.readMins} min read</span>
                 <h3>{b.title}</h3>
                 <span className="text-link">Read article <ArrowUpRight size={15} /></span>

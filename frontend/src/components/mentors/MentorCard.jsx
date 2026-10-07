@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { BadgeCheck, Star } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import { formatMoney } from '../../lib/format'
+import Photo from '../ui/Photo'
 import './mentors.css'
 
 // preview: the same card, not a link (the mentor application shows applicants how they will look)
@@ -10,7 +11,7 @@ export default function MentorCard({ m, preview = false }) {
   return (
     <Tag {...(preview ? {} : { to: `/mentors/${m.id}` })} className="mcard">
       <div className="mcard-photo">
-        {m.user.avatar ? <img src={m.user.avatar} alt="" loading="lazy" decoding="async" /> : <Avatar user={m.user} size={96} />}
+        {m.user.avatar ? <Photo src={m.user.avatar} sizes="(max-width: 640px) 46vw, 280px" /> : <Avatar user={m.user} size={96} />}
         <span className="mcard-price">{formatMoney(m.priceMinor, m.currency)} · {m.sessionMinutes} min</span>
       </div>
       <div className="mcard-body">

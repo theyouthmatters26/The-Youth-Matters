@@ -1,14 +1,13 @@
-import Avatar from '../../components/ui/Avatar'
-import { caseStudies, users } from '../../data/sample'
+import { caseStudies } from '../../data/sample'
 import { useMeta } from '../../lib/meta'
 
 export default function CaseStudies() {
-  useMeta({ title: 'Case studies', description: 'Short stories from students who used The Youth Matters on their way to universities in the UK and the US.', path: '/case-studies' })
+  useMeta({ title: 'Case studies', description: 'The journeys The Youth Matters is built for: getting visa funds right, finding flatmates before the flight, and reshaping a shortlist with a mentor.', path: '/case-studies' })
   return (
     <div className="container page">
       <header className="page-head">
-        <h1>Where our members ended up</h1>
-        <p>Short stories from students who used the community on their way abroad.</p>
+        <h1>The journeys TYM is built for</h1>
+        <p>Three examples of how students use the community on their way abroad. Stories from our own members will take their place as they share them.</p>
       </header>
       <div className="case-grid">
         {caseStudies.map((c) => (
@@ -16,8 +15,7 @@ export default function CaseStudies() {
             <p className="mono faint">{c.route}</p>
             <blockquote className="display">“{c.quote}”</blockquote>
             <figcaption className="mini-row">
-              <Avatar user={Object.values(users).find((u) => u.displayName === c.name) || { displayName: c.name }} size={40} />
-              <div><strong>{c.name}</strong><span>{c.course}</span></div>
+              <div><strong>{c.course}</strong><span>An example journey</span></div>
             </figcaption>
           </figure>
         ))}

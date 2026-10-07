@@ -1,6 +1,9 @@
 # Change the domain below if the site moves
 User-agent: *
+Disallow: /admin
+Disallow: /api/
 Disallow: /my
+Disallow: /settings
 Disallow: /notifications
 Allow: /
 

@@ -6,7 +6,7 @@ import { MoreMenu } from '../components/feed/PostActions'
 import MySessions from '../components/mentors/MySessions'
 import Avatar from '../components/ui/Avatar'
 import RoleBadge from '../components/ui/RoleBadge'
-import { Spinner } from '../components/auth/fields'
+import { FormError, Spinner } from '../components/auth/fields'
 import { api, useApi } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { plural, timeAgo } from '../lib/format'
@@ -20,17 +20,25 @@ function Answers({ username }) {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const load = async (n) => {
     setLoading(true)
-    const res = await api(`/users/${username}/comments?page=${n}`)
-    setItems((prev) => (n === 1 ? res.items : [...prev, ...res.items]))
-    setPage(n)
-    setHasMore(res.hasMore)
-    setLoading(false)
+    setError('')
+    try {
+      const res = await api(`/users/${username}/comments?page=${n}`)
+      setItems((prev) => (n === 1 ? res.items : [...prev, ...res.items]))
+      setPage(n)
+      setHasMore(res.hasMore)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
   useEffect(() => { load(1) }, [username])
 
   if (loading && !items.length) return <p className="muted post-loading"><Spinner /> Loading answers</p>
+  if (error && !items.length) return <FormError>{error}</FormError>
   if (!items.length) return <div className="card empty"><h2 className="display">No answers yet</h2><p className="muted">Answers and replies will show up here.</p></div>
   return (
     <>
@@ -49,6 +57,7 @@ function Answers({ username }) {
           </li>
         ))}
       </ol>
+      {error && <div style={{ marginTop: 'var(--s-4)' }}><FormError>{error}</FormError></div>}
       {hasMore && <button className="btn btn-ghost btn-sm load-more" onClick={() => load(page + 1)} disabled={loading}>Show more</button>}
     </>
   )
@@ -65,6 +74,7 @@ export default function Profile() {
   useMeta(u ? { title: `${u.displayName} (@${u.username})`, description: u.bio || `${u.displayName} on The Youth Matters.`, path: `/u/${u.username}` } : {})
 
   if (error?.status === 404) return <NotFound />
+  if (error) return <div className="container page"><FormError>{error.message}</FormError></div>
   if (loading || !u) return <div className="container page post-loading"><Spinner /> Loading profile</div>
 
   const facts = [

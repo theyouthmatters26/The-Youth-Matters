@@ -3,9 +3,12 @@
 .masthead-inner { display: flex; align-items: center; justify-content: space-between; gap: var(--s-5); height: 64px; }
 
 .brand { display: inline-flex; align-items: center; gap: var(--s-3); flex-shrink: 0; }
-.brand img { width: 38px; height: 40px; border-radius: 50%; }
+.brand img { flex-shrink: 0; width: 42px; height: 44px; border-radius: 50%; }
+/* The wordmark. The headline face comes in one weight, so a hairline stroke gives the name the
+   presence of a logo; the nudge sets the capitals on the centre line of the roundel beside it. */
 .brand-name {
-  font-family: var(--font-display); font-size: 1.25rem; line-height: 1; letter-spacing: -0.01em; white-space: nowrap;
+  font-family: var(--font-display); font-size: 1.5rem; line-height: 1; letter-spacing: -0.015em; white-space: nowrap;
+  color: var(--ink); -webkit-text-stroke: 0.3px currentColor; transform: translateY(var(--brand-nudge, 0.12em));
 }
 
 .account { display: flex; align-items: center; gap: var(--s-1); }
@@ -79,37 +82,61 @@
 }
 .mobile-link.active { color: var(--on-ink); }
 .mobile-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); margin-top: var(--s-6); }
+.mobile-actions.is-one { grid-template-columns: 1fr; }
+/* Signed in: your own links under the site's, as the avatar menu has them on a wide screen */
+.mobile-account { padding-top: var(--s-2); }
+.mobile-me { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s-3); align-items: center; padding-bottom: var(--s-4); color: var(--on-ink); }
+.mobile-me > span { display: grid; line-height: 1.3; }
+.mobile-me strong { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
+.mobile-me span span { font-size: var(--step--1); color: var(--on-ink-muted); }
+.mobile-sublink { display: flex; align-items: center; gap: var(--s-3); height: 46px; color: var(--on-ink-muted); font-weight: 500; transition: color 0.2s; }
+.mobile-sublink:hover { color: var(--on-ink); }
 @keyframes menu-in { from { opacity: 0; transform: translateY(-8px); } }
 
 /* Footer (black) */
 .site-footer { margin-top: 0; }
+/* Brand on the left, the two link columns against the right edge */
 .footer-top {
-  display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-7);
-  padding-top: var(--s-9); padding-bottom: var(--s-8);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--s-6) clamp(40px, 6vw, 96px);
+  padding-top: var(--s-8); padding-bottom: var(--s-7);
 }
 /* Brand block: logo row, then a clear gap, then the line, the sentence and the button on one rhythm */
 .footer-brand { display: grid; justify-items: start; max-width: 440px; }
-.footer-logo { display: inline-flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-7); }
+.footer-logo { display: inline-flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-5); }
 .footer-logo img { width: 44px; height: 46px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.24); }
 .footer-logo span { font-family: var(--font-display); font-size: 1.25rem; line-height: 1; letter-spacing: -0.01em; color: var(--on-ink); }
-.footer-line { margin-bottom: var(--s-4); font-size: clamp(2.75rem, 1.9rem + 2.4vw, 3.75rem); line-height: 1.02; letter-spacing: -0.03em; }
-.footer-brand > p.muted { max-width: 36ch; margin-bottom: var(--s-6); line-height: 1.65; }
+.footer-line { margin-bottom: var(--s-3); font-size: clamp(2rem, 1.5rem + 1.4vw, 2.75rem); line-height: 1.05; letter-spacing: -0.03em; }
+.footer-brand > p.muted { max-width: 40ch; margin-bottom: var(--s-5); line-height: 1.6; }
 /* Column titles sit on the same line as the logo row */
 .footer-col { display: grid; gap: var(--s-3); align-content: start; padding-top: 13px; }
 .footer-title { font-size: var(--step--1); color: var(--on-ink-faint); margin-bottom: var(--s-1); }
-.footer-col a { color: var(--on-ink-muted); width: fit-content; transition: color 0.2s; }
-.footer-col a:hover { color: var(--on-ink); }
-.footer-soon { color: var(--on-ink-faint); }
+.footer-col a { color: var(--on-ink-muted); width: fit-content; }
+/* The name and its Soon tag always share a line */
+.footer-soon { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--on-ink-faint); }
 .footer-soon em {
-  font-style: normal; font-size: 0.6875rem; margin-left: 6px; padding: 1px 6px;
+  font-style: normal; font-size: 0.6875rem; padding: 1px 6px;
   border: 1px solid var(--night-line); border-radius: 4px;
 }
 .footer-links {
-  display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-3) var(--s-5); padding-top: var(--s-5); padding-bottom: var(--s-5);
-  border-top: 1px solid var(--night-line); border-bottom: 1px solid var(--night-line);
+  position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-3) var(--s-5);
+  padding-top: var(--s-5); padding-bottom: var(--s-5);
 }
-.footer-links a { color: var(--on-ink-muted); font-size: var(--step--1); transition: color 0.2s; }
-.footer-links a:hover { color: var(--on-ink); }
+/* The rules start and end where the text does, so nothing above or below looks indented */
+.footer-links::before, .footer-links::after {
+  content: ''; position: absolute; left: var(--gutter); right: var(--gutter); height: 1px; background: var(--night-line);
+}
+.footer-links::before { top: 0; }
+.footer-links::after { bottom: 0; }
+.footer-links a { color: var(--on-ink-muted); font-size: var(--step--1); }
+/* Footer links: the text brightens and an underline draws in from the left */
+.footer-col a, .footer-links a { position: relative; transition: color 0.25s var(--ease); }
+.footer-col a::after, .footer-links a::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: currentColor;
+  transform: scaleX(0); transform-origin: left; transition: transform 0.4s var(--ease);
+}
+.footer-col a:hover, .footer-links a:hover, .footer-col a:focus-visible, .footer-links a:focus-visible { color: var(--on-ink); }
+.footer-col a:hover::after, .footer-links a:hover::after,
+.footer-col a:focus-visible::after, .footer-links a:focus-visible::after { transform: scaleX(1); }
 .footer-bottom {
   display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); flex-wrap: wrap;
   padding-top: var(--s-5); padding-bottom: var(--s-6); font-size: var(--step--1); color: var(--on-ink-faint);
@@ -123,9 +150,23 @@
 .connect a:hover { color: var(--ink); background: var(--on-ink); border-color: var(--on-ink); }
 
 /* Responsive */
+@media (max-width: 960px) {
+  /* Subjects is as wide as its longest line (so no Soon tag drops below its name); Community takes the rest */
+  .footer-top { grid-template-columns: max-content minmax(0, 1fr); }
+  .footer-brand { grid-column: 1 / -1; }
+}
 @media (max-width: 1100px) {
   .navbar { display: none; }
   .menu-toggle { display: grid; margin-left: var(--s-2); }
+  /* Signed in, the one button is your own picture and opens your account. The pages move to a
+     strip under the header: the same nav bar, scrolling sideways, no longer pinned to the top. */
+  .masthead.is-member .account-menu { display: none; }
+  .menu-toggle.is-me { padding: 0; background: none; }
+  .menu-toggle.is-me .avatar { width: 100%; height: 100%; box-shadow: 0 0 0 1px var(--line); }
+  .masthead.is-member + .navbar { display: block; position: static; }
+  .masthead.is-member + .navbar .navbar-inner { justify-content: flex-start; gap: var(--s-5); height: 46px; overflow-x: auto; scrollbar-width: none; }
+  .masthead.is-member + .navbar .navbar-inner::-webkit-scrollbar { display: none; }
+  .masthead.is-member + .navbar .nav-link { height: 46px; }
   .masthead { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--line-soft); }
 }
 @media (max-width: 720px) {
@@ -133,19 +174,22 @@
   .mobile-menu { inset: 72px 0 0; }
   .brand { gap: 10px; }
   .brand img { width: 40px; height: 42px; }
-  .brand-name { font-size: 1.1875rem; }
+  .brand-name { font-size: 1.3125rem; }
   .account-auth { display: none; }            /* Log in / Register live in the mobile menu */
   .account-link { font-size: 0; gap: 0; width: 40px; padding: 0; justify-content: center; }
-  .account-me span { display: none; }
+  .account-me > span:not(.avatar), .account-caret { display: none; } /* the label and arrow go; the face or initials stay */
   .account-me { padding: 0 4px; margin-right: 0; }
-  .footer-top { grid-template-columns: 1fr 1fr; padding-top: var(--s-8); }
-  .footer-brand { grid-column: 1 / -1; }
-  .footer-links { gap: var(--s-3) var(--s-5); }
+  .footer-top { column-gap: var(--s-5); padding-top: var(--s-7); padding-bottom: var(--s-6); }
+  /* Phones: links in two even columns, then the social icons, with the copyright line last */
+  .footer-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4) var(--s-5); justify-items: start; }
+  .footer-bottom { flex-direction: column-reverse; align-items: flex-start; gap: var(--s-5); padding-bottom: var(--s-7); }
 }
 @media (max-width: 359px) {
+  .footer-top { column-gap: var(--s-4); }
+  .footer-col { font-size: 0.9375rem; }
   .brand { gap: 8px; }
-  .brand-name { font-size: 0.9375rem; }
-  .brand img { width: 30px; height: 32px; }
+  .brand-name { font-size: 1.0625rem; }
+  .brand img { width: 32px; height: 34px; }
   .menu-toggle { width: 38px; height: 38px; margin-left: 2px; }
   .account-link { width: 34px; }
   .account-me { height: 36px; padding: 0 2px; border: 0; }
@@ -163,9 +207,18 @@
 @media (max-width: 720px) {
   .bell { font-size: var(--step-0); }
 }
-/* Signed in, the bell and avatar need the room: the logo stands alone on phones */
+/* Signed in, the bell and avatar share the row: the name stays, a little smaller, and on the
+   narrowest phones it sits on two lines beside the logo */
 @media (max-width: 440px) {
-  .masthead.is-member .brand-name { display: none; }
+  .masthead.is-member .masthead-inner { gap: var(--s-2); }
+  .masthead.is-member .brand { gap: 8px; }
+  .masthead.is-member .brand img { width: 36px; height: 38px; }
+  .masthead.is-member .brand-name { font-size: 1.125rem; }
+  .masthead.is-member .account-link { width: 36px; }
+  .masthead.is-member .menu-toggle { margin-left: 0; }
+}
+@media (max-width: 349px) {
+  .masthead.is-member .brand-name { --brand-nudge: 0em; max-width: 4.7em; white-space: normal; font-size: 1rem; line-height: 1.04; }
 }
 
 /* Account menu under the avatar */

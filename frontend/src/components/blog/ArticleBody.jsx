@@ -5,7 +5,7 @@ import Avatar from '../ui/Avatar'
 import { users } from '../../data/sample'
 import './blog.css'
 
-// Articles are stored as typed blocks (data/blogs/*.js) and rendered here, so writers get
+// Articles are written as text in the admin panel, turned into typed blocks (lib/article.js) and rendered here, so writers get
 // stats that count up, checklists readers can tick, tables and callouts without writing HTML.
 
 // **bold** and [label](url) inside any text. Internal links stay in the app, others open a new tab.
@@ -16,6 +16,7 @@ export function Inline({ text }) {
     const link = part.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/)
     if (!link) return <Fragment key={i}>{part}</Fragment>
     const [, label, href] = link
+    if (!/^(https?:\/\/|mailto:|\/)/i.test(href)) return <Fragment key={i}>{label}</Fragment>
     return href.startsWith('/')
       ? <Link key={i} to={href} className="link">{label}</Link>
       : <a key={i} href={href} target="_blank" rel="noopener" className="link">{label}</a>

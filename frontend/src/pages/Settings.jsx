@@ -55,7 +55,7 @@ export default function Settings() {
   useMeta({ title: 'Your profile settings', path: '/settings' })
   const { account, setAccount, logout } = useAuth()
   const navigate = useNavigate()
-  const { data } = useApi(`/users/${account.username}`)
+  const { data, error: loadError } = useApi(`/users/${account.username}`)
   const [profile, setProfile] = useState(null)
   const [form, setForm] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -71,6 +71,7 @@ export default function Settings() {
     })
   }, [data])
 
+  if (!form && loadError) return <div className="container page"><FormError>{loadError.message}</FormError></div>
   if (!form) return <div className="container page post-loading"><Spinner /> Loading your profile</div>
 
   const set = (k) => (e) => { setForm({ ...form, [k]: e.target.value }); setSaved(false) }

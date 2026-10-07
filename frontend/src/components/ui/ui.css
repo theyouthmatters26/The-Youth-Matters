@@ -5,9 +5,9 @@
   background: var(--tint); color: var(--slate);
 }
 .avatar-mentor { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
-.avatar-admin, .avatar-bot { background: var(--ink); color: var(--on-ink); font-family: var(--font-mono); }
+.avatar-admin, .avatar-bot { background: var(--ink); color: var(--on-ink); }
 /* Portraits are graded to the site's monochrome; mentors keep their ring as an outline */
-.avatar-photo { object-fit: cover; object-position: center 25%; filter: grayscale(1) contrast(1.04); background: var(--sunken); }
+.avatar-photo { aspect-ratio: 1; object-fit: cover; object-position: center 25%; filter: grayscale(1) contrast(1.04); background: var(--sunken); }
 .avatar-photo.avatar-mentor { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--ink); }
 
 /* Badges: one style, differences carried by icon + label */

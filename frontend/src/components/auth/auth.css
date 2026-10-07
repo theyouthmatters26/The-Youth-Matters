@@ -194,3 +194,6 @@
   .otp span { height: 50px; font-size: var(--step-1); }
   .id-sketch { width: 78%; }
 }
+
+/* Under "Continue with Google": what it skips, what it does not */
+.google-note { margin-top: var(--s-3); font-size: var(--step--2); line-height: 1.55; color: var(--muted); text-align: center; text-wrap: pretty; }

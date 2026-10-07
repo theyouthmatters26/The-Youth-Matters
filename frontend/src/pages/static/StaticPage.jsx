@@ -1,9 +1,11 @@
 import { useLocation } from 'react-router-dom'
+import { useMeta } from '../../lib/meta'
+import NotFound from '../NotFound'
 
 // Footer pages. Final legal copy comes from the client; these are placeholders in the right structure.
 const PAGES = {
   '/news': ['Latest news', 'Updates from the TYM team: new destinations, features and community events.', [
-    'We are launching with the United Kingdom hub and will open more destinations as the community grows.',
+    'Communities are open for the United Kingdom, United States, Canada, Australia, Ireland and Germany, and more destinations will follow as the community grows.',
   ]],
   '/careers': ['Work for us', 'We are a small team building a calmer way to prepare for studying abroad.', [
     'We do not have open roles right now. Send your CV and a short note to careers@theyouthmatters.org and we will keep you in mind.',
@@ -22,8 +24,8 @@ const PAGES = {
   ]],
   '/payment-terms': ['Payment terms', 'How paying for mentor sessions works.', [
     'Sessions are paid in advance through Razorpay by UPI, card or net banking. Prices are shown in INR.',
-    'Cancel or reschedule up to 24 hours before a session for a full refund.',
-    'An invoice is emailed automatically after every successful payment.',
+    'Cancel up to 24 hours before a session for a full refund.',
+    'Every payment gets an invoice number, shown with the session in your profile, and a confirmation email.',
   ]],
   '/help-safety': ['Help and safety', 'What to do if something goes wrong.', [
     'Use Report on any post, comment, message or profile. Our team reviews every report.',
@@ -45,7 +47,10 @@ const PAGES = {
 }
 
 export default function StaticPage() {
-  const [title, intro, body] = PAGES[useLocation().pathname]
+  const { pathname } = useLocation()
+  const [title, intro, body] = PAGES[pathname] || []
+  useMeta({ title, description: intro, path: pathname })
+  if (!title) return <NotFound />
   return (
     <div className="container page narrow">
       <header className="page-head">
@@ -59,4 +64,4 @@ export default function StaticPage() {
   )
 }
 
-export const STATIC_PATHS = Object.keys(PAGES)
+export const STATIC_PATHS = Object.keys(PAGES) // read by scripts/prerender.mjs

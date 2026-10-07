@@ -14,7 +14,8 @@ MENTION = re.compile(r"(?<![\w@])@([a-z0-9._]{3,32})", re.I)
 
 def clean(text, max_len):
     """(clean_text, was_censored). Strips tags, trims, collapses 3+ blank lines, caps length."""
-    text = bleach.clean(str(text or ""), tags=[], strip=True)
+    # Cut first: cleaning megabytes of junk would hold up everyone else's requests
+    text = bleach.clean(str(text or "")[:max_len * 4], tags=[], strip=True)
     text = text.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
     text = re.sub(r"\n{3,}", "\n\n", text.replace("\r\n", "\n")).strip()[:max_len]
     return censor(text)

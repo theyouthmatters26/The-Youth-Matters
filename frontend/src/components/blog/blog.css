@@ -22,9 +22,11 @@
 .post-dates { display: grid; margin-left: auto; text-align: right; font-size: var(--step--1); color: var(--faint); }
 
 /* Cover: unveiled top to bottom on arrival */
-.post-cover { margin-top: var(--s-7); }
+/* Same width as the title block above it, so heading, byline and photo read as one column */
+.post-cover { max-width: 880px; margin-top: var(--s-6); }
 .post-cover img {
-  width: 100%; aspect-ratio: 21 / 9; object-fit: cover; border-radius: var(--radius-lg); filter: grayscale(1) contrast(1.04);
+  /* Wide and short: never taller than about half the window, so the article starts on the first screen */
+  width: 100%; aspect-ratio: 16 / 9; max-height: min(48vh, 420px); object-fit: cover; border-radius: var(--radius-lg); filter: grayscale(1) contrast(1.04);
   animation: cover-in 1.4s var(--ease) both;
 }
 @keyframes cover-in { from { clip-path: inset(0 0 100% 0 round var(--radius-lg)); } to { clip-path: inset(0 0 0 0 round var(--radius-lg)); } }
@@ -179,7 +181,8 @@
 }
 @media (max-width: 720px) {
   .read-progress { top: 73px; }
-  .post-cover img { aspect-ratio: 4 / 3; }
+  .post-cover img { aspect-ratio: 16 / 9; max-height: min(42vh, 300px); }
+  .post-cover { margin-top: var(--s-6); }
   .post-dates { margin-left: 0; text-align: left; }
   .post-grid { padding-top: var(--s-7); }
   .article-body { font-size: 1rem; }

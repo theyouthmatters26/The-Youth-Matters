@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { MessageSquare, Plus, Send, Trash2 } from 'lucide-react'
+import { MessageSquare, Plus, Send, Trash2, UserRound } from 'lucide-react'
 import RichText from '../components/feed/RichText'
 import Avatar from '../components/ui/Avatar'
 import { FormError } from '../components/auth/fields'
@@ -11,12 +11,35 @@ import { useMeta } from '../lib/meta'
 import { Sources, Typing } from './Chatrooms'
 
 const TYMAI = { displayName: 'TYMAi', role: 'bot' }
+const POLL_MS = 5000 // a person from the team may reply at any moment
 const STARTERS = [
   'Review the opening paragraph of my SOP',
   'Which documents do I need for a UK student visa?',
   'Help me shortlist universities for MSc Data Science',
   'How much should I budget per month as a student in Dublin?',
 ]
+
+// Who is answering right now, and the way to ask for a person
+function Handoff({ convo, onAsk, onCancel, busy }) {
+  if (convo.status === 'human') {
+    return <p className="handoff is-person"><UserRound size={15} aria-hidden /> <span><strong>{convo.person || 'Someone'} from the TYM team</strong> is with you. TYMAi is paused while they help.</span></p>
+  }
+  if (convo.status === 'waiting') {
+    return (
+      <p className="handoff">
+        <UserRound size={15} aria-hidden />
+        <span><strong>We have told the team.</strong> A person will reply here and we will email you. TYMAi keeps answering in the meantime.</span>
+        <button type="button" className="btn-text" onClick={onCancel} disabled={busy}>Cancel</button>
+      </p>
+    )
+  }
+  return (
+    <p className="handoff">
+      <span>You are talking to TYMAi. Prefer a person from our team?</span>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={onAsk} disabled={busy}><UserRound size={14} /> Talk to a person</button>
+    </p>
+  )
+}
 
 // Private one-to-one help. The open conversation lives in ?c= so a reload keeps your place.
 export default function AiLounge() {
@@ -26,25 +49,54 @@ export default function AiLounge() {
   const id = Number(params.get('c')) || null
   const list = useApi('/ai/conversations')
   const [messages, setMessages] = useState([])
+  const [convo, setConvo] = useState(null) // { status, person } of the open conversation
   const [loading, setLoading] = useState(false)
   const [thinking, setThinking] = useState(false)
-  const [draft, setDraft] = useState('')
+  const [asking, setAsking] = useState(false)
+  const [draft, setDraft] = useState(() => params.get('q') || '') // the home page's Ask bar sends its question as ?q=
   const [error, setError] = useState('')
   const created = useRef(null) // a conversation this page just started: its messages are already here
+  const openId = useRef(id) // the conversation on screen now, for a reply that arrives after a switch
+  openId.current = id
   const log = useRef(null)
   const input = useRef(null)
+  const lastId = useRef(0)
+
+  const add = (rows) => {
+    const real = rows.filter((m) => typeof m.id === 'number')
+    if (real.length) lastId.current = Math.max(lastId.current, ...real.map((m) => m.id))
+    setMessages((prev) => {
+      const seen = new Set(prev.map((m) => m.id))
+      return [...prev.filter((m) => m.id !== 'pending'), ...rows.filter((m) => !seen.has(m.id))]
+    })
+  }
+  const keep = (c) => setConvo((prev) => (prev?.status === c.status && prev?.person === c.person ? prev : { status: c.status, person: c.person }))
 
   useEffect(() => {
     setError('')
-    if (!id) { setMessages([]); return }
-    if (created.current === id) return
+    if (!id) { setMessages([]); setConvo(null); lastId.current = 0; return undefined }
     let live = true
-    setLoading(true)
-    api(`/ai/conversations/${id}`)
-      .then((c) => live && setMessages(c.messages))
-      .catch((err) => live && setError(err.message))
-      .finally(() => live && setLoading(false))
-    return () => { live = false }
+    if (created.current !== id) {
+      setLoading(true)
+      setMessages([])
+      lastId.current = 0
+      api(`/ai/conversations/${id}`)
+        .then((c) => { if (live) { keep(c); add(c.messages) } })
+        .catch((err) => live && setError(err.message))
+        .finally(() => live && setLoading(false))
+    }
+    // Replies from a person arrive while you read, so keep looking
+    const timer = setInterval(async () => {
+      if (document.hidden || !lastId.current) return
+      try {
+        const fresh = await api(`/ai/conversations/${id}/messages?after=${lastId.current}`)
+        if (!live) return
+        if (fresh.messages.length) list.reload() // the list shows who each conversation is with
+        keep(fresh)
+        add(fresh.messages)
+      } catch { /* the next look tries again */ }
+    }, POLL_MS)
+    return () => { live = false; clearInterval(timer) }
   }, [id])
 
   useEffect(() => { if (log.current) log.current.scrollTop = log.current.scrollHeight }, [messages, thinking])
@@ -55,10 +107,13 @@ export default function AiLounge() {
     setDraft('')
     setError('')
     setMessages((m) => [...m, { id: 'pending', role: 'user', content: body }])
-    setThinking(true)
+    setThinking(convo?.status !== 'human') // with a person in the conversation, TYMAi does not answer
     try {
       const res = await api('/ai/messages', { method: 'POST', body: { body, conversationId: id || undefined } })
-      setMessages((m) => [...m.filter((x) => x.id !== 'pending'), ...res.messages])
+      // They opened another conversation while waiting: the answer stays in the one it was asked in
+      if (openId.current !== id) { list.reload(); return }
+      keep(res.conversation)
+      add(res.messages)
       if (!id) {
         created.current = res.conversation.id
         setParams({ c: res.conversation.id })
@@ -74,12 +129,30 @@ export default function AiLounge() {
     }
   }
 
+  const person = async (cancel) => {
+    setAsking(true)
+    setError('')
+    try {
+      keep(await api(`/ai/conversations/${id}/human`, { method: 'POST', body: { cancel } }))
+      list.reload()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setAsking(false)
+    }
+  }
+
   const startNew = () => { created.current = null; setParams({}); input.current?.focus() }
   const remove = async (c) => {
     if (!window.confirm(`Delete "${c.title}"?`)) return
-    await api(`/ai/conversations/${c.id}`, { method: 'DELETE' })
-    if (c.id === id) startNew()
-    list.reload()
+    setError('')
+    try {
+      await api(`/ai/conversations/${c.id}`, { method: 'DELETE' })
+      if (c.id === id) startNew()
+      list.reload()
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   return (
@@ -92,14 +165,17 @@ export default function AiLounge() {
             {(list.data || []).map((c) => (
               <li key={c.id} className={c.id === id ? 'is-active' : ''}>
                 <button onClick={() => { created.current = null; setParams({ c: c.id }) }} aria-current={c.id === id ? 'page' : undefined}>
-                  <MessageSquare size={14} aria-hidden />
-                  <span><strong>{c.title}</strong><span>{timeAgo(c.createdAt)}</span></span>
+                  {c.status === 'ai' ? <MessageSquare size={14} aria-hidden /> : <UserRound size={14} aria-hidden />}
+                  <span>
+                    <strong>{c.title}</strong>
+                    <span>{c.unread && c.id !== id ? <b className="lounge-unread">New reply from the team</b> : c.status === 'human' ? 'With the TYM team' : c.status === 'waiting' ? 'Waiting for a person' : timeAgo(c.createdAt)}</span>
+                  </span>
                 </button>
                 <button className="lounge-delete" onClick={() => remove(c)} aria-label={`Delete ${c.title}`}><Trash2 size={13} /></button>
               </li>
             ))}
           </ul>
-          <p className="lounge-note">Private to you. TYMAi can make mistakes, so confirm visa rules on official government sites.</p>
+          <p className="lounge-note">Private to you and, if you ask for a person, the TYM team. TYMAi can make mistakes, so confirm visa rules on official government sites.</p>
         </aside>
 
         <section className="chat-main is-lounge" aria-label="Ask TYM AI">
@@ -107,7 +183,7 @@ export default function AiLounge() {
             <div className="lounge-empty">
               <Avatar user={TYMAI} size={48} />
               <h1>Ask TYM AI</h1>
-              <p className="muted">One-to-one help with SOPs, visas and choosing a university. Answers use what students here have already shared, and your profile.</p>
+              <p className="muted">One-to-one help with SOPs, visas and choosing a university. Answers use what students here have already shared, and your profile. You can ask for a person from our team at any point.</p>
               <div className="starter-grid">
                 {STARTERS.map((s) => <button key={s} className="starter" onClick={() => ask(s)}>{s}</button>)}
               </div>
@@ -115,24 +191,31 @@ export default function AiLounge() {
           ) : (
             <ol className="chat-log" ref={log} aria-live="polite">
               {loading && <li className="chat-note">Loading conversation...</li>}
-              {messages.map((m) => (
-                <li key={m.id} className={m.role === 'assistant' ? 'is-ai' : ''}>
-                  <Avatar user={m.role === 'assistant' ? TYMAI : user} size={32} />
-                  <div>
-                    <p className="chat-meta"><strong>{m.role === 'assistant' ? 'TYMAi' : 'You'}</strong></p>
-                    <RichText text={m.content} className="chat-text" />
-                    <Sources items={m.sources} />
-                  </div>
-                </li>
-              ))}
+              {messages.map((m) => {
+                const author = m.role === 'assistant' ? TYMAI : m.role === 'human' ? { displayName: m.author?.name || 'TYM team', role: 'admin' } : user
+                return (
+                  <li key={m.id} className={m.role === 'assistant' ? 'is-ai' : m.role === 'human' ? 'is-person' : ''}>
+                    <Avatar user={author} size={32} />
+                    <div>
+                      <p className="chat-meta">
+                        <strong>{m.role === 'assistant' ? 'TYMAi' : m.role === 'human' ? author.displayName : 'You'}</strong>
+                        {m.role === 'human' && <span className="chat-team">TYM team</span>}
+                      </p>
+                      <RichText text={m.content} className="chat-text" />
+                      <Sources items={m.sources} />
+                    </div>
+                  </li>
+                )
+              })}
               {thinking && <li className="is-ai"><Avatar user={TYMAI} size={32} /><Typing name="TYMAi" /></li>}
             </ol>
           )}
           <form className="chat-input" onSubmit={(e) => { e.preventDefault(); ask(draft) }}>
+            {id && convo && <Handoff convo={convo} busy={asking} onAsk={() => person(false)} onCancel={() => person(true)} />}
             <FormError>{error}</FormError>
-            <label htmlFor="ai-msg" className="visually-hidden">Ask TYMAi</label>
+            <label htmlFor="ai-msg" className="visually-hidden">Your message</label>
             <input id="ai-msg" ref={input} className="input" value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={4000}
-              placeholder="Ask about visas, SOPs, universities..." autoComplete="off" disabled={thinking} />
+              placeholder={convo?.status === 'human' ? `Reply to ${convo.person || 'the team'}...` : 'Ask about visas, SOPs, universities...'} autoComplete="off" disabled={thinking} />
             <button className="btn btn-primary" aria-label="Send" disabled={thinking || !draft.trim()}><Send size={16} /></button>
           </form>
         </section>

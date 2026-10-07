@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import Photo from '../../components/ui/Photo'
+import { useMeta } from '../../lib/meta'
 
 const VALUES = [
   ['Honest over polished', 'Answers come from students who have filed the same forms, paid the same deposits and missed the same deadlines.'],
@@ -7,6 +9,7 @@ const VALUES = [
 ]
 
 export default function About() {
+  useMeta({ title: 'About TYM', description: 'The Youth Matters is built by students who wished it had existed: one place to ask before you go abroad, and to answer once you are there.', path: '/about' })
   return (
     <div className="container page">
       <header className="page-head">
@@ -15,7 +18,7 @@ export default function About() {
 
       <section className="about-story">
         <figure className="about-photo">
-          <img src="/images/hero-students.jpg" alt="Four students talking around a table" width="1600" height="1067" />
+          <Photo src="/images/hero-students.jpg" alt="Four students talking around a table" sizes="(max-width: 1240px) 92vw, 1160px" priority />
         </figure>
         <div className="about-copy">
           <h2 className="display about-lede">One place for every question between the offer letter and the flight.</h2>

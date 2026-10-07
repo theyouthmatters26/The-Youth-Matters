@@ -44,6 +44,8 @@ export default function Chatrooms() {
   const log = useRef(null)
   const lastId = useRef(0)
   const stick = useRef(true) // follow new messages unless the reader scrolled up
+  const openRoom = useRef(room) // the room on screen now, for a reply that arrives after a switch
+  openRoom.current = room
 
   const merge = (rows) => {
     if (!rows.length) return
@@ -56,16 +58,23 @@ export default function Chatrooms() {
 
   useEffect(() => {
     let live = true
+    let looks = 0
     setMessages(null)
     setError('')
     lastId.current = 0
     stick.current = true
     const load = async () => {
       if (document.hidden && lastId.current) return
+      // Every sixth look fetches the latest page whole and replaces the list, so a message deleted
+      // by its author or a moderator leaves this screen too.
+      // ponytail: this also trims a long session back to the latest 50; keep older rows if that is missed
+      const seen = lastId.current
+      const whole = looks++ % 6 === 0 || !seen
       try {
-        const rows = await api(`/chat/rooms/${room}/messages${lastId.current ? `?after=${lastId.current}` : ''}`)
+        const rows = await api(`/chat/rooms/${room}/messages${whole ? '' : `?after=${seen}`}`)
         if (!live) return
-        if (!lastId.current) setMessages(rows)
+        // A message sent while this page was on its way is not in it yet, so it must not be replaced away
+        if (whole && lastId.current === seen) setMessages(rows)
         merge(rows)
       } catch (err) {
         if (live && !lastId.current) { setMessages([]); setError(err.message) }
@@ -96,11 +105,14 @@ export default function Chatrooms() {
     setMessages((prev) => [...(prev || []), temp])
     setThinking(ASKS_TYMAI.test(body))
     try {
-      merge(await api(`/chat/rooms/${room}/messages`, { method: 'POST', body: { body } }))
+      const rows = await api(`/chat/rooms/${room}/messages`, { method: 'POST', body: { body } })
+      // They moved to another room while it was sending: the reply belongs to the room it was sent in
+      if (openRoom.current === room) merge(rows)
     } catch (err) {
+      setError(err.message)
+      if (openRoom.current !== room) return
       setMessages((prev) => prev.filter((m) => m.id !== temp.id))
       setDraft(body)
-      setError(err.message)
     } finally {
       setThinking(false)
     }

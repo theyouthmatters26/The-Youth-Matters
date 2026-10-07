@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ImagePlus, X } from 'lucide-react'
 import Avatar from '../ui/Avatar'
+import { fileToJpeg } from '../auth/camera'
 import { FormError, Spinner } from '../auth/fields'
 import { categories, countries } from '../../data/sample'
-import { api } from '../../lib/api'
+import { api, useApi } from '../../lib/api'
 import { useAuth, useMemberGuard } from '../../lib/auth'
 import './feed.css'
 
@@ -31,6 +32,7 @@ export default function Composer({ country, full = false, onPosted }) {
   const [error, setError] = useState('')
   const titleRef = useRef(null)
   const picker = useRef(null)
+  const topics = useApi(open && user ? '/categories' : null).data || categories // the admin's topics; ours until they load
 
   useEffect(() => { if (country) setPlace(country) }, [country])
   useEffect(() => {
@@ -56,14 +58,17 @@ export default function Composer({ country, full = false, onPosted }) {
     requestAnimationFrame(() => titleRef.current?.focus())
   }
 
-  const addFiles = (e) => {
+  const addFiles = async (e) => {
     const chosen = [...e.target.files].slice(0, MAX_IMAGES - files.length)
     e.target.value = ''
-    const tooBig = chosen.find((f) => f.size > 6 * 1024 * 1024)
-    if (tooBig) { setError(`${tooBig.name} is larger than 6 MB.`); return }
-    const added = chosen.map((file) => ({ file, url: URL.createObjectURL(file) }))
-    added.forEach((f) => urls.current.add(f.url))
-    setFiles([...files, ...added])
+    try {
+      // Shrunk in the browser first: four photos as they come off a phone are more than one request may carry
+      const added = (await Promise.all(chosen.map(fileToJpeg))).map((file) => ({ file, url: URL.createObjectURL(file) }))
+      added.forEach((f) => urls.current.add(f.url))
+      setFiles((prev) => [...prev, ...added].slice(0, MAX_IMAGES))
+    } catch {
+      setError('We could not open one of those pictures. Use JPG, PNG or WebP files.')
+    }
   }
 
   const reset = () => {
@@ -99,7 +104,8 @@ export default function Composer({ country, full = false, onPosted }) {
 
   const onKey = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submit() }
 
-  if (!open) {
+  // A saved draft opens the form, but only for a member: a visitor has no name or photo to show in it
+  if (!open || !user) {
     return (
       <div className="composer is-collapsed">
         {user ? <Avatar user={user} size={40} /> : <span className="composer-dot" aria-hidden />}
@@ -162,7 +168,7 @@ export default function Composer({ country, full = false, onPosted }) {
         <label className="visually-hidden" htmlFor="c-topic">Topic</label>
         <select id="c-topic" className="select select-sm" value={topic} onChange={(e) => setTopic(e.target.value)}>
           <option value="">Any topic</option>
-          {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+          {topics.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
         </select>
         <button type="button" className="icon-ghost" aria-label="Add pictures" disabled={files.length >= MAX_IMAGES}
           onClick={() => picker.current.click()} title="Add up to 4 pictures">

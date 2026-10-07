@@ -1,3 +1,4 @@
+import Photo from './Photo'
 import './ui.css'
 
 const initials = (name = '') => name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
@@ -6,8 +7,7 @@ const initials = (name = '') => name.split(' ').map((p) => p[0]).slice(0, 2).joi
 export default function Avatar({ user, size = 32 }) {
   const role = user.role || 'student'
   if (user.avatar) {
-    return <img className={`avatar avatar-photo avatar-${role}`} src={user.avatar} alt="" width={size} height={size}
-      loading="lazy" decoding="async" />
+    return <Photo className={`avatar avatar-photo avatar-${role}`} src={user.avatar} width={size} height={size} sizes={`${size}px`} />
   }
   return (
     <span className={`avatar avatar-${role}`} style={{ width: size, height: size, fontSize: size * 0.38 }} aria-hidden>

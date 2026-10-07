@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
+from sqlalchemy.engine import URL
 
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")  # one settings file for backend and website, at the project root
@@ -11,17 +12,31 @@ load_dotenv(ROOT / ".env")  # one settings file for backend and website, at the 
 MIGRATIONS_DIR = str(ROOT / "database" / "migrations")
 
 
+def database_url():
+    """Where PostgreSQL is. A full DATABASE_URL wins (a managed database hands you one). Otherwise it is
+    put together from the DB_ settings; left blank, those describe the database docker-compose.yml starts."""
+    if os.getenv("DATABASE_URL"):
+        return os.getenv("DATABASE_URL")
+    return URL.create("postgresql+psycopg", host=os.getenv("DB_HOST") or "localhost", port=int(os.getenv("DB_PORT") or 5432),
+                      database=os.getenv("DB_NAME") or "tymdatabase", username=os.getenv("DB_USER") or "tym",
+                      password=os.getenv("DB_PASSWORD") or "tym").render_as_string(hide_password=False)
+
+
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY") or "dev-only-secret-key-set-SECRET_KEY-in-production"
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or "dev-only-jwt-key-set-JWT_SECRET_KEY-in-production"
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL") or "postgresql+psycopg://tym:tym@localhost:5432/tym"
+    SQLALCHEMY_DATABASE_URI = database_url()
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
-    REDIS_URL = os.getenv("REDIS_URL") or "redis://localhost:6379/0"
-    RATELIMIT_STORAGE_URI = os.getenv("REDIS_URL") or "memory://"
+    # Rate limits are counted in this process's memory: no Redis or other service to run
+    RATELIMIT_STORAGE_URI = "memory://"
+    # How many proxies sit in front of the API (Nginx = 1; Cloudflare in front of Nginx = 2). The visitor's
+    # address is read from that many steps back in X-Forwarded-For; without it every visitor looks like the
+    # proxy and shares one rate limit. 0 = the API is reached directly.
+    TRUSTED_PROXIES = int(os.getenv("TRUSTED_PROXIES") or 1)
     CORS_ORIGINS = (os.getenv("CORS_ORIGINS") or "http://localhost:5173").split(",")
 
     SPACES_ENDPOINT = os.getenv("SPACES_ENDPOINT")
@@ -38,6 +53,12 @@ class Config:
     RESEND_API_KEY = os.getenv("RESEND_API_KEY")
     MAIL_FROM = os.getenv("MAIL_FROM") or "The Youth Matters <no-reply@theyouthmatters.org>"
     CONTACT_EMAIL = os.getenv("CONTACT_EMAIL") or "hello@theyouthmatters.org"  # contact form and mentor applications
+
+    # Admin panel: the owner's login. The password is only ever stored as a bcrypt hash.
+    ADMIN_EMAIL = (os.getenv("ADMIN_EMAIL") or "").strip().lower()
+    ADMIN_PASSWORD_HASH = (os.getenv("ADMIN_PASSWORD_HASH") or "").strip()
+    # Public address of the website, for links in emails. Empty = the first address in CORS_ORIGINS.
+    SITE_URL = (os.getenv("VITE_SITE_URL") or "").rstrip("/")
 
     # TYMAi (Ask TYM AI and @TYMAi in chat rooms). Without a key it answers from the community instead.
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")

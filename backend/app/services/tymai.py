@@ -124,14 +124,20 @@ def answer(user, question, history=(), brief=False):
              context and f"Answers from students in the community that may help:\n\n{context}",
              brief and "This is a public group chat, so keep the reply under 120 words.",
              f"My question: {question}"]
+    prompt = "\n\n".join(p for p in parts if p)
+    # Everything read from the database is in the prompt now. Hand the connection back before the
+    # wait: a busy minute of questions must not use up every connection the site has.
+    # (Nothing is pending: both callers save the question before asking.)
+    db.session.rollback()
     client = anthropic.Anthropic(api_key=key, timeout=60.0)
     try:
         res = client.beta.messages.create(
             model=current_app.config["AI_MODEL"],
-            max_tokens=16000,
+            # Thinking counts towards this, so a chat reply still needs room well above its 120 words
+            max_tokens=2000 if brief else 16000,
             system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
-            messages=[*history, {"role": "user", "content": "\n\n".join(p for p in parts if p)}],
-            output_config={"effort": "medium"},
+            messages=[*history, {"role": "user", "content": prompt}],
+            output_config={"effort": "low" if brief else "medium"},
             # On a safety decline the API re-runs the request on a fallback model it picks
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",

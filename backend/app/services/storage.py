@@ -23,7 +23,11 @@ def _client():
 def _local_path(key):
     if current_app.config["SPACES_KEY"]:
         return None
-    return Path(current_app.instance_path, "private", key)
+    root = Path(current_app.instance_path, "private").resolve()
+    path = (root / key).resolve()
+    if not path.is_relative_to(root):  # a key with ../ in it must never reach outside the folder
+        raise ValueError("Not a storage key")
+    return path
 
 
 def upload(data: bytes, folder: str, content_type: str) -> str:

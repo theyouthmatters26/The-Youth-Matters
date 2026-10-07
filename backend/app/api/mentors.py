@@ -3,7 +3,7 @@ from flask import Blueprint, abort, jsonify, request
 from sqlalchemy import func
 
 from ..extensions import db
-from ..models import Community, Country, MentorProfile, MentorReview, Subject
+from ..models import Community, Country, MentorProfile, MentorReview, Subject, User
 from ..services import availability
 from . import serializers as s
 
@@ -19,15 +19,17 @@ def _ratings(mentor_ids):
 
 
 def _verified(mentor_id):
+    """A mentor students can see: listed by the team, on an account in good standing."""
     m = db.session.get(MentorProfile, mentor_id)
-    if not m or not m.is_verified:
+    if not m or not m.is_verified or m.user.status != "active":
         abort(404, "We could not find that mentor.")
     return m
 
 
 @bp.get("/mentors")
 def list_mentors():
-    q = db.select(MentorProfile).join(Community).where(MentorProfile.is_verified)
+    q = (db.select(MentorProfile).join(Community).join(User, MentorProfile.user_id == User.id)
+         .where(MentorProfile.is_verified, User.status == "active"))
     if slug := request.args.get("subject"):
         q = q.join(Subject).where(Subject.slug == slug)
     if slug := request.args.get("country"):

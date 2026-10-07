@@ -5,11 +5,13 @@ import MentorCard, { MentorCardSkeleton } from '../components/mentors/MentorCard
 import { countries } from '../data/sample'
 import { useApi } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { useMeta } from '../lib/meta'
 import '../components/mentors/mentors.css'
 
 const PREVIEW = 2 // visitors see this many, the rest after signing up
 
 export default function Mentors() {
+  useMeta({ title: 'TYM Mentors', description: 'Book a one-to-one video session with a verified student or recent graduate who studied where you are going. Pay securely, cancel up to 24 hours before.', path: '/mentors' })
   const { user } = useAuth()
   const { data, error, loading, reload } = useApi('/mentors')
   const [country, setCountry] = useState('')

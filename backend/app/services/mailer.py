@@ -16,3 +16,11 @@ def send(to: str, subject: str, html: str, reply_to: str | None = None) -> None:
         timeout=10,
     )
     resp.raise_for_status()
+
+
+def send_quietly(to: str, subject: str, html: str, reply_to: str | None = None) -> None:
+    """For notifications: a failed email is logged, it never fails the request that caused it."""
+    try:
+        send(to, subject, html, reply_to)
+    except Exception as e:  # noqa: BLE001  any provider or network failure
+        current_app.logger.warning("Email to %s failed (%s): %s", to, subject, e)

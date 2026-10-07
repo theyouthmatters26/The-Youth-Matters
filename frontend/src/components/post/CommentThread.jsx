@@ -91,8 +91,17 @@ function Comment({ c, ctx }) {
     }
   }
   const remove = async () => {
-    await api(`/comments/${c.id}`, { method: 'DELETE' })
-    ctx.update({ ...c, isDeleted: true, body: '' })
+    setError('')
+    try {
+      await api(`/comments/${c.id}`, { method: 'DELETE' })
+      ctx.update({ ...c, isDeleted: true, body: '' })
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+  const mark = () => {
+    setError('')
+    ctx.markHelpful(helpful ? null : c.id).catch((err) => setError(err.message))
   }
 
   return (
@@ -119,7 +128,7 @@ function Comment({ c, ctx }) {
               <textarea className="textarea" rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} aria-label="Edit your answer" />
               <FormError>{error}</FormError>
               <div className="reply-box-bar">
-                <button className="btn-text" onClick={() => { setEditing(false); setDraft(c.body) }}>Cancel</button>
+                <button className="btn-text" onClick={() => { setEditing(false); setDraft(c.body); setError('') }}>Cancel</button>
                 <button className="btn btn-primary btn-sm" onClick={save} disabled={draft.trim().length < 2}>Save</button>
               </div>
             </div>
@@ -132,7 +141,7 @@ function Comment({ c, ctx }) {
                 <MessageSquareReply size={15} /> Reply
               </button>
               {ctx.canMarkHelpful && !c.parentId && !own && (
-                <button className={`post-action${helpful ? ' is-on' : ''}`} onClick={() => ctx.markHelpful(helpful ? null : c.id)}>
+                <button className={`post-action${helpful ? ' is-on' : ''}`} onClick={mark}>
                   <CheckCircle2 size={15} /> {helpful ? 'Unmark' : 'This helped'}
                 </button>
               )}
@@ -140,6 +149,7 @@ function Comment({ c, ctx }) {
                 reportTarget={{ targetType: 'comment', targetId: c.id, path: `/p/${c.postId}#c${c.id}` }} />
             </div>
           )}
+          {!editing && <FormError>{error}</FormError>}
 
           {replying && (
             <ReplyBox postId={c.postId} parentId={c.id} autoFocus placeholder={`Reply to ${c.author.displayName}`}

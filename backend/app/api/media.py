@@ -1,4 +1,4 @@
-"""Uploaded pictures (post images, profile and cover photos).
+"""Uploaded pictures (post images, profile and cover photos, blog covers).
 
 Locally they are served from backend/instance/private; with DigitalOcean Spaces this redirects to
 a short-lived signed URL. Only these public folders are reachable, never anything else in storage.
@@ -10,7 +10,7 @@ from flask import Blueprint, abort, current_app, redirect, send_from_directory
 from ..services import storage
 
 bp = Blueprint("media", __name__)
-PUBLIC = ("posts/", "avatars/", "covers/")
+PUBLIC = ("posts/", "avatars/", "covers/", "blog/")
 
 
 @bp.get("/media/<path:key>")

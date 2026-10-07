@@ -31,18 +31,37 @@ class ChatMessage(Model):
 
 
 class AiConversation(Model):
-    """Private 1-on-1 thread in the AI Counsellor Lounge."""
+    """Private 1-on-1 thread in Ask TYM AI. A person from the team can step in (services/handoff.py):
+    ai = TYMAi answers; waiting = the student asked for a person, TYMAi keeps answering meanwhile;
+    human = a team member is handling it and TYMAi is paused."""
     __tablename__ = "ai_conversations"
+    __table_args__ = (db.Index("ix_ai_conversations_inbox", "status", "last_message_at"),)
 
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title = db.Column(db.String(120), nullable=False, default="New conversation")
+    status = db.Column(enum("ai", "waiting", "human", name="ai_conversation_status"), nullable=False,
+                       default="ai", server_default="ai")
+    assigned_to_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    human_requested_at = db.Column(db.DateTime(timezone=True))
+    # Kept on the conversation so the team inbox is one query
+    last_message_at = db.Column(db.DateTime(timezone=True))
+    last_role = db.Column(db.String(12))
+    last_preview = db.Column(db.String(160))
+    user_unread = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    staff_alerted_at = db.Column(db.DateTime(timezone=True))  # last "a student is waiting" email
+
+    user = db.relationship("User", foreign_keys=[user_id])
+    assigned_to = db.relationship("User", foreign_keys=[assigned_to_id])
 
 
 class AiMessage(Model):
     __tablename__ = "ai_messages"
 
-    conversation_id = db.Column(db.Integer, db.ForeignKey("ai_conversations.id", ondelete="CASCADE"),
+    conversation_id = db.Column(db.Integer, db.ForeignKey("ai_conversations.id", ondelete="CASCADE"), index=True,
                                 nullable=False)
-    role = db.Column(enum("user", "assistant", name="ai_role"), nullable=False)
+    role = db.Column(enum("user", "assistant", "human", name="ai_role"), nullable=False)  # human = team member
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))  # who, for human
     content = db.Column(db.Text, nullable=False)
     sources = db.Column(db.JSON)  # [{"postId", "title"}] community questions the answer drew on
+
+    author = db.relationship("User")

@@ -1,6 +1,7 @@
 """Personal home feed (Module 6).
 
-    GET /feed?sort=hot|new&page=    posts from the communities you joined; until you join one, the
+    GET /feed?sort=hot|new&unanswered=1&page=
+                                    posts from the communities you joined; until you join one, the
                                     whole community's best posts, with following=false so the page
                                     can suggest communities to join
 """
@@ -18,5 +19,6 @@ bp = Blueprint("feed", __name__)
 @jwt_required()
 def feed():
     joined = bool(db.session.scalar(db.select(Follow.id).filter_by(user_id=current_user.id).limit(1)))
-    args = {"sort": request.args.get("sort", "hot"), **({"following": "1"} if joined else {})}
+    args = {"sort": request.args.get("sort", "hot"), "unanswered": request.args.get("unanswered"),
+            **({"following": "1"} if joined else {})}
     return jsonify(following=joined, **page_of(query_posts(args, current_user), current_user))

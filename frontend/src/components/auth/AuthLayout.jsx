@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react'
+import Photo from '../ui/Photo'
 import './auth.css'
 
 // Two tiles side by side: the form on white, a photograph on black with something human on it.
@@ -17,7 +18,7 @@ export default function AuthLayout({ kicker, title, subtitle, aside = <MemberQuo
         </div>
       </section>
       <aside className="auth-aside dark">
-        <img src="/images/hero-students.jpg" alt="" />
+        <Photo src="/images/hero-students.jpg" sizes="(max-width: 900px) 1px, 50vw" />
         <div className="auth-aside-body">{aside}</div>
       </aside>
     </div>
@@ -28,15 +29,11 @@ export function MemberQuote() {
   return (
     <figure className="auth-quote">
       <blockquote>
-        “I asked about my CAS at midnight. By breakfast, three people who had been through it had answered.”
+        Ask about your CAS at midnight. Wake up to answers from students who have already been through it.
       </blockquote>
-      <figcaption>
-        <strong>Aisha Khan</strong>
-        <span>MSc Marketing, University of Leeds</span>
-      </figcaption>
       <dl className="auth-facts">
-        <div><dt>12,480</dt><dd>members heading to the UK</dd></div>
-        <div><dt>6</dt><dd>countries with mentors</dd></div>
+        <div><dt>18+</dt><dd>every member is age-checked</dd></div>
+        <div><dt>6</dt><dd>countries, each with its own community</dd></div>
       </dl>
     </figure>
   )

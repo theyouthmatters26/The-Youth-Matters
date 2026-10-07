@@ -1,5 +1,6 @@
-"""Demo chat rooms: one open room plus one per country, each with a short real-sounding conversation.
-Safe to re-run: rooms are created once and messages are only added to empty rooms."""
+"""The chat rooms every site starts with (one open room plus one per country) and, for the demo,
+a short conversation in each. Safe to re-run: a room is created once and never changed afterwards, so
+names edited in the admin panel are kept; demo messages are only added to empty rooms."""
 from datetime import datetime, timedelta, timezone
 
 # slug, name, description, country community (None for the open room)
@@ -66,7 +67,7 @@ MESSAGES = {
 }
 
 
-def seed_chat(db, models):
+def seed_chat(db, models, messages=True):
     ChatMessage, ChatRoom, Community, Subject, User = (
         models[k] for k in ("ChatMessage", "ChatRoom", "Community", "Subject", "User"))
     now = datetime.now(timezone.utc)
@@ -76,12 +77,12 @@ def seed_chat(db, models):
                    if c.subject.slug == "study-abroad"}
 
     for slug, name, description, country in ROOMS:
-        room = db.session.scalar(db.select(ChatRoom).where(ChatRoom.slug == slug)) or ChatRoom(slug=slug)
-        room.name, room.description, room.subject = name, description, subject
-        room.community = communities.get(country)
-        db.session.add(room)
-        db.session.flush()
-        if db.session.scalar(db.select(ChatMessage.id).where(ChatMessage.room_id == room.id).limit(1)):
+        room = db.session.scalar(db.select(ChatRoom).where(ChatRoom.slug == slug))
+        if not room:
+            room = ChatRoom(slug=slug, name=name, description=description, subject=subject, community=communities.get(country))
+            db.session.add(room)
+            db.session.flush()
+        if not messages or db.session.scalar(db.select(ChatMessage.id).where(ChatMessage.room_id == room.id).limit(1)):
             continue
         for author, body, minutes in MESSAGES[slug]:
             db.session.add(ChatMessage(room_id=room.id, author_id=users[author].id, body=body,

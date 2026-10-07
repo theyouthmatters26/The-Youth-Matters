@@ -8,7 +8,7 @@ import { useMeta } from '../../lib/meta'
 const TOPICS = ['My account', 'Payments', 'Safety', 'Partnerships', 'Something else']
 const ROUTES = [
   ['/mentors/register', 'Become a mentor', 'Apply to mentor students heading where you went.'],
-  ['/help-safety', 'Report a safety issue', 'Something wrong in a chat or a post? Start here.'],
+  ['/help-safety', 'Report a safety issue', 'Something wrong in a question, an answer or a chat room? Start here.'],
   ['/payment-terms', 'Payments and refunds', 'How session payments, cancellations and refunds work.'],
   ['/faq', 'Common questions', 'Quick answers to what most people ask us.'],
 ]

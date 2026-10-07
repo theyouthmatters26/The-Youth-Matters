@@ -12,10 +12,10 @@ from datetime import timedelta
 from flask import Blueprint, abort, jsonify, request
 from flask_jwt_extended import current_user, jwt_required
 
-from ..extensions import db, limiter
+from ..extensions import db, limiter, member_key
 from ..models import ChatMessage, ChatRoom, User
 from ..models.base import utcnow
-from ..services import content, tymai
+from ..services import content, staff, tymai
 from . import serializers as s
 from .posts import member, viewer
 
@@ -55,7 +55,7 @@ def list_rooms():
             "country": r.community.country.slug if r.community else None,
             "activeToday": active,
             "lastAt": last.created_at.isoformat() if last else None,
-            "last": _message(last) if last and user else None,
+            "last": _message(last) if last and user and user.status == "active" else None,
         })
     return jsonify(out)
 
@@ -73,9 +73,15 @@ def list_messages(slug):
     return jsonify([_message(m) for m in rows])
 
 
+def _asks_tymai():
+    return bool(ASKS_TYMAI.search(str((request.get_json(silent=True) or {}).get("body") or "")))
+
+
 @bp.post("/chat/rooms/<slug>/messages")
 @jwt_required()
 @limiter.limit("20 per minute; 300 per day")
+# Each @TYMAi is a paid answer: counted per member, like Ask TYM AI
+@limiter.limit("20 per hour; 60 per day", key_func=member_key, exempt_when=lambda: not _asks_tymai())
 def send_message(slug):
     user = member()
     room = _room(slug)
@@ -91,8 +97,10 @@ def send_message(slug):
         question = ASKS_TYMAI.sub("", body).strip()
         if bot and question:
             text, sources = tymai.answer(user, question, brief=True)
-            sent.append(ChatMessage(room_id=room.id, author_id=bot.id, body=f"@{user.username} {text}",
-                                    sources=sources))
+            reply = f"@{user.username} {text}"
+            if len(reply) > 2000:  # the column's limit; cut at a word, never mid-way
+                reply = reply[:1990].rsplit(" ", 1)[0] + " ..."
+            sent.append(ChatMessage(room_id=room.id, author_id=bot.id, body=reply, sources=sources))
             db.session.add(sent[-1])
             db.session.commit()
     return jsonify([_message(m) for m in sent]), 201
@@ -104,8 +112,8 @@ def delete_message(message_id):
     m = db.session.get(ChatMessage, message_id)
     if not m or m.is_deleted:
         abort(404, "That message is already gone.")
-    if m.author_id != current_user.id and current_user.role != "admin":
-        abort(403, "You can only delete your own messages.")
+    if m.author_id != current_user.id:
+        staff.moderating(current_user, "removed", "chat_message", m.id, m.author, "You can only delete your own messages.")
     m.is_deleted = True
     db.session.commit()
     return jsonify(deleted=True)

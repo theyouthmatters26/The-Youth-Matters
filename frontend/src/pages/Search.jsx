@@ -1,17 +1,18 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import PostCard, { PostSkeleton } from '../components/feed/PostCard'
 import Avatar from '../components/ui/Avatar'
-import { blogs } from '../data/sample'
+import { useArticles } from '../lib/blog'
 import { useApi } from '../lib/api'
 import { useMeta } from '../lib/meta'
 
 // Questions, people, communities and mentors come from the API (Postgres full-text search);
-// articles are matched here because they ship with the website.
+// articles are few, so they are matched here from the published list.
 export default function Search() {
   const [params] = useSearchParams()
   const term = (params.get('q') || '').trim()
   useMeta({ title: term ? `Search: ${term}` : 'Search', path: '/search' })
   const { data, loading } = useApi(term.length >= 2 ? `/search?q=${encodeURIComponent(term)}` : null)
+  const blogs = useArticles().articles
   const q = term.toLowerCase()
   const has = (s) => s.toLowerCase().includes(q)
   const articles = q ? blogs.filter((b) => has(b.title) || has(b.excerpt) || b.keywords.some(has)) : []

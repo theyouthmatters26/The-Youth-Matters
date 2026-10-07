@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Facebook, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react'
 import { subjects } from '../../data/sample'
+import Photo from '../ui/Photo'
 import './layout.css'
 
 // Bottom link row: exactly the client's template, in order.
@@ -16,13 +17,15 @@ export const FOOTER_LINKS = [
   ['/cookies', 'Cookies Policy'],
 ]
 
+// Put each profile's full address in href. One left empty is not shown, so the footer never
+// links to a social network's front page.
 const SOCIAL = [
-  { href: 'https://facebook.com', label: 'Facebook', Icon: Facebook },
-  { href: 'https://x.com', label: 'X', Icon: Twitter },
-  { href: 'https://instagram.com', label: 'Instagram', Icon: Instagram },
-  { href: 'https://youtube.com', label: 'YouTube', Icon: Youtube },
-  { href: 'https://linkedin.com', label: 'LinkedIn', Icon: Linkedin },
-]
+  { href: '', label: 'Facebook', Icon: Facebook },
+  { href: '', label: 'X', Icon: Twitter },
+  { href: '', label: 'Instagram', Icon: Instagram },
+  { href: '', label: 'YouTube', Icon: Youtube },
+  { href: '', label: 'LinkedIn', Icon: Linkedin },
+].filter((s) => s.href)
 
 export default function Footer() {
   return (
@@ -30,7 +33,7 @@ export default function Footer() {
       <div className="container footer-top">
         <div className="footer-brand">
           <Link to="/" className="footer-logo" aria-label="The Youth Matters, home">
-            <img src="/logo.png" alt="" width="48" height="50" loading="lazy" />
+            <Photo src="/logo.png" width="48" height="50" sizes="48px" />
             <span>The Youth Matters</span>
           </Link>
           <p className="footer-line display">Ask before you fly.</p>
@@ -58,12 +61,14 @@ export default function Footer() {
 
       <div className="container footer-bottom">
         <span>© {new Date().getFullYear()} The Youth Matters. All Rights Reserved.</span>
-        <div className="connect" aria-label="Connect with us">
-          <span>Connect</span>
-          {SOCIAL.map(({ href, label, Icon }) => (
-            <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label}><Icon size={16} strokeWidth={1.6} /></a>
-          ))}
-        </div>
+        {SOCIAL.length > 0 && (
+          <div className="connect" aria-label="Connect with us">
+            <span>Connect</span>
+            {SOCIAL.map(({ href, label, Icon }) => (
+              <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label}><Icon size={16} strokeWidth={1.6} /></a>
+            ))}
+          </div>
+        )}
       </div>
     </footer>
   )

@@ -11,7 +11,7 @@ from flask_jwt_extended import current_user, jwt_required
 from ..extensions import db, limiter
 from ..models import Comment, Post, Vote
 from ..models.base import utcnow
-from ..services import content
+from ..services import content, staff
 from ..services.notify import notify, notify_mentions
 from . import serializers as s
 from .posts import _post, member, viewer
@@ -53,7 +53,7 @@ def create_comment(post_id):
         abort(400, "Write your answer first.")
     parent = None
     if data.get("parentId"):
-        parent = db.session.get(Comment, data["parentId"])
+        parent = db.session.get(Comment, data["parentId"]) if isinstance(data["parentId"], int) else None
         if not parent or parent.post_id != post.id:
             abort(400, "You are replying to something that is not in this thread.")
 
@@ -97,11 +97,13 @@ def edit_comment(comment_id):
 def delete_comment(comment_id):
     user = current_user
     c = _comment(comment_id)
-    if c.author_id != user.id and user.role != "admin":
-        abort(403, "You can only delete your own answers.")
-    c.is_deleted = True
-    db.session.execute(db.update(Post).where(Post.id == c.post_id)
-                       .values(comment_count=db.func.greatest(Post.comment_count - 1, 0)))
+    if c.author_id != user.id:
+        staff.moderating(user, "removed", "comment", c.id, c.author, "You can only delete your own answers.")
+    # Claim the removal in one statement, so two deletes at once take one off the count, not two
+    removed = db.session.execute(db.update(Comment).where(Comment.id == c.id, ~Comment.is_deleted).values(is_deleted=True))
+    if removed.rowcount:
+        db.session.execute(db.update(Post).where(Post.id == c.post_id)
+                           .values(comment_count=db.func.greatest(Post.comment_count - 1, 0)))
     if c.post.helpful_comment_id == c.id:
         c.post.helpful_comment_id = None
     db.session.commit()

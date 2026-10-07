@@ -7,6 +7,8 @@ import { Spinner } from '../components/auth/fields'
 import { useApi } from '../lib/api'
 import { formatMoney } from '../lib/format'
 import NotFound from './NotFound'
+import Photo from '../components/ui/Photo'
+import { useMeta } from '../lib/meta'
 import '../components/mentors/mentors.css'
 
 const STEPS = [
@@ -28,6 +30,7 @@ const reviewDate = (iso) => new Date(iso).toLocaleDateString('en-GB', { month: '
 export default function MentorProfile() {
   const { id } = useParams()
   const { data: m, error, loading } = useApi(`/mentors/${id}`)
+  useMeta({ title: m && `${m.user.displayName}, ${m.course}`, description: m?.headline, path: `/mentors/${id}` })
 
   if (loading) return <div className="container page mp-loading"><Spinner /> Loading profile</div>
   if (error?.status === 404) return <NotFound />
@@ -39,7 +42,7 @@ export default function MentorProfile() {
       <Link to="/mentors" className="back-link mp-back"><ArrowLeft size={15} /> All mentors</Link>
 
       <header className="mp-head">
-        {m.user.avatar ? <img className="mp-photo" src={m.user.avatar} alt={`Portrait of ${m.user.displayName}`} />
+        {m.user.avatar ? <Photo className="mp-photo" src={m.user.avatar} alt={`Portrait of ${m.user.displayName}`} sizes="(max-width: 720px) 60vw, 320px" priority />
           : <Avatar user={m.user} size={160} />}
         <div className="mp-intro">
           <p className="mp-kicker"><BadgeCheck size={15} aria-hidden /> Verified mentor · {m.community.country.name}</p>

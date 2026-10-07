@@ -14,7 +14,7 @@ from flask_jwt_extended import current_user, jwt_required, verify_jwt_in_request
 from ..extensions import db, limiter
 from ..models import Category, Comment, Community, Country, Follow, Post, PostImage, SavedPost, Subject, User, Vote
 from ..models.base import utcnow
-from ..services import content, images, storage
+from ..services import content, images, staff, storage
 from ..services.notify import notify, notify_mentions
 from ..services.ranking import hot_sql
 from . import serializers as s
@@ -96,9 +96,10 @@ def _post(post_id):
     return p
 
 
-def _own(p, user):
-    if p.author_id != user.id and user.role != "admin":
-        abort(403, "You can only change your own posts.")
+def _own(p, user, doing):
+    """The author may change their post. So may a moderator, and that is written down."""
+    if p.author_id != user.id:
+        staff.moderating(user, doing, "post", p.id, p.author, "You can only change your own posts.")
 
 
 def _payload():
@@ -169,7 +170,7 @@ def create_post():
 def edit_post(post_id):
     user = member()
     p = _post(post_id)
-    _own(p, user)
+    _own(p, user, "edited")
     data = request.get_json(silent=True) or {}
     if "title" in data:
         p.title, _ = content.clean(data["title"], 300)
@@ -189,7 +190,7 @@ def edit_post(post_id):
 def delete_post(post_id):
     user = current_user
     p = _post(post_id)
-    _own(p, user)
+    _own(p, user, "removed")
     p.is_deleted = True
     db.session.commit()
     return "", 204
@@ -224,7 +225,7 @@ def mark_helpful(post_id):
     if comment_id is None:
         p.helpful_comment_id = None
     else:
-        c = db.session.get(Comment, comment_id)
+        c = db.session.get(Comment, comment_id) if isinstance(comment_id, int) else None
         if not c or c.post_id != p.id or c.is_deleted:
             abort(400, "That answer is not part of this question.")
         if p.helpful_comment_id != c.id:

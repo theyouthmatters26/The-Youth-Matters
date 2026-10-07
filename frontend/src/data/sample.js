@@ -10,9 +10,6 @@ export const subjects = [
   { slug: 'life', name: 'Life & Experiences', description: 'Everything else that comes with growing up.', isActive: false },
 ]
 
-// Articles live in data/blogs/, one file each
-export { blogs } from './blogs'
-
 export const countries = [
   { slug: 'uk', name: 'United Kingdom', isoCode: 'GB', airport: 'LHR', members: 12480, description: 'Universities, visas, housing and life in the UK.', official: { label: 'Student visa on GOV.UK', url: 'https://www.gov.uk/student-visa' } },
   { slug: 'usa', name: 'United States', isoCode: 'US', airport: 'JFK', members: 9310, description: 'Applications, F-1 visas, funding and campus life.', official: { label: 'Student visas on travel.state.gov', url: 'https://travel.state.gov/content/travel/en/us-visas/study/student-visa.html' } },
@@ -216,9 +213,9 @@ export const faqs = [
   ['Is The Youth Matters free?', 'Yes. Asking questions, answering, the community hubs, the Study Abroad chatroom and the AI Counsellor are free. Only one-to-one sessions with TYM Mentors are paid.'],
   ['Why do you ask for a photo ID?', 'The community is for adults only, so every member must be 18 or older. We read the date of birth from your passport, driving licence or national ID on our own servers. The photo is never stored: we keep the date of birth, not the document.'],
   ['Who are TYM Mentors?', 'Current students and recent graduates of universities abroad. Each one is verified by our team before they can take bookings.'],
-  ['What is TYMAi?', 'Our study abroad assistant. It answers questions that have had no reply for six hours, joins chatrooms when you type @TYMAi, and offers private counselling in the AI Lounge. It can be wrong, so check official sources for visa rules.'],
-  ['What happens if someone is abusive?', 'Offensive words are hidden automatically. Repeat behaviour leads to a warning, then a 24 hour mute, then suspension. You can also report any post or user and block people you do not want to hear from.'],
-  ['Can I cancel a mentor session?', 'You can reschedule or cancel up to 24 hours before the session for a full refund.'],
+  ['What is TYMAi?', 'Our study abroad assistant. It joins a chat room when you type @TYMAi, and answers privately in Ask TYM AI, where you can also ask for a person from our team. It can be wrong, so check official sources for visa rules.'],
+  ['What happens if someone is abusive?', 'Offensive words are hidden automatically. Repeat behaviour leads to a warning, then a 24 hour mute, then suspension. You can also report any question, answer or member to our team.'],
+  ['Can I cancel a mentor session?', 'You can cancel up to 24 hours before the session for a full refund, then book another time.'],
 ]
 
 export const caseStudies = [

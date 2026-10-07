@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, MessagesSquare, Star } from 'lucide-react'
+import RoomCard from '../feed/RoomCard'
 import Avatar from '../ui/Avatar'
-import { countryBySlug, roomMessages, rooms } from '../../data/sample'
+import { countryBySlug } from '../../data/sample'
 import { useApi } from '../../lib/api'
 import { formatMoney } from '../../lib/format'
 import './home.css'
@@ -12,23 +13,19 @@ export default function SideRail({ country }) {
   const place = countryBySlug[country]
   const { data } = useApi(country ? `/mentors?country=${country}` : '/mentors')
   const mentors = (data || []).slice(0, 3)
-  const room = rooms.find((r) => r.slug === country) || rooms[0]
-  const recent = roomMessages.filter((m) => m.author.role !== 'bot').slice(-2)
+  const rooms = useApi('/chat/rooms').data || []
+  // The country's own room, or the open one (no country) when it has none
+  const room = rooms.find((r) => r.country === country) || rooms.find((r) => !r.country)
 
   return (
     <aside className="stack sticky rail">
-      <div className="card card-pad rail-room">
-        <div className="rail-room-head">
-          <h3 className="section-title"><MessagesSquare size={16} aria-hidden /> {room.name} chatroom</h3>
-          <span className="rail-live">{room.online} online</span>
+      {room && (
+        <div className="card card-pad rail-room">
+          <h3 className="section-title"><MessagesSquare size={16} aria-hidden /> Live chatroom</h3>
+          <RoomCard room={room} />
+          <Link to={`/chat/${room.slug}`} className="btn btn-ghost btn-sm btn-block">Join the conversation</Link>
         </div>
-        <ul className="rail-messages">
-          {recent.map((m) => (
-            <li key={m.id}><Avatar user={m.author} size={26} /><p><strong>{m.author.displayName.split(' ')[0]}</strong> {m.body}</p></li>
-          ))}
-        </ul>
-        <Link to={`/chat/${room.slug}`} className="btn btn-ghost btn-sm btn-block">Join the conversation</Link>
-      </div>
+      )}
 
       {mentors.length > 0 && (
         <div className="card card-pad">

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Bookmark, CalendarCheck, ChevronDown, GraduationCap, KeyRound, LayoutDashboard, LogOut, Menu, Search, Settings, User, UserPlus, X } from 'lucide-react'
+import { Bell, Bookmark, CalendarCheck, ChevronDown, EllipsisVertical, GraduationCap, KeyRound, LayoutDashboard, LogOut, Search, Settings, User, UserPlus, X } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
+import Photo from '../ui/Photo'
 import './layout.css'
 
 // Same items and order as the client's template.
@@ -65,7 +66,20 @@ function NotificationBell() {
   )
 }
 
-// Avatar menu: everything about your own account, including the way out
+// Everything about your own account: the desktop avatar menu and the phone menu both list these
+function accountLinks(user) {
+  const profile = `/u/${user.username}`
+  return [
+    ['/my', LayoutDashboard, 'My TYM'],
+    [profile, User, 'Your profile'],
+    [`${profile}?tab=Saved`, Bookmark, 'Saved questions'],
+    [`${profile}?tab=Sessions`, CalendarCheck, 'Your sessions'],
+    ['/settings', Settings, 'Profile settings'],
+    user.role === 'student' && ['/mentors/register', GraduationCap, 'Become a mentor'],
+  ].filter(Boolean)
+}
+
+// Avatar menu on wide screens, including the way out
 function AccountMenu({ user }) {
   const { logout } = useAuth()
   const navigate = useNavigate()
@@ -84,14 +98,7 @@ function AccountMenu({ user }) {
   }, [open])
 
   const profile = `/u/${user.username}`
-  const links = [
-    ['/my', LayoutDashboard, 'My TYM'],
-    [profile, User, 'Your profile'],
-    [`${profile}?tab=Saved`, Bookmark, 'Saved questions'],
-    [`${profile}?tab=Sessions`, CalendarCheck, 'Your sessions'],
-    ['/settings', Settings, 'Profile settings'],
-    user.role === 'student' && ['/mentors/register', GraduationCap, 'Become a mentor'],
-  ].filter(Boolean)
+  const links = accountLinks(user)
 
   return (
     <div className="account-menu" ref={ref}>
@@ -123,9 +130,9 @@ export default function Header() {
   const navigate = useNavigate()
   const [menu, setMenu] = useState(false)
   const [search, setSearch] = useState(false)
-  const { pathname } = useLocation()
+  const { key } = useLocation()
 
-  useEffect(() => setMenu(false), [pathname])
+  useEffect(() => setMenu(false), [key]) // any move, a tab on the same page included
   useEffect(() => {
     document.body.style.overflow = menu || search ? 'hidden' : ''
   }, [menu, search])
@@ -136,7 +143,7 @@ export default function Header() {
       <div className={`masthead${user ? ' is-member' : ''}`}>
         <div className="container masthead-inner">
           <Link to="/" className="brand" aria-label="The Youth Matters, home">
-            <img src="/logo.png" alt="" width="44" height="46" />
+            <Photo src="/logo.png" width="44" height="46" sizes="44px" loading="eager" />
             <span className="brand-name">The Youth Matters</span>
           </Link>
 
@@ -153,9 +160,9 @@ export default function Header() {
               </>
             )}
             <button className="account-link" onClick={() => setSearch(true)}><Search size={15} strokeWidth={1.7} /> Search</button>
-            <button className="menu-toggle" aria-expanded={menu} aria-controls="mobile-menu"
-              aria-label={menu ? 'Close menu' : 'Open menu'} onClick={() => setMenu(!menu)}>
-              {menu ? <X size={22} strokeWidth={1.6} /> : <Menu size={22} strokeWidth={1.6} />}
+            <button className={`menu-toggle${user && !menu ? ' is-me' : ''}`} aria-expanded={menu} aria-controls="mobile-menu"
+              aria-label={menu ? 'Close menu' : user ? 'Your account' : 'Open menu'} onClick={() => setMenu(!menu)}>
+              {menu ? <X size={22} strokeWidth={1.6} /> : user ? <Avatar user={user} size={42} /> : <EllipsisVertical size={22} strokeWidth={2.6} />}
             </button>
           </div>
         </div>
@@ -174,21 +181,35 @@ export default function Header() {
         </ul>
       </nav>
 
+      {/* Phones and tablets. A visitor's menu is the site's pages. A member's is their own account:
+          the pages are in the strip under the header instead (the same nav bar, scrolling sideways). */}
       {menu && (
         <div id="mobile-menu" className="mobile-menu">
           <div className="container">
-            <nav aria-label="Mobile">
-              {NAV.map((item) => (
-                <NavLink key={item.to} to={item.to} end={item.end} className="mobile-link">
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
+            {!user && (
+              <nav aria-label="Mobile">
+                {NAV.map((item) => (
+                  <NavLink key={item.to} to={item.to} end={item.end} className="mobile-link">
+                    {item.label}
+                  </NavLink>
+                ))}
+              </nav>
+            )}
             {user && (
-              <div className="mobile-actions">
-                <Link to="/settings" className="btn btn-glass">Profile settings</Link>
-                <button className="btn btn-light" onClick={() => { logout(); navigate('/') }}>Log out</button>
-              </div>
+              <>
+                <nav aria-label="Your account" className="mobile-account">
+                  <Link to={`/u/${user.username}`} className="mobile-me">
+                    <Avatar user={user} size={44} />
+                    <span><strong>{user.displayName}</strong><span>@{user.username}</span></span>
+                  </Link>
+                  {accountLinks(user).map(([to, Icon, label]) => (
+                    <Link key={to} to={to} className="mobile-sublink"><Icon size={17} strokeWidth={1.7} aria-hidden /> {label}</Link>
+                  ))}
+                </nav>
+                <div className="mobile-actions is-one">
+                  <button className="btn btn-light" onClick={() => { logout(); navigate('/') }}>Log out</button>
+                </div>
+              </>
             )}
             {account && !user && (
               <div className="mobile-actions">

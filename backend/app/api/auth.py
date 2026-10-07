@@ -34,6 +34,19 @@ def _load_user(_header, data):
     return db.session.get(User, int(data["sub"]))
 
 
+@jwt.token_in_blocklist_loader
+def _signed_out_everywhere(_header, data):
+    """Tokens from before the account's password last changed are refused: resetting a password
+    ends every session, a stolen one included."""
+    user = db.session.get(User, int(data["sub"]))
+    return bool(user and user.tokens_valid_after and data["iat"] < int(user.tokens_valid_after.timestamp()))
+
+
+def _email_key():
+    """Guesses at a code are counted per account, whatever addresses they come from."""
+    return "code:" + str((request.get_json(silent=True) or {}).get("email") or "").strip().lower()[:255]
+
+
 def _body(*fields):
     data = request.get_json(silent=True) or {}
     return [str(data.get(f) or "").strip() for f in fields]
@@ -102,10 +115,11 @@ def register():
     email = email.lower()
     if not 2 <= len(name) <= 80:
         abort(400, "Enter your full name.")
-    if not EMAIL.match(email):
+    if not EMAIL.match(email) or len(email) > 255:
         abort(400, "Enter a valid email address.")
     user = _by_email(email)
-    if user and user.email_verified:
+    # A team account is never taken over by a new sign-up, whatever state it was in when it was added
+    if user and (user.email_verified or user.role != "student"):
         abort(409, "There is already an account with this email. Log in instead.")
     if not user:  # an unconfirmed earlier attempt is simply taken over by whoever confirms the email
         user = User(email=email, username=_username(name))
@@ -126,10 +140,12 @@ def resend_code():
 
 @bp.post("/auth/verify-email")
 @limiter.limit("10 per 10 minutes")
+@limiter.limit("6 per 10 minutes", key_func=_email_key)
 def verify_email():
     email, code = _body("email", "code")
     user = _by_email(email)
     _use_code(user, code)
+    _check_allowed(user)
     user.email_verified = True
     db.session.commit()
     return _session(user)
@@ -157,28 +173,41 @@ def google():
     if not client_id:
         abort(501, "Google sign-in is not switched on yet. Use your email for now.")
     (token,) = _body("accessToken")
-    info = requests.get("https://oauth2.googleapis.com/tokeninfo", params={"access_token": token}, timeout=10)
-    data = info.json() if info.ok else {}
+    try:
+        info = requests.get("https://oauth2.googleapis.com/tokeninfo", params={"access_token": token}, timeout=10)
+        data = info.json() if info.ok else {}
+    except (requests.RequestException, ValueError):
+        abort(502, "We could not reach Google. Try again in a moment.")
     # The token must have been issued to our app, otherwise any site's Google token could sign in here
-    if data.get("aud") != client_id or str(data.get("email_verified")).lower() != "true" or not data.get("email"):
+    if (data.get("aud") != client_id or str(data.get("email_verified")).lower() != "true"
+            or not data.get("email") or not data.get("sub")):
         abort(401, "Google sign-in did not go through. Try again.")
 
     user = db.session.scalar(db.select(User).where(User.google_id == data["sub"])) or _by_email(data["email"])
     if not user:
-        profile = requests.get("https://openidconnect.googleapis.com/v1/userinfo",
-                               headers={"Authorization": f"Bearer {token}"}, timeout=10).json()
+        try:
+            profile = requests.get("https://openidconnect.googleapis.com/v1/userinfo",
+                                   headers={"Authorization": f"Bearer {token}"}, timeout=10).json()
+        except (requests.RequestException, ValueError):
+            profile = {}
         name = (profile.get("name") or data["email"].split("@")[0])[:80]
         user = User(email=data["email"].lower(), username=_username(name), display_name=name)
         db.session.add(user)
     _check_allowed(user)
+    if not user.email_verified:
+        # Someone typed this email into the sign-up form but never confirmed it. Google has now shown
+        # who owns it, so the password that stranger chose must not open the account.
+        user.password_hash = None
     user.google_id, user.email_verified = data["sub"], True
     db.session.commit()
+    # A new Google account is "pending" like any other: it still has to pass the photo-ID age check
     return _session(user)
 
 
 @bp.post("/auth/refresh")
 @jwt_required(refresh=True)
 def refresh():
+    _check_allowed(current_user)
     return jsonify(access=create_access_token(get_jwt_identity()))
 
 
@@ -200,13 +229,14 @@ def forgot_password():
 
 @bp.post("/auth/reset-password")
 @limiter.limit("10 per 10 minutes")
+@limiter.limit("6 per 10 minutes", key_func=_email_key)
 def reset_password():
     email, code, password = _body("email", "code", "password")
     hashed = _password_hash(password)
     user = _by_email(email)
     _use_code(user, code)
     _check_allowed(user)
-    user.password_hash = hashed
+    user.password_hash, user.tokens_valid_after = hashed, utcnow()
     user.email_verified = True  # they just proved they read this inbox
     db.session.commit()
     return _session(user)

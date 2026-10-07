@@ -2,12 +2,13 @@ import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import { comments, countryBySlug, mentors, posts } from '../../data/sample'
-import { timeAgo } from '../../lib/format'
+import { building } from '../../lib/prerender'
 import './home.css'
 
-// The headline's promise, shown literally: a real question and the answer from someone who went.
-// It follows the background slider (London -> a UK question, Toronto -> a Canadian one), and is
-// built from the same discussion data as the feed, so it previews the product, not decoration.
+// The headline's promise, shown literally: a question and the answer from someone who went.
+// It follows the background slider (London -> a UK question, Toronto -> a Canadian one).
+// These are written examples (data/sample.js), so the card says so, carries no counts or times,
+// and links to the real community rather than to a thread.
 function threadFor(country) {
   const firstAnswer = (p) => comments[p.id]?.find((c) => !c.parentId && c.author.role !== 'bot')
   const question = posts.find((p) => p.country === country && firstAnswer(p))
@@ -19,14 +20,16 @@ const credentials = (user) => {
   return m ? `${m.course}, ${m.university}` : user.bio
 }
 
-function ThreadCard({ question, answer, active }) {
-  const hours = Math.max(1, Math.round((new Date(answer.createdAt) - new Date(question.createdAt)) / 3600_000))
+function ThreadCard({ question, answer, country, active }) {
+  // In a page built ahead of time the five cards waiting their turn show initials: their portraits
+  // would be fetched with the page's first picture and they cannot be seen yet
+  const face = (user) => (building && !active ? { ...user, avatar: null } : user)
   return (
     <article className={`thread-card${active ? ' is-active' : ''}`} aria-hidden={!active} inert={active ? undefined : ''}>
       <header className="thread-who">
-        <Avatar user={question.author} size={34} />
+        <Avatar user={face(question.author)} size={34} />
         <span>
-          <strong>{question.author.displayName} <time dateTime={question.createdAt}>{timeAgo(question.createdAt)} ago</time></strong>
+          <strong>{question.author.displayName}</strong>
           <span>{question.author.bio}</span>
         </span>
       </header>
@@ -34,7 +37,7 @@ function ThreadCard({ question, answer, active }) {
 
       <div className="thread-answer">
         <header className="thread-who">
-          <Avatar user={answer.author} size={34} />
+          <Avatar user={face(answer.author)} size={34} />
           <span>
             <strong>{answer.author.displayName} {answer.author.role === 'mentor' && <em>Mentor</em>}</strong>
             <span>{credentials(answer.author)}</span>
@@ -49,9 +52,8 @@ function ThreadCard({ question, answer, active }) {
       </div>
 
       <footer className="thread-foot">
-        <span>Answered within {hours} {hours === 1 ? 'hour' : 'hours'}</span>
-        <span>{question.score} found this helpful</span>
-        <Link to={`/p/${question.id}`} className="thread-link">Read the thread <ArrowUpRight size={15} aria-hidden /></Link>
+        <span>An example of a question and its answer</span>
+        <Link to={`/c/${country}`} className="thread-link">See the real ones <ArrowUpRight size={15} aria-hidden /></Link>
       </footer>
     </article>
   )
@@ -62,16 +64,16 @@ export default function HeroThread({ countries, active }) {
   const current = threads.find((t) => t.country === countries[active]) || threads[0]
 
   return (
-    <figure className="thread" aria-label="A recent question and answer from the community">
+    <figure className="thread" aria-label="An example of a question and its answer">
       {/* All cards share one grid cell: the tallest sets the height, so nothing jumps as they change */}
       <div className="thread-stack">
         <div className="thread-card thread-behind" aria-hidden />
         {threads.map(({ country, thread }) => (
-          <ThreadCard key={country} {...thread} active={country === current.country} />
+          <ThreadCard key={country} {...thread} country={country} active={country === current.country} />
         ))}
       </div>
       <figcaption className="thread-caption" key={current.country}>
-        From the {countryBySlug[current.country].name} community
+        What the {countryBySlug[current.country].name} community is for
       </figcaption>
     </figure>
   )

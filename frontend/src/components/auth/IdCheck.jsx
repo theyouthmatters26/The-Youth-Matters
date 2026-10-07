@@ -115,7 +115,6 @@ export default function IdCheck({ onDone }) {
             <button className="btn btn-primary" onClick={() => onDone(result.user)}>
               Continue <span className="btn-arrow" aria-hidden><ArrowRight size={15} /></span>
             </button>
-            <button className="btn-text" onClick={retake}>Not right? Retake</button>
           </div>
         </div>
       ) : photo ? (

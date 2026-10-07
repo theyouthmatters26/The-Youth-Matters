@@ -62,7 +62,7 @@ button.chip:hover { border-color: var(--faint); color: var(--ink); }
   position: relative; isolation: isolate; display: grid; align-items: end; overflow: hidden;
   min-height: clamp(380px, 40vw, 500px); border-radius: var(--radius-lg); color: #fff;
 }
-.country-hero > img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); }
+.country-hero > picture > img, .country-hero > img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); }
 .country-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(9, 9, 10, 0.9) 0%, rgba(9, 9, 10, 0.45) 50%, rgba(9, 9, 10, 0.12) 100%); }
 .country-hero-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--s-6); padding: clamp(24px, 4vw, 48px); }
 .country-eyebrow { display: flex; align-items: center; gap: var(--s-3); font-size: var(--step--1); font-weight: 500; color: rgba(255, 255, 255, 0.78); }
@@ -168,6 +168,16 @@ form.card-pad { padding: var(--s-7); gap: var(--s-5); }
 .chat-sources > span { display: inline-flex; align-items: center; gap: 6px; font-size: var(--step--2); color: var(--muted); }
 .chat-sources a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
 .chat-sources a:hover { text-decoration-color: var(--ink); }
+/* Ask TYM AI: who is answering, and a person from the team stepping in */
+.handoff { display: flex; flex-wrap: wrap; flex-basis: 100%; align-items: center; gap: var(--s-2) var(--s-3); font-size: var(--step--1); line-height: 1.45; color: var(--muted); }
+.handoff > span { flex: 1 1 220px; }
+.handoff > svg { flex-shrink: 0; color: var(--ink); }
+.handoff strong { font-weight: 600; color: var(--ink); }
+.handoff.is-person { padding: var(--s-2) var(--s-3); border-radius: var(--radius-sm); background: var(--chalk); }
+.chat-log li.is-person > div { padding: var(--s-3) var(--s-4); border-radius: var(--radius); background: var(--ink); color: var(--on-ink); }
+.chat-log li.is-person .chat-text a { color: inherit; }
+.chat-team { padding: 1px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); font-size: 0.6875rem; font-weight: 500; }
+.lounge-unread { font-weight: 600; color: var(--ink); }
 .chat-typing { display: inline-flex; align-items: center; gap: var(--s-2); align-self: center; font-size: var(--step--1); color: var(--muted); }
 .chat-typing span { display: inline-flex; gap: 3px; }
 .chat-typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: typing 1.2s infinite var(--ease); }

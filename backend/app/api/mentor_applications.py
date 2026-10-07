@@ -19,9 +19,9 @@ from flask_jwt_extended import current_user, jwt_required
 from markupsafe import escape
 
 from ..extensions import db, limiter
-from ..models import Community, Country, MentorApplication, MentorProfile, Subject
+from ..models import Community, Country, MentorApplication, MentorProfile, ModerationLog, Subject
 from ..models.base import utcnow
-from ..services import content, images, mailer, storage
+from ..services import content, images, mailer, staff, storage
 from ..services.availability import DAYS
 from ..services.notify import notify
 from .posts import member
@@ -162,14 +162,15 @@ def apply():
             ("Sessions", f"{a.session_minutes} min at ₹{price}, {slots} times a week ({a.timezone})"),
             ("LinkedIn", a.linkedin or "-")]
     html = "".join(f"<p><b>{k}:</b> {escape(v)}</p>" for k, v in rows) + f"<p>{escape(a.about)}</p>"
-    mailer.send(current_app.config["CONTACT_EMAIL"], f"[Mentor application #{a.id}] {user.display_name}", html,
-                reply_to=user.email)
+    # The application is saved: a failed email must not tell the applicant it was lost
+    mailer.send_quietly(current_app.config["CONTACT_EMAIL"], f"[Mentor application #{a.id}] {user.display_name}", html,
+                        reply_to=user.email)
     return jsonify(_summary(a)), 201
 
 
 def _admin():
-    if current_user.role != "admin":
-        abort(403, "Only the TYM team can review applications.")
+    if not staff.can(current_user, "mentors"):
+        abort(403, "Only team members with access to mentors can review applications.")
 
 
 def _application(application_id):
@@ -186,8 +187,9 @@ def queue():
     status = request.args.get("status", "pending")
     rows = db.session.scalars(db.select(MentorApplication).where(MentorApplication.status == status)
                               .order_by(MentorApplication.id))
-    return jsonify([{**_summary(a), "user": {"id": a.user.id, "username": a.user.username,
-                                             "displayName": a.user.display_name, "email": a.user.email}} for a in rows])
+    return jsonify([{**_summary(a), "user": {"id": a.user.id, "username": a.user.username, "avatar": a.user.avatar_url,
+                                             "displayName": a.user.display_name, "email": a.user.email, "role": a.user.role},
+                     "proofIsPdf": a.proof_key.endswith(".pdf")} for a in rows])
 
 
 @bp.get("/admin/mentor-applications/<int:application_id>/files/<kind>")
@@ -197,7 +199,8 @@ def document(application_id, kind):
     a = _application(application_id)
     key = {"cv": a.cv_key, "proof": a.proof_key}.get(kind) or abort(404)
     if current_app.config["SPACES_KEY"]:
-        return redirect(storage.signed_url(key))
+        url = storage.signed_url(key)
+        return jsonify(url=url) if request.args.get("link") else redirect(url)  # the panel asks for the link
     return send_from_directory(Path(current_app.instance_path, "private"), key)
 
 
@@ -211,6 +214,8 @@ def decide(application_id):
     data = request.get_json(silent=True) or {}
     a.status = "approved" if data.get("approve") else "rejected"
     a.note = str(data.get("note") or "").strip()[:500] or None
+    if a.status == "rejected" and len(a.note or "") < 10:
+        abort(400, "Write a note saying what they should change. They see it when they apply again.")
     a.decided_at, a.reviewed_by_id = utcnow(), current_user.id
     if a.status == "approved":
         m = db.session.scalar(db.select(MentorProfile).where(MentorProfile.user_id == a.user_id)) \
@@ -221,11 +226,14 @@ def decide(application_id):
         m.price_minor, m.currency, m.session_minutes = a.price_minor, "INR", a.session_minutes
         m.timezone, m.weekly_hours, m.is_verified = a.timezone, a.weekly_hours, True
         db.session.add(m)
-        a.user.role = "mentor"
+        if a.user.role == "student":  # someone on the team who also mentors keeps their place on the team
+            a.user.role = "mentor"
         notify(a.user_id, current_user, "system",
                message="approved your mentor application. Students can book you now.")
     else:
         notify(a.user_id, current_user, "system",
                message="reviewed your mentor application. Open TYM Mentors to see the note.")
+    db.session.add(ModerationLog(actor_id=current_user.id, action=f"mentor_{a.status}", target_type="user",
+                                 target_id=a.user_id, detail={"name": a.user.display_name}))
     db.session.commit()
     return jsonify(_summary(a))

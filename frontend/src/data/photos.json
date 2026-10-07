@@ -1,0 +1,349 @@
+{
+ "/images/ai-desk.jpg": {
+  "w": 1200,
+  "h": 800,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   960,
+   1200
+  ]
+ },
+ "/images/chatroom.jpg": {
+  "w": 1200,
+  "h": 800,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   960,
+   1200
+  ]
+ },
+ "/images/city-australia.jpg": {
+  "w": 900,
+  "h": 600,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   900
+  ]
+ },
+ "/images/city-canada.jpg": {
+  "w": 900,
+  "h": 600,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   900
+  ]
+ },
+ "/images/city-germany.jpg": {
+  "w": 900,
+  "h": 600,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   900
+  ]
+ },
+ "/images/city-ireland.jpg": {
+  "w": 900,
+  "h": 598,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   900
+  ]
+ },
+ "/images/city-uk.jpg": {
+  "w": 900,
+  "h": 600,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   900
+  ]
+ },
+ "/images/city-usa.jpg": {
+  "w": 900,
+  "h": 600,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   900
+  ]
+ },
+ "/images/flight.jpg": {
+  "w": 1800,
+  "h": 1196,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   960,
+   1280,
+   1600
+  ]
+ },
+ "/images/hero-students.jpg": {
+  "w": 1600,
+  "h": 1067,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   960,
+   1280,
+   1600
+  ]
+ },
+ "/images/mentor-session.jpg": {
+  "w": 1400,
+  "h": 933,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   960,
+   1280,
+   1400
+  ]
+ },
+ "/images/people/aditya.v.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/aisha.k.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/arjun.r.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/daniel.o.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/hannah.l.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/ishaan.g.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/kabir.s.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/kavya.r.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/meera.n.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/priya.s.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/rohan.m.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/people/sara.t.jpg": {
+  "w": 600,
+  "h": 750,
+  "widths": [
+   96,
+   192,
+   384
+  ]
+ },
+ "/images/slide-berlin.jpg": {
+  "w": 2200,
+  "h": 1467,
+  "widths": [
+   960,
+   1280,
+   1440,
+   1600,
+   1920
+  ],
+  "tall": [
+   480,
+   640,
+   800,
+   1080
+  ]
+ },
+ "/images/slide-dublin.jpg": {
+  "w": 2200,
+  "h": 1463,
+  "widths": [
+   960,
+   1280,
+   1440,
+   1600,
+   1920
+  ],
+  "tall": [
+   480,
+   640,
+   800,
+   1080
+  ]
+ },
+ "/images/slide-london.jpg": {
+  "w": 2200,
+  "h": 1467,
+  "widths": [
+   960,
+   1280,
+   1440,
+   1600,
+   1920
+  ],
+  "tall": [
+   480,
+   640,
+   800,
+   1080
+  ]
+ },
+ "/images/slide-newyork.jpg": {
+  "w": 2200,
+  "h": 1467,
+  "widths": [
+   960,
+   1280,
+   1440,
+   1600,
+   1920
+  ],
+  "tall": [
+   480,
+   640,
+   800,
+   1080
+  ]
+ },
+ "/images/slide-sydney.jpg": {
+  "w": 2200,
+  "h": 1467,
+  "widths": [
+   960,
+   1280,
+   1440,
+   1600,
+   1920
+  ],
+  "tall": [
+   480,
+   640,
+   800,
+   1080
+  ]
+ },
+ "/images/slide-toronto.jpg": {
+  "w": 2200,
+  "h": 1467,
+  "widths": [
+   960,
+   1280,
+   1440,
+   1600,
+   1920
+  ],
+  "tall": [
+   480,
+   640,
+   800,
+   1080
+  ]
+ },
+ "/logo.png": {
+  "w": 180,
+  "h": 188,
+  "widths": [
+   96,
+   180
+  ]
+ }
+}

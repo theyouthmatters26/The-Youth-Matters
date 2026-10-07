@@ -21,13 +21,18 @@ export function AuthProvider({ children }) {
   }
   const logout = () => {
     session.set(null)
+    // Half-written questions and mentor applications are not left for the next person on a shared computer
+    try { localStorage.removeItem('tym.draft'); localStorage.removeItem('tym.mentorDraft') } catch { /* ignore */ }
     setAccountState(null)
   }
 
   // Pick up anything that changed elsewhere: a review approved by our team, a suspended account
   useEffect(() => {
-    if (!session.get()?.access) return
-    api('/auth/me').then(setAccount).catch((e) => [401, 403, 422].includes(e.status) && logout())
+    // lib/api.js says so when a sign-in can no longer be renewed
+    const ended = () => setAccountState(null)
+    window.addEventListener('tym.session:ended', ended)
+    if (session.get()?.access) api('/auth/me').then(setAccount).catch((e) => [401, 403, 422].includes(e.status) && logout())
+    return () => window.removeEventListener('tym.session:ended', ended)
   }, [])
 
   const user = account?.verification === 'verified' ? account : null

@@ -41,6 +41,7 @@ function EditPost({ post, onSaved, onCancel }) {
   const [topic, setTopic] = useState(post.category?.slug || '')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const topics = useApi('/categories').data || categories // the admin's topics; ours until they load
   const save = async (e) => {
     e.preventDefault()
     setBusy(true)
@@ -58,7 +59,7 @@ function EditPost({ post, onSaved, onCancel }) {
       <textarea className="textarea" rows={6} value={body} maxLength={10000} onChange={(e) => setBody(e.target.value)} aria-label="Details" />
       <select className="select" value={topic} onChange={(e) => setTopic(e.target.value)} aria-label="Topic">
         <option value="">Any topic</option>
-        {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+        {topics.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
       </select>
       <FormError>{error}</FormError>
       <div className="form-actions">
@@ -81,6 +82,7 @@ export default function PostDetail() {
   const [comments, setComments] = useState([])
   const [sort, setSort] = useState('best')
   const [editing, setEditing] = useState(Boolean(location.state?.edit))
+  const [error, setError] = useState('')
 
   useEffect(() => { if (postRes.data) setPost(postRes.data) }, [postRes.data])
   useEffect(() => { if (commentsRes.data) setComments(commentsRes.data) }, [commentsRes.data])
@@ -99,13 +101,20 @@ export default function PostDetail() {
   const own = account?.username === post.author.username
   const place = post.community.country
   const answers = comments.filter((c) => !c.isDeleted).length
+  const asked = timeAgo(post.createdAt)
+  // A refusal is shown on the answer itself (CommentThread)
   const markHelpful = async (commentId) => {
     const res = await api(`/posts/${post.id}/helpful`, { method: 'POST', body: { commentId } })
     setPost({ ...post, helpfulCommentId: res.helpfulCommentId, hasHelpful: Boolean(res.helpfulCommentId) })
   }
   const remove = async () => {
-    await api(`/posts/${post.id}`, { method: 'DELETE' })
-    navigate(`/c/${place.slug}`, { replace: true })
+    setError('')
+    try {
+      await api(`/posts/${post.id}`, { method: 'DELETE' })
+      navigate(`/c/${place.slug}`, { replace: true })
+    } catch (err) {
+      setError(err.message)
+    }
   }
   const threadProps = {
     comments, setComments, sort, opUsername: post.author.username, helpfulId: post.helpfulCommentId,
@@ -130,11 +139,12 @@ export default function PostDetail() {
                 {post.category && <span className="faint"> / {post.category.name}</span>}
               </span>
               <time className="faint post-time" dateTime={post.createdAt} title={fullDate(post.createdAt)}>
-                Asked {timeAgo(post.createdAt)} ago{post.edited && ' · edited'}
+                Asked {asked}{asked !== 'just now' && ' ago'}{post.edited && ' · edited'}
               </time>
               <MoreMenu own={own} onEdit={() => setEditing(true)} onDelete={remove}
                 reportTarget={{ targetType: 'post', targetId: post.id, path: `/p/${post.id}` }} />
             </header>
+            <FormError>{error}</FormError>
 
             {editing ? (
               <EditPost post={post} onCancel={() => setEditing(false)} onSaved={(p) => { setPost({ ...post, ...p }); setEditing(false) }} />
@@ -187,7 +197,7 @@ export default function PostDetail() {
 
             {commentsRes.loading && <p className="muted post-loading"><Spinner /> Loading answers</p>}
             {!commentsRes.loading && answers === 0 && (
-              <p className="muted answers-empty">Be the first to help. If nobody answers within 6 hours, TYMAi will post a first answer to get things started.</p>
+              <p className="muted answers-empty">Be the first to help. While you wait, you can ask TYM AI the same question for an answer straight away.</p>
             )}
             {user && <CommentThread {...threadProps} />}
             {!user && answers > 0 && (

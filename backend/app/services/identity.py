@@ -8,13 +8,16 @@ KYC service, and the photo is only ever held in memory.
 import re
 from datetime import date
 from functools import cache
+from io import BytesIO
 
 import cv2
 import numpy as np
+from PIL import Image, UnidentifiedImageError
 
 cv2.utils.logging.setLogLevel(cv2.utils.logging.LOG_LEVEL_ERROR)  # OpenCV 5 warns about unused GPU targets
 
 MAX_SIDE = 1600  # downscale large phone photos before OCR
+MAX_PIXELS = 40_000_000  # far above any phone camera
 
 
 class IdentityError(Exception):
@@ -24,6 +27,12 @@ class IdentityError(Exception):
 # ---------------------------------------------------------------- images
 
 def decode(data: bytes):
+    try:  # read the size from the header before decoding: a tiny file can claim a billion pixels
+        width, height = Image.open(BytesIO(data)).size
+    except (UnidentifiedImageError, OSError):
+        raise IdentityError("We could not open that file. Use a JPG or PNG photo.") from None
+    if width * height > MAX_PIXELS:
+        raise IdentityError("That photo is too large. Take it again at a normal size.")
     img = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
     if img is None:
         raise IdentityError("We could not open that file. Use a JPG or PNG photo.")

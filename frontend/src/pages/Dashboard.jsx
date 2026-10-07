@@ -12,6 +12,7 @@ import { useAuth } from '../lib/auth'
 import { timeAgo } from '../lib/format'
 import { useMeta } from '../lib/meta'
 import { notificationText } from './Notifications'
+import Photo from '../components/ui/Photo'
 import '../components/feed/feed.css'
 
 const greeting = () => {
@@ -93,7 +94,7 @@ export default function Dashboard() {
               </div>
             </div>
           )}
-          <PostList endpoint="/feed" query={sort === 'unanswered' ? 'sort=new' : `sort=${sort}`} fresh={fresh}
+          <PostList endpoint="/feed" query={sort === 'unanswered' ? 'sort=new&unanswered=1' : `sort=${sort}`} fresh={fresh}
             onMeta={(res) => setJoined(res.following)}
             empty={<div className="card empty"><h2 className="display">Quiet for now</h2><p className="muted">Nothing new in your communities yet. Ask the first question.</p></div>} />
         </section>
@@ -125,10 +126,11 @@ export default function Dashboard() {
             <h3 className="section-title"><CalendarCheck size={16} aria-hidden /> Next session</h3>
             {next ? (
               <div className="dash-session">
-                <Avatar user={next.mentor.user} size={40} />
+                {/* For a mentor the other person is the student who booked them */}
+                <Avatar user={next.asMentor ? next.student : next.mentor.user} size={40} />
                 <div>
-                  <strong>{next.mentor.user.displayName}</strong>
-                  <span>{formatDay(next.startsAt, { weekday: 'short' })}, {formatTime(next.startsAt)}</span>
+                  <strong>{(next.asMentor ? next.student : next.mentor.user).displayName}</strong>
+                  <span>{next.asMentor ? 'You are mentoring · ' : ''}{formatDay(next.startsAt, { weekday: 'short' })}, {formatTime(next.startsAt)}</span>
                 </div>
                 <a href={next.meetingUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm"><Video size={14} /> Join</a>
               </div>
@@ -146,7 +148,7 @@ export default function Dashboard() {
               <div className="mini-list">
                 {communities.data.map((c) => (
                   <Link key={c.id} to={`/c/${c.country.slug}`} className="mini-row">
-                    <img src={`/images/city-${c.country.slug}.jpg`} alt="" className="mini-city" />
+                    <Photo src={`/images/city-${c.country.slug}.jpg`} className="mini-city" sizes="48px" />
                     <div><strong>{c.country.name}</strong><span>{c.subject.name}</span></div>
                   </Link>
                 ))}

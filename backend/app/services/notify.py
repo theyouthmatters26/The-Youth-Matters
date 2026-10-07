@@ -8,7 +8,8 @@ def notify(user_id, actor, kind, post=None, comment=None, message=None):
         return
     db.session.add(Notification(user_id=user_id, actor_id=actor.id if actor else None, kind=kind,
                                 post_id=post.id if post else None,
-                                comment_id=comment.id if comment else None, message=message))
+                                comment_id=comment.id if comment else None,
+                                message=message[:255] if message else None))
 
 
 def notify_mentions(usernames, actor, post, comment=None, already=()):

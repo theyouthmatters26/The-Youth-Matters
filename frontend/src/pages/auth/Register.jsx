@@ -8,6 +8,7 @@ import {
 import IdCheck from '../../components/auth/IdCheck'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
+import { useMeta } from '../../lib/meta'
 
 // Sign-up (Module 1): account -> email code -> photo ID (date of birth read by OCR, 18+).
 // The step comes from the account itself, so leaving halfway and logging in later resumes here.
@@ -34,6 +35,12 @@ function AccountStep({ onSent, onSession }) {
   return (
     <>
       <GoogleButton onSession={onSession} onError={setError} />
+      <p className="google-note">
+        Google confirms your email, so there is no code to type. You still show a photo ID to confirm your age.
+        By continuing you confirm you are 18 or older and agree to the{' '}
+        <Link to="/terms" target="_blank" className="link">Terms</Link> and{' '}
+        <Link to="/guidelines" target="_blank" className="link">Community Guidelines</Link>.
+      </p>
       <div className="divider"><span>or with email</span></div>
       <form className="stack auth-form" onSubmit={submit}>
         <div className="field">
@@ -149,6 +156,7 @@ function Finished({ account, from, logout }) {
 }
 
 export default function Register() {
+  useMeta({ title: 'Join free', description: 'Create a free account on The Youth Matters. Members are 18 or over and verified, so the answers come from real students.', path: '/register' })
   const { account, signIn, setAccount, logout } = useAuth()
   const location = useLocation()
   const from = location.state?.from || '/'

@@ -10,6 +10,7 @@ import { api, useApi } from '../lib/api'
 import { useAuth, useMemberGuard } from '../lib/auth'
 import { plural } from '../lib/format'
 import { useMeta } from '../lib/meta'
+import Photo from '../components/ui/Photo'
 import '../components/feed/feed.css'
 
 // One country community in the strip: tap to open it, join without leaving the page.
@@ -35,7 +36,7 @@ function CommunityTile({ c }) {
   return (
     <li className="hub-tile">
       <Link to={`/c/${c.country.slug}`} className="hub-tile-link">
-        <img src={`/images/city-${c.country.slug}.jpg`} alt="" loading="lazy" />
+        <Photo src={`/images/city-${c.country.slug}.jpg`} sizes="(max-width: 640px) 46vw, 300px" />
         <span className="hub-tile-text">
           <strong>{c.country.name}</strong>
           <span>{plural(c.questions, 'question')} · {plural(members, 'member')}</span>
@@ -72,9 +73,9 @@ export default function CommunityHub() {
       </header>
 
       <ul className="hub-strip" aria-label="Country communities">
-        {communities.data
-          ? communities.data.map((c) => <CommunityTile key={c.id} c={c} />)
-          : Array.from({ length: 6 }, (_, i) => <li key={i} className="hub-tile is-loading" aria-hidden />)}
+        {communities.data ? communities.data.map((c) => <CommunityTile key={c.id} c={c} />)
+          : communities.error ? <li className="muted">We could not load the communities just now. Reload the page to try again.</li>
+            : Array.from({ length: 6 }, (_, i) => <li key={i} className="hub-tile is-loading" aria-hidden />)}
       </ul>
 
       <div className="layout-2 dash-grid hub-grid">

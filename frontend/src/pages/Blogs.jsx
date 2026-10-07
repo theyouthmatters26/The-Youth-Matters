@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import Avatar from '../components/ui/Avatar'
-import { blogs, users } from '../data/sample'
+import { users } from '../data/sample'
+import { useArticles } from '../lib/blog'
 import { useMeta } from '../lib/meta'
+import Photo from '../components/ui/Photo'
 import '../components/home/home.css'
 
 const byline = (b) => {
@@ -25,7 +27,8 @@ export default function Blogs() {
     description: 'Long-form guides on UK student visa funds, your first month abroad and writing an SOP, written by the TYM team and verified student mentors.',
     path: '/blogs',
   })
-  const [lead, ...rest] = blogs
+  const { articles, loading } = useArticles()
+  const [lead, ...rest] = articles
   return (
     <div className="container page">
       <header className="page-head" data-reveal>
@@ -34,7 +37,7 @@ export default function Blogs() {
       </header>
       {lead && <div className="blog-layout" data-reveal data-reveal-delay="1">
         <Link to={`/blogs/${lead.slug}`} className="blog-lead">
-          <div className="blog-photo"><img src={lead.image} alt={lead.imageAlt || ''} /></div>
+          <div className="blog-photo"><Photo src={lead.image} alt={lead.imageAlt || ''} sizes="(max-width: 860px) 92vw, 640px" priority /></div>
           <span className="blog-meta">{lead.topic} · {lead.date}</span>
           <h3>{lead.title}</h3>
           <p>{lead.excerpt}</p>
@@ -54,6 +57,7 @@ export default function Blogs() {
           ))}
         </ul>
       </div>}
+      {!lead && <p className="muted">{loading ? 'Loading articles...' : 'The first guides are being written. Check back soon.'}</p>}
     </div>
   )
 }

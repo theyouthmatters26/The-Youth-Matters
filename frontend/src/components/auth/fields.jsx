@@ -118,7 +118,6 @@ export function GoogleButton({ onSession, onError }) {
 
   const click = () => {
     onError('')
-    if (!GOOGLE_CLIENT_ID) return onError('Google sign-in is not switched on yet. Use your email for now.')
     if (!window.google?.accounts) return onError('Google sign-in is still loading. Try again in a moment.')
     // Opened straight from the click so the browser does not block the Google window
     window.google.accounts.oauth2.initTokenClient({
@@ -139,6 +138,7 @@ export function GoogleButton({ onSession, onError }) {
     }).requestAccessToken()
   }
 
+  if (!GOOGLE_CLIENT_ID) return null // not switched on: the page offers email only, with no dead button
   return (
     <button type="button" className="btn btn-ghost btn-block auth-google" onClick={click} disabled={busy}>
       {busy ? <Spinner /> : <GoogleMark />} Continue with Google

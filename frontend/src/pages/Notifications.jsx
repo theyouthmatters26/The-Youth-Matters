@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowBigUp, AtSign, Bell, CheckCircle2, MessageSquare, Reply } from 'lucide-react'
 import Avatar from '../components/ui/Avatar'
-import { Spinner } from '../components/auth/fields'
+import { FormError, Spinner } from '../components/auth/fields'
 import { api } from '../lib/api'
 import { fullDate, timeAgo } from '../lib/format'
 import { useMeta } from '../lib/meta'
@@ -30,15 +30,22 @@ export default function Notifications() {
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [error, setError] = useState('')
 
   const load = async (n) => {
     setLoading(true)
-    const res = await api(`/notifications?page=${n}`)
-    setItems((prev) => (n === 1 ? res.items : [...prev, ...res.items]))
-    setUnread(res.unread)
-    setPage(n)
-    setHasMore(res.hasMore)
-    setLoading(false)
+    setError('')
+    try {
+      const res = await api(`/notifications?page=${n}`)
+      setItems((prev) => (n === 1 ? res.items : [...prev, ...res.items]))
+      setUnread(res.unread)
+      setPage(n)
+      setHasMore(res.hasMore)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
   useEffect(() => { load(1) }, [])
 
@@ -71,7 +78,7 @@ export default function Notifications() {
       </div>
 
       {loading && !items.length && <p className="muted post-loading"><Spinner /> Loading</p>}
-      {!loading && !shown.length && (
+      {!loading && !shown.length && !error && (
         <div className="card empty">
           <span className="empty-icon"><Bell size={20} /></span>
           <h2 className="display">{filter === 'all' ? 'Nothing yet' : 'Nothing here'}</h2>
@@ -99,6 +106,7 @@ export default function Notifications() {
           })}
         </ol>
       )}
+      {error && <div style={{ marginTop: 'var(--s-4)' }}><FormError>{error}</FormError></div>}
       {hasMore && <button className="btn btn-ghost btn-sm load-more" onClick={() => load(page + 1)} disabled={loading}>Show older</button>}
     </div>
   )

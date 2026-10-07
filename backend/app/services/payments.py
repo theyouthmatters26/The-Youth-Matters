@@ -55,7 +55,7 @@ def _signed(secret, message: bytes):
 def valid_payment(order_id, payment_id, signature):
     """Checkout's success signature: HMAC-SHA256 of "order_id|payment_id" with our key secret."""
     expected = _signed(current_app.config["RAZORPAY_KEY_SECRET"], f"{order_id}|{payment_id}".encode())
-    return hmac.compare_digest(expected, signature or "")
+    return isinstance(signature, str) and hmac.compare_digest(expected, signature)
 
 
 def valid_webhook(body: bytes, signature):

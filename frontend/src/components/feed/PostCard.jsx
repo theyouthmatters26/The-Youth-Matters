@@ -5,6 +5,7 @@ import Avatar from '../ui/Avatar'
 import RoleBadge from '../ui/RoleBadge'
 import VoteControl from '../ui/VoteControl'
 import { MoreMenu, SaveButton, ShareButton } from './PostActions'
+import { FormError } from '../auth/fields'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { fullDate, plural, timeAgo } from '../../lib/format'
@@ -15,14 +16,20 @@ export default function PostCard({ post, onDeleted }) {
   const { account } = useAuth()
   const navigate = useNavigate()
   const [gone, setGone] = useState(false)
+  const [error, setError] = useState('')
   if (gone) return null
 
   const own = account?.username === post.author.username
   const place = post.community.country
   const remove = async () => {
-    await api(`/posts/${post.id}`, { method: 'DELETE' })
-    setGone(true)
-    onDeleted?.(post.id)
+    setError('')
+    try {
+      await api(`/posts/${post.id}`, { method: 'DELETE' })
+      setGone(true)
+      onDeleted?.(post.id)
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   return (
@@ -43,6 +50,7 @@ export default function PostCard({ post, onDeleted }) {
         <MoreMenu own={own} onEdit={() => navigate(`/p/${post.id}`, { state: { edit: true } })} onDelete={remove}
           reportTarget={{ targetType: 'post', targetId: post.id, path: `/p/${post.id}` }} />
       </header>
+      <FormError>{error}</FormError>
 
       <h3 className="post-title"><Link to={`/p/${post.id}`}>{post.title}</Link></h3>
       {post.excerpt && <p className="post-excerpt">{post.excerpt}</p>}

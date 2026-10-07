@@ -4,6 +4,7 @@ import AuthLayout from '../../components/auth/AuthLayout'
 import { FormError, GoogleButton, PasswordField, SubmitButton } from '../../components/auth/fields'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
+import { useMeta } from '../../lib/meta'
 
 // Members-only pages send visitors here; tell them what logging in will open
 const REASONS = [
@@ -15,6 +16,7 @@ const REASONS = [
 ]
 
 export default function Login() {
+  useMeta({ title: 'Log in', description: 'Log in to The Youth Matters to ask questions, join the chat rooms and book mentors.', path: '/login' })
   const { account, signIn } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -44,6 +46,11 @@ export default function Login() {
   return (
     <AuthLayout title="Welcome back" subtitle={REASONS.find(([p]) => from.startsWith(p))?.[1] || 'Log in to ask questions, join the chatrooms and book mentors.'}>
       <GoogleButton onSession={signIn} onError={setError} />
+      <p className="google-note">
+        New here? Google creates your account, then we ask for a photo ID to confirm you are 18 or over. By
+        continuing you agree to the <Link to="/terms" target="_blank" className="link">Terms</Link> and{' '}
+        <Link to="/guidelines" target="_blank" className="link">Community Guidelines</Link>.
+      </p>
       <div className="divider"><span>or with email</span></div>
 
       <form className="stack auth-form" onSubmit={submit}>

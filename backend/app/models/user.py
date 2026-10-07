@@ -21,11 +21,16 @@ class User(Model):
     # One-time code for email verification and password reset (sha256 of code, 10 minute expiry)
     email_code_hash = db.Column(db.String(64))
     email_code_expires_at = db.Column(db.DateTime(timezone=True))
+    # Set when the password changes: sign-ins from before then stop working (see api/auth.py)
+    tokens_valid_after = db.Column(db.DateTime(timezone=True))
 
     role = db.Column(enum(*ROLES, name="user_role"), nullable=False, default="student")
     # pending until the identity check passes, then active
     status = db.Column(enum(*STATUSES, name="user_status"), nullable=False, default="pending")
     muted_until = db.Column(db.DateTime(timezone=True))  # set by strike 2
+    # Admins only: the parts of the admin panel this person may open, e.g. ["support"]. ["*"] = all.
+    # The owner (ADMIN_EMAIL in .env) always has everything, whatever is stored here.
+    admin_access = db.Column(db.JSON)
 
     date_of_birth = db.Column(db.Date)  # read from the photo ID during verification
     display_name = db.Column(db.String(80), nullable=False)

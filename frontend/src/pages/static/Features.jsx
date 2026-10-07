@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { Bot, Globe2, MessagesSquare, ShieldCheck, Users, Vote } from 'lucide-react'
+import { useMeta } from '../../lib/meta'
 
 const FEATURES = [
   { Icon: Users, title: 'Questions and answers', text: 'Ask anything, answer what you know, and vote the most useful replies to the top.', to: '/ask', cta: 'Ask a question' },
-  { Icon: Globe2, title: 'Destination hubs', text: 'Follow the UK, US, Canada and more to fill your feed with the countries you care about.', to: '/c/uk', cta: 'Visit the UK hub' },
+  { Icon: Globe2, title: 'Destination hubs', text: 'Join the UK, US, Canada and more to fill your feed with the countries you care about.', to: '/community', cta: 'See every country' },
   { Icon: MessagesSquare, title: 'Live chatrooms', text: 'Free public rooms by country. Find flatmates, compare CAS timelines, ask quick questions.', to: '/chat', cta: 'Open chatrooms' },
   { Icon: Bot, title: 'AI Counsellor', text: 'Private help with SOPs, visa steps and shortlists. Type @TYMAi in any chatroom for a quick answer.', to: '/ai', cta: 'Try the AI Lounge' },
   { Icon: Vote, title: 'Verified mentors', text: 'Book a paid one-to-one with a student at the university you want, at a time that suits you.', to: '/mentors', cta: 'Browse mentors' },
@@ -11,6 +12,7 @@ const FEATURES = [
 ]
 
 export default function Features() {
+  useMeta({ title: 'Features', description: 'Country communities, questions and answers, live chat rooms, Ask TYM AI and one-to-one sessions with student mentors: everything between the offer letter and the flight.', path: '/features' })
   return (
     <div className="container page">
       <header className="page-head">

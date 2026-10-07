@@ -1,8 +1,14 @@
-"""Seed reference data + demo content. Safe to re-run: reference data and posts are added once,
-the demo people and mentors are brought up to date every time.
+"""What a new database needs before the site works, and optionally a demo community to look at.
 
     cd backend
-    python ../database/seed.py
+    python ../database/seed.py           a live site: subjects, countries, topics, chat rooms, the TYMAi
+                                         account and the three starter guides. No people, no passwords.
+    python ../database/seed.py --demo    your own computer: all of that plus demo students, mentors,
+                                         questions and chat, every demo account on the password below.
+
+Never run --demo against a live database: the demo password is published in the README, and the demo
+mentors would be bookable for real money. Safe to re-run either way: what exists is left alone, and
+with --demo the demo people and mentors are brought up to date.
 """
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -17,6 +23,7 @@ from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
 from app.models import (BlogPost, Category, ChatMessage, ChatRoom, Comment, Community, Country,  # noqa: E402
                         Follow, MentorProfile, MentorReview, Post, Subject, User)
+from demo_blog import seed_blog  # noqa: E402
 from demo_chat import seed_chat  # noqa: E402
 from demo_posts import seed_posts  # noqa: E402
 
@@ -44,7 +51,7 @@ CATEGORIES = [
 ]
 
 
-MODELS = {"Category": Category, "ChatMessage": ChatMessage, "ChatRoom": ChatRoom, "Comment": Comment,
+MODELS = {"BlogPost": BlogPost, "Category": Category, "ChatMessage": ChatMessage, "ChatRoom": ChatRoom, "Comment": Comment,
           "Community": Community, "Post": Post, "Subject": Subject, "User": User}
 
 # Local demo accounts only (example.com addresses), e.g. aisha.k@example.com
@@ -232,15 +239,10 @@ def seed_people():
     db.session.commit()
 
 
-def run():
+def reference():
+    """What the site cannot work without. Added once; a later run changes nothing here."""
     if db.session.scalar(db.select(Subject).limit(1)):
-        seed_people()
-        seed_posts(db, MODELS)
-        seed_chat(db, MODELS)
-        demo_logins()
-        print("Already seeded; demo people and mentors are up to date.")
         return
-
     subjects = {slug: Subject(slug=slug, name=n, description=d, is_active=a, sort_order=i)
                 for i, (slug, n, d, a) in enumerate(SUBJECTS)}
     countries = {slug: Country(slug=slug, name=n, iso_code=c) for slug, n, c, _ in COUNTRIES}
@@ -250,25 +252,24 @@ def run():
     db.session.add_all([*subjects.values(), *countries.values(), *abroad.values(), *cats.values()])
 
     bot = user("tymai", "TYMAi", role="bot", dob=date(2000, 1, 1))
+    # The name on TYM's own guides. It has no password and no part of the admin panel, so nobody signs in as it.
     team = user("tym.team", "TYM Team", role="admin", dob=date(1995, 1, 1))
-    aisha = user("aisha.k", "Aisha Khan", target_country=countries["uk"])
-    rohan = user("rohan.m", "Rohan Mehta", target_country=countries["uk"])
-    priya = user("priya.s", "Priya Sharma", role="mentor")
-    db.session.add_all([bot, team, aisha, rohan, priya])
-
-    now = datetime.now(timezone.utc)
-    db.session.add(BlogPost(slug="uk-visa-funds-explained", subject=subjects["study-abroad"], author=team,
-                            title="UK student visa funds, explained in plain English",
-                            excerpt="How much you need, how long it must sit in the account, and the mistakes that get applications refused.",
-                            body="<p>Draft body.</p>", published_at=now - timedelta(days=2)))
+    db.session.add_all([bot, team])
     db.session.commit()
-    seed_people()
-    seed_posts(db, MODELS)
-    seed_chat(db, MODELS)
-    demo_logins()
-    print("Seeded.")
+
+
+def run(demo=False):
+    reference()
+    if demo:
+        seed_people()
+        seed_posts(db, MODELS)
+    seed_chat(db, MODELS, messages=demo)
+    seed_blog(db, MODELS, team_only=not demo)
+    if demo:
+        demo_logins()
+    print("Demo community is in place." if demo else "The site's reference data is in place. No demo accounts were made.")
 
 
 if __name__ == "__main__":
     with create_app().app_context():
-        run()
+        run(demo="--demo" in sys.argv)

@@ -8,7 +8,7 @@ class Comment(Model):
     __table_args__ = (db.Index("ix_comments_post_created", "post_id", "created_at"),)
 
     post_id = db.Column(db.Integer, db.ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
-    author_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     parent_id = db.Column(db.Integer, db.ForeignKey("comments.id", ondelete="CASCADE"))
     depth = db.Column(db.SmallInteger, nullable=False, default=0)
 

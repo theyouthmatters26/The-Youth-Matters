@@ -5,10 +5,13 @@ import PostCard, { PostSkeleton } from '../components/feed/PostCard'
 import RoomCard from '../components/feed/RoomCard'
 import Avatar from '../components/ui/Avatar'
 import Gate from '../components/ui/Gate'
-import { blogs, caseStudies, countries, subjects } from '../data/sample'
+import Photo from '../components/ui/Photo'
+import { caseStudies, countries, subjects } from '../data/sample'
+import { useArticles } from '../lib/blog'
 import { useApi } from '../lib/api'
 import { formatCount, formatMoney } from '../lib/format'
 import { useAuth } from '../lib/auth'
+import { SITE, siteUrl, useMeta } from '../lib/meta'
 import '../components/home/home.css'
 
 // Visitors see this many items per list before the sign-up gate.
@@ -47,6 +50,8 @@ function Subjects() {
 }
 
 function Destinations() {
+  // How many students have joined each country, from the database
+  const joined = Object.fromEntries((useApi('/subjects/study-abroad/communities').data || []).map((c) => [c.country.slug, c.members]))
   return (
     <section className="section" aria-labelledby="dest-title">
       <div className="container">
@@ -55,13 +60,12 @@ function Destinations() {
           <p>Every country has its own community with discussions, a live chat room and mentors who studied there.</p>
         </header>
         <div className="dest-grid" data-reveal data-reveal-delay="1">
-          {countries.map((c, i) => (
+          {countries.map((c) => (
             <Link key={c.slug} to={`/c/${c.slug}`} className="dest-card">
-              <img src={`/images/city-${c.slug}.jpg`} alt="" loading="lazy" width="900" height="600" />
+              <Photo src={`/images/city-${c.slug}.jpg`} sizes="(max-width: 640px) 92vw, (max-width: 1000px) 46vw, 400px" />
               <div className="dest-info">
                 <span className="dest-name">{c.name}</span>
-                <span className="dest-meta">{formatCount(c.members)} students</span>
-                {i === 0 && <span className="dest-note">Our largest community, and where TYM started.</span>}
+                <span className="dest-meta">{joined[c.slug] > 0 ? `${formatCount(joined[c.slug])} ${joined[c.slug] === 1 ? 'student' : 'students'}` : 'Open now'}</span>
               </div>
               <ArrowUpRight size={18} className="dest-arrow" aria-hidden />
             </Link>
@@ -75,7 +79,8 @@ function Destinations() {
 // The four best discussions this week from the API; visitors see two and the invitation
 function TopPosts() {
   const { user } = useAuth()
-  const { data } = useApi('/posts?sort=top')
+  const { data, error } = useApi('/posts?sort=top')
+  if (error && !data) return <p className="muted">We could not load the discussions just now. Reload the page to try again.</p>
   if (!data) return <div className="feed-list"><PostSkeleton /><PostSkeleton /></div>
   const top = data.items
   return (
@@ -172,7 +177,7 @@ function MentorsBand() {
 }
 
 function Blogs() {
-  const [lead, ...rest] = blogs
+  const [lead, ...rest] = useArticles().articles.slice(0, 4)
   if (!lead) return null
   return (
     <section className="section" aria-labelledby="blogs-title">
@@ -186,7 +191,7 @@ function Blogs() {
         </header>
         <div className="blog-layout" data-reveal data-reveal-delay="1">
           <Link to={`/blogs/${lead.slug}`} className="blog-lead">
-            <div className="blog-photo"><img src={lead.image} alt="" loading="lazy" /></div>
+            <div className="blog-photo"><Photo src={lead.image} sizes="(max-width: 860px) 92vw, 640px" /></div>
             <span className="blog-meta">{lead.topic} · {lead.readMins} min read</span>
             <h3>{lead.title}</h3>
             <p>{lead.excerpt}</p>
@@ -212,23 +217,30 @@ function Blogs() {
 function Story() {
   const story = caseStudies[0]
   return (
-    <section className="section" aria-label="Member story">
+    <section className="section" aria-label="An example journey">
       <div className="container story" data-reveal>
-        <img src="/images/flight.jpg" alt="View of a plane wing above the clouds" loading="lazy" />
+        <Photo src="/images/flight.jpg" alt="View of a plane wing above the clouds" sizes="(max-width: 860px) 92vw, 520px" />
         <figure>
           <blockquote className="display">{story.quote}</blockquote>
           <figcaption>
-            <strong>{story.name}</strong>
+            <strong>The kind of journey TYM is for</strong>
             <span>{story.course}, {story.route}</span>
           </figcaption>
-          <Link to="/case-studies" className="text-link">Read more case studies <ArrowRight size={16} /></Link>
+          <Link to="/case-studies" className="text-link">See more journeys <ArrowRight size={16} /></Link>
         </figure>
       </div>
     </section>
   )
 }
 
+// What search engines are told this site is
+const ABOUT_TYM = {
+  '@context': 'https://schema.org', '@type': 'Organization', name: SITE, url: siteUrl, logo: `${siteUrl}/logo.png`,
+  description: 'A community of students helping each other study abroad: questions and answers, chat rooms, mentors and guides.',
+}
+
 export default function Home() {
+  useMeta({ description: 'Ask questions, meet students and talk to verified mentors before you study abroad. Honest answers on visas, money and housing from people who made the move.', path: '/', jsonLd: ABOUT_TYM })
   return (
     <>
       <Hero />

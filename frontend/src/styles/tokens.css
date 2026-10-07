@@ -11,7 +11,7 @@
   --ink-soft: #232326;
   --slate: #3c3c41;
   --muted: #5f5f66;
-  --faint: #8e8e95;
+  --faint: #68686f;        /* the lightest text: still 4.5:1 on the grey surfaces */
 
   /* Light surfaces */
   --chalk: #f4f4f5;        /* page background */
@@ -28,7 +28,7 @@
   --night-line: rgba(255, 255, 255, 0.09);
   --on-ink: #f5f5f6;
   --on-ink-muted: rgba(245, 245, 246, 0.62);
-  --on-ink-faint: rgba(245, 245, 246, 0.42);
+  --on-ink-faint: rgba(245, 245, 246, 0.52);
 
   --danger: #a12b2b;
 

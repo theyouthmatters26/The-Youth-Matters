@@ -12,7 +12,7 @@ class Post(Model):
         db.Index("ix_posts_search", "search_vector", postgresql_using="gin"),
     )
 
-    author_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     community_id = db.Column(db.Integer, db.ForeignKey("communities.id"), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))
 
