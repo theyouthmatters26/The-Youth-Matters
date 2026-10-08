@@ -4,6 +4,12 @@ Passports and many ID cards carry a machine readable zone (MRZ) whose dates have
 that is trusted first; otherwise a date next to a "Date of birth" / "DOB" label; otherwise the
 earliest plausible date on the card. Runs on our own server with RapidOCR (ONNX), no third-party
 KYC service, and the photo is only ever held in memory.
+
+A date on any picture is not an ID, so before a date is believed the text must show what a real
+document carries (document_kind): a machine readable zone whose check digits add up, an Aadhaar
+number that passes its checksum, a PAN in the Income Tax Department's format, or a driving licence.
+This stops a random photo with a date on it. It cannot tell a real card from a careful forgery of
+one: that takes a government lookup (DigiLocker or a KYC provider), which is the upgrade path.
 """
 import re
 from datetime import date
@@ -72,7 +78,7 @@ def _make_date(day, month, year):
 def _dates(text):
     for m in DATE.finditer(text):
         d = _make_date(*m.group(1, 2, 3)) if m.group(1) else _make_date(m.group(6), m.group(5), m.group(4))
-        if d and date(1900, 1, 1) < d < date.today():
+        if d and date(date.today().year - 100, 1, 1) < d < date.today():  # nobody signing up is over 100
             yield d
 
 
@@ -88,13 +94,25 @@ def _check_digit(field):
 DIGIT_FIXES = str.maketrans({"O": "0", "Q": "0", "D": "0", "I": "1", "L": "1", "Z": "2", "S": "5", "B": "8", "G": "6"})
 
 
-def _mrz_dob(line, today):
-    """DOB from one MRZ line, or None. Passport (TD3, 44 chars) and TD2 (36) second line: positions
-    13-19. ID card (TD1, 30 chars) second line: positions 0-6."""
-    start = 13 if len(line) >= 34 else 0
+def _checked(line, start):
+    """The six digits at `start` if the check digit after them adds up, else None."""
     field = line[start:start + 6].translate(DIGIT_FIXES)
     check = line[start + 6:start + 7].translate(DIGIT_FIXES)
-    if not (len(field) == 6 and field.isdigit() and check == _check_digit(field)):
+    return field if len(field) == 6 and field.isdigit() and check == _check_digit(field) else None
+
+
+def _mrz_line(raw):
+    line = re.sub(r"[^A-Z0-9<]", "", raw.upper().replace("«", "<"))
+    return line if line.count("<") >= 2 and len(line) >= 28 else None
+
+
+def _mrz_dob(line, today):
+    """DOB from one MRZ line, or None. Passport (TD3, 44 chars) and TD2 (36) second line: birth at
+    13, expiry at 21. ID card (TD1, 30 chars) second line: birth at 0, expiry at 8. Both dates carry
+    a check digit and both must add up: one alone is right by chance one time in ten."""
+    birth, expiry = (13, 21) if len(line) >= 34 else (0, 8)
+    field = _checked(line, birth)
+    if not (field and _checked(line, expiry)):
         return None
     yy, mm, dd = int(field[:2]), int(field[2:4]), int(field[4:])
     try:
@@ -107,8 +125,7 @@ def find_dob(lines, today=None):
     """(date_of_birth, source) from OCR text lines, or (None, None). source: mrz | label | date"""
     today = today or date.today()
     for raw in lines:
-        line = re.sub(r"[^A-Z0-9<]", "", raw.upper().replace("«", "<"))
-        if line.count("<") >= 2 and len(line) >= 28 and (dob := _mrz_dob(line, today)):
+        if (line := _mrz_line(raw)) and (dob := _mrz_dob(line, today)):
             return dob, "mrz"
 
     for i, raw in enumerate(lines):
@@ -120,6 +137,54 @@ def find_dob(lines, today=None):
 
     found = [d for raw in lines for d in _dates(raw)]
     return (min(found), "date") if found else (None, None)
+
+
+# ---------------------------------------------------------------- which document is it
+
+# Verhoeff checksum, the one Aadhaar numbers end in: it catches every single wrong digit and swap
+_D = [[(i + j) % 5 if i < 5 and j < 5 else 5 + (i + j) % 5 if i < 5 else 5 + (i - j) % 5 if j < 5 else (i - j) % 5
+       for j in range(10)] for i in range(10)]
+_P = [list(range(10)), [1, 5, 7, 6, 2, 8, 3, 0, 9, 4]]
+for _ in range(6):
+    _P.append([_P[-1][_P[1][i]] for i in range(10)])
+
+
+def _verhoeff(number):
+    c = 0
+    for i, ch in enumerate(reversed(number)):
+        c = _D[c][_P[i % 8][int(ch)]]
+    return c == 0
+
+
+AADHAAR = re.compile(r"(?<!\d)(?<!\d )([2-9]\d{3}) ?(\d{4}) ?(\d{4})(?! ?\d)")
+PAN = re.compile(r"\b[A-Z]{3}P[A-Z]\d{4}[A-Z]\b")  # the fourth letter is P on a person's card
+PASSPORT_NO = re.compile(r"\b[A-Z]\d{7}\b")
+LICENCE_NO = re.compile(r"\b[A-Z]{2}[- ]?\d{2}[- ]?(?:19|20)\d{2} ?\d{7}\b")  # state, office, year, serial
+
+
+def document_kind(lines, today=None):
+    """'passport', 'driving_licence' or 'national_id' when the text is that of a real document, else None."""
+    today = today or date.today()
+    for raw in lines:
+        if (line := _mrz_line(raw)) and _mrz_dob(line, today):
+            return "passport" if len(line) >= 40 else "national_id"
+    text = " ".join(lines).upper()
+    words = re.sub(r"[^A-Z]", "", text)  # OCR drops and adds spaces; the letters survive
+
+    def said(*any_of):
+        return any(w in words for w in any_of)
+
+    labelled = any(LABEL.search(raw) for raw in lines)
+    if any(_verhoeff("".join(m.groups())) for m in AADHAAR.finditer(text)) and (
+            labelled or said("GOVERNMENTOFINDIA", "AADHAAR", "UNIQUEIDENTIFICATION", "UIDAI")):
+        return "national_id"
+    if PAN.search(text) and said("INCOMETAX", "PERMANENTACCOUNT", "GOVTOFINDIA"):
+        return "national_id"
+    if said("LICENCE", "LICENSE") and (said("DRIVING", "DRIVER", "TRANSPORT") or LICENCE_NO.search(text)):
+        return "driving_licence"
+    if said("PASSPORT") and PASSPORT_NO.search(text) and labelled:
+        return "passport"  # the photo page, when the two lines at the bottom did not read cleanly
+    return None
 
 
 @cache
@@ -134,8 +199,14 @@ def read_text(img):
 
 
 def read_dob(img):
-    dob, source = find_dob(read_text(img))
+    """(date_of_birth, source, document) from a photo of an ID."""
+    lines = read_text(img)
+    kind = document_kind(lines)
+    if not kind:
+        raise IdentityError("We could not recognise this as a passport, driving licence, Aadhaar or PAN card. "
+                            "Use the original document, with the whole of it in the frame, in focus and without glare.")
+    dob, source = find_dob(lines)
     if not dob:
         raise IdentityError("We could not read a date of birth on that photo. Make sure the whole "
                             "document is in the frame, in focus and without glare.")
-    return dob, source
+    return dob, source, kind

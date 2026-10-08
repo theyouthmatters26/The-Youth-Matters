@@ -5,6 +5,7 @@ import { FormError, Spinner, SubmitButton } from '../../components/auth/fields'
 import MentorCard from '../../components/mentors/MentorCard'
 import Avatar from '../../components/ui/Avatar'
 import { countries } from '../../data/sample'
+import { AGREEMENTS, ALL_FIELDS, AVAILABILITY, CODE_OF_CONDUCT, DECLARATION, EDUCATION, EXPERTISE, KEY_AREAS, MENTORING, MOTIVATION, PERSONAL, PROFESSIONAL, plain, required } from '../../data/mentorForm'
 import { api, useApi } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { fullDate } from '../../lib/format'
@@ -18,14 +19,14 @@ const BENEFITS = [
   [HeartHandshake, 'Help someone like you', 'You remember how confusing your own move was. A single hour can save someone months.'],
 ]
 const LOOK_FOR = [
-  'You study at, or recently graduated from, a university abroad',
+  'You are an experienced professional, educator, international graduate or study-abroad expert',
   'Your age is checked from photo ID (part of every TYM account)',
-  'You can show proof of enrolment or your degree',
+  'You can show your CV and proof of your qualification',
   'You reply to bookings and messages within a day',
   'You give honest answers, including "check the official page" when you are not sure',
 ]
 const STEPS = [
-  ['Apply', 'Your profile, hours, CV and proof of study, all on this page.'],
+  ['Apply', 'Complete the form on this page. Please make sure everything is accurate and up to date.'],
   ['Review', 'Our team checks your documents and may ask for a short call.'],
   ['Go live', 'Your profile appears in TYM Mentors and students can book you.'],
 ]
@@ -35,8 +36,6 @@ const PRESETS = [
   ['Weekday evenings', ['mon', 'tue', 'wed', 'thu', 'fri'], ['18:00', '19:00', '20:00']],
   ['Weekend mornings', ['sat', 'sun'], ['09:00', '10:00', '11:00']],
 ]
-const TOPICS = ['SOP and personal statement review', 'Student visa documents', 'University shortlisting', 'Scholarships and funding',
-  'Finding accommodation', 'Part-time work rules', 'Interview practice', 'Settling in']
 const LANGUAGES = ['English', 'Hindi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Marathi', 'Bengali', 'Gujarati', 'Punjabi', 'Urdu']
 const MAX_FILE = 5 * 1024 * 1024
 const DRAFT = 'tym.mentorDraft'
@@ -45,6 +44,7 @@ const ZONES = (() => { try { return Intl.supportedValuesOf('timeZone') } catch {
 const EMPTY = {
   country: 'uk', university: '', course: '', graduated: false, graduationYear: '', headline: '', about: '', experience: '',
   topics: [], languages: ['English'], linkedin: '', price: 1299, sessionMinutes: 30, timezone: myZone(), weeklyHours: {},
+  details: {},
 }
 const slotCount = (hours) => Object.values(hours).reduce((n, t) => n + t.length, 0)
 
@@ -128,6 +128,59 @@ function WeekGrid({ value, update }) {
   )
 }
 
+// The client's questions (data/mentorForm.js). Answers live together in form.details.
+function Questions({ fields, details, set }) {
+  return fields.map((f) => {
+    const [key, label, kind, options] = f
+    const id = `q-${key}`
+    const value = details[key] ?? (kind === 'many' ? [] : '')
+    const need = required(f)
+    if (kind === 'many') {
+      return (
+        <fieldset key={key} className="field apply-many">
+          <legend>{label}</legend>
+          <div className="grid-2">
+            {options.map((o) => (
+              <label key={o} className="check">
+                <input type="checkbox" checked={value.includes(o)}
+                  onChange={(e) => set(key, e.target.checked ? [...value, o] : value.filter((x) => x !== o))} />
+                <span>{o}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )
+    }
+    if (kind === 'yesno') {
+      return (
+        <div key={key} className="field">
+          <span className="apply-q">{label}</span>
+          <fieldset className="segmented apply-two" aria-label={plain(label)}>
+            {['Yes', 'No'].map((o) => (
+              <label key={o}><input type="radio" name={id} checked={value === o} onChange={() => set(key, o)} /><span>{o}</span></label>
+            ))}
+          </fieldset>
+        </div>
+      )
+    }
+    return (
+      <div key={key} className="field">
+        <label htmlFor={id}>{label}</label>
+        {kind === 'select' ? (
+          <select id={id} className="select" value={value} onChange={(e) => set(key, e.target.value)} required={need}>
+            <option value="">Choose</option>
+            {options.map((o) => <option key={o}>{o}</option>)}
+          </select>
+        ) : kind === 'area' ? (
+          <textarea id={id} className="textarea" rows={4} value={value} onChange={(e) => set(key, e.target.value)} required={need} maxLength={2000} />
+        ) : (
+          <input id={id} className="input" value={value} onChange={(e) => set(key, e.target.value)} required={need} maxLength={160} />
+        )}
+      </div>
+    )
+  })
+}
+
 function FileField({ id, label, hint, accept, file, onChange }) {
   return (
     <div className="field">
@@ -148,7 +201,7 @@ function Section({ n, title, text, children }) {
   return (
     <section className="card card-pad apply-section" aria-labelledby={`apply-${n}`}>
       <header>
-        <span className="mono apply-num">0{n}</span>
+        <span className="mono apply-num">{String(n).padStart(2, '0')}</span>
         <div><h2 id={`apply-${n}`}>{title}</h2>{text && <p className="muted">{text}</p>}</div>
       </header>
       <div className="stack">{children}</div>
@@ -167,7 +220,7 @@ function StatusCard({ icon: Icon, title, children }) {
 }
 
 export default function MentorApply() {
-  useMeta({ title: 'Become a TYM mentor', description: 'Studying abroad or recently graduated? Mentor students heading where you went: set your own hours and price, and get paid upfront through Razorpay.', path: '/mentors/register' })
+  useMeta({ title: 'Become a TYM mentor', description: 'Become a Study Abroad Mentor with The Youth Matters: for experienced professionals, educators, international graduates and study-abroad experts who can guide young people through their journey.', path: '/mentors/register' })
   const { account, user, setAccount } = useAuth()
   const existing = useApi(user ? '/mentor-application' : null)
   const [form, setForm] = useState(() => {
@@ -175,7 +228,7 @@ export default function MentorApply() {
   })
   const [cv, setCv] = useState(null)
   const [proof, setProof] = useState(null)
-  const [agree, setAgree] = useState(false)
+  const [agreed, setAgreed] = useState(() => AGREEMENTS.map(() => false))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(null)
@@ -185,6 +238,7 @@ export default function MentorApply() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
   const setValue = (k) => (v) => setForm((f) => ({ ...f, [k]: v }))
+  const setDetail = (k, v) => setForm((f) => ({ ...f, details: { ...f.details, [k]: v } }))
   const pickFile = (setter, pdfOnly) => (file) => {
     setError('')
     if (file && file.size > MAX_FILE) return setError(`${file.name} is over 5 MB. Upload a smaller file.`)
@@ -195,12 +249,14 @@ export default function MentorApply() {
   const submit = async (e) => {
     e.preventDefault()
     setError('')
+    const missing = ALL_FIELDS.find((f) => required(f) && !(form.details[f[0]] || '').length)
     const problem = !user.avatar ? 'Add a profile photo in step 1.'
-      : !form.topics.length ? 'Add at least one topic you can help with.'
-        : !form.languages.length ? 'Add the languages you can mentor in.'
-          : slotCount(form.weeklyHours) < 2 ? 'Pick at least 2 weekly session times in step 5.'
-            : !cv || !proof ? 'Add your CV and proof of study in step 6.'
-              : !agree ? 'Please agree to the mentor guidelines.' : ''
+      : missing ? `Please answer: ${plain(missing[1])}`
+        : !form.topics.length ? 'Choose at least one key area of expertise.'
+          : !form.languages.length ? 'Add the languages you can mentor in.'
+            : slotCount(form.weeklyHours) < 2 ? 'Pick at least 2 weekly session times.'
+              : !cv || !proof ? 'Add your CV and your qualification document.'
+                : agreed.includes(false) ? 'Please tick the Mentor Code of Conduct and each declaration.' : ''
     if (problem) return setError(problem)
     const body = new FormData()
     Object.entries(form).forEach(([k, v]) => body.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v)))
@@ -289,21 +345,25 @@ export default function MentorApply() {
           </div>
         </Section>
 
-        <Section n={2} title="Where you studied">
+        <Section n={2} title="Personal details" text="Your email address and date of birth come from your TYM account.">
+          <div className="grid-2"><Questions fields={PERSONAL} details={form.details} set={setDetail} /></div>
+        </Section>
+
+        <Section n={3} title="Educational background" text="Your highest qualification, and where you gained it.">
           <div className="grid-2">
             <div className="field">
-              <label htmlFor="a-country">Country</label>
+              <label htmlFor="a-country">Country you will mentor for (your main one)</label>
               <select id="a-country" className="select" value={form.country} onChange={set('country')}>
                 {countries.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
               </select>
             </div>
             <div className="field">
-              <label htmlFor="a-uni">University</label>
+              <label htmlFor="a-uni">Institution or university</label>
               <input id="a-uni" className="input" value={form.university} onChange={set('university')} required minLength={2} maxLength={120} placeholder="University of Leeds" />
             </div>
           </div>
           <div className="field">
-            <label htmlFor="a-course">Course</label>
+            <label htmlFor="a-course">Degree or qualification</label>
             <input id="a-course" className="input" value={form.course} onChange={set('course')} required minLength={2} maxLength={120} placeholder="MSc Data Science" />
           </div>
           <div className="grid-2">
@@ -317,17 +377,35 @@ export default function MentorApply() {
             </fieldset>
             <div className="field">
               <label htmlFor="a-year">{form.graduated ? 'Graduation year' : 'Expected graduation year'}</label>
-              <input id="a-year" className="input" type="number" inputMode="numeric" min={2000} max={2035} value={form.graduationYear}
+              <input id="a-year" className="input" type="number" inputMode="numeric" min={1970} max={2035} value={form.graduationYear}
                 onChange={set('graduationYear')} required placeholder={String(form.graduated ? year - 1 : year + 1)} />
             </div>
           </div>
+          <Questions fields={EDUCATION} details={form.details} set={setDetail} />
         </Section>
 
-        <Section n={3} title="Your mentor profile" text="Write it the way you would introduce yourself to a junior. Specific beats impressive.">
+        <Section n={4} title="Professional experience">
+          <Questions fields={PROFESSIONAL} details={form.details} set={setDetail} />
+        </Section>
+
+        <Section n={5} title="Study abroad expertise" text="Select every country and area you have substantial knowledge or experience with.">
+          <Questions fields={EXPERTISE} details={form.details} set={setDetail} />
+          <div className="field">
+            <div className="field-row"><label htmlFor="a-topics">Your key areas of expertise *</label><span className="hint">{form.topics.length}/8</span></div>
+            <TagInput id="a-topics" value={form.topics} onChange={setValue('topics')} suggestions={KEY_AREAS} max={8} placeholder="Choose your strongest areas, or type another" />
+          </div>
+          <p className="muted dash-small">Important: mentors should only provide visa, immigration, legal or financial guidance within the scope of their actual qualifications and expertise.</p>
+        </Section>
+
+        <Section n={6} title="Mentoring experience">
+          <Questions fields={MENTORING} details={form.details} set={setDetail} />
+        </Section>
+
+        <Section n={7} title="Your mentor profile" text="Students see your headline and introduction on your mentor profile.">
           <div className="field">
             <div className="field-row"><label htmlFor="a-headline">Headline</label><span className="hint">{160 - form.headline.length} left</span></div>
             <input id="a-headline" className="input" value={form.headline} onChange={set('headline')} required minLength={20} maxLength={160}
-              placeholder="I review SOPs line by line and check UK visa files before you submit." />
+              placeholder="International Education Professional | UK & Canada Study Abroad Mentor" />
           </div>
           <div className="field">
             <div className="field-row">
@@ -343,10 +421,6 @@ export default function MentorApply() {
               placeholder="Data analyst intern at a Leeds fintech. Student ambassador." />
           </div>
           <div className="field">
-            <div className="field-row"><label htmlFor="a-topics">What you help with</label><span className="hint">{form.topics.length}/8</span></div>
-            <TagInput id="a-topics" value={form.topics} onChange={setValue('topics')} suggestions={TOPICS} max={8} placeholder="Type a topic and press Enter" />
-          </div>
-          <div className="field">
             <div className="field-row"><label htmlFor="a-langs">Languages you can mentor in</label><span className="hint">{form.languages.length}/6</span></div>
             <TagInput id="a-langs" value={form.languages} onChange={setValue('languages')} suggestions={LANGUAGES} max={6} placeholder="Type a language" />
           </div>
@@ -354,9 +428,11 @@ export default function MentorApply() {
             <label htmlFor="a-link">LinkedIn <span className="faint">Optional, but it helps</span></label>
             <input id="a-link" className="input" type="url" value={form.linkedin} onChange={set('linkedin')} placeholder="https://www.linkedin.com/in/..." />
           </div>
+          <Questions fields={MOTIVATION} details={form.details} set={setDetail} />
         </Section>
 
-        <Section n={4} title="Sessions and price" text="Sessions are one-to-one video calls. Most TYM mentors charge ₹1,199 to ₹1,999.">
+        <Section n={8} title="Availability and mentoring format" text="Bookings on TYM are one-to-one video calls. Most TYM mentors charge ₹1,199 to ₹1,999.">
+          <Questions fields={AVAILABILITY} details={form.details} set={setDetail} />
           <div className="grid-2">
             <fieldset className="segmented" aria-label="Session length">
               {[30, 45, 60].map((m) => (
@@ -383,25 +459,32 @@ export default function MentorApply() {
           </div>
         </Section>
 
-        <Section n={5} title="Weekly hours" text={`Pick when sessions can start, in ${form.timezone.replace(/_/g, ' ')} time. Students see them in their own time zone. They are set when the team approves your application; to change them afterwards, write to support@theyouthmatters.com.`}>
+        <Section n={9} title="Weekly hours" text={`Pick when sessions can start, in ${form.timezone.replace(/_/g, ' ')} time. Students see them in their own time zone. They are set when the team approves your application; to change them afterwards, write to support@theyouthmatters.com.`}>
           <WeekGrid value={form.weeklyHours} update={(fn) => setForm((f) => ({ ...f, weeklyHours: fn(f.weeklyHours) }))} />
         </Section>
 
-        <Section n={6} title="Documents" text="Only the TYM review team can open these. They are never shown on your profile.">
+        <Section n={10} title="Documents and verification" text="Only the TYM review team can open these. They are never shown on your profile.">
           <div className="grid-2">
-            <FileField id="a-cv" label="CV" hint="PDF, up to 5 MB" accept="application/pdf" file={cv} onChange={pickFile(setCv, true)} />
-            <FileField id="a-proof" label="Proof of enrolment or degree" hint="Student ID, enrolment letter or degree. PDF, JPG or PNG, up to 5 MB"
+            <FileField id="a-cv" label="Resume / CV *" hint="PDF, up to 5 MB" accept="application/pdf" file={cv} onChange={pickFile(setCv, true)} />
+            <FileField id="a-proof" label="Educational qualification document *" hint="Degree certificate, transcript or enrolment letter. PDF, JPG or PNG, up to 5 MB"
               accept="application/pdf,image/jpeg,image/png" file={proof} onChange={pickFile(setProof, false)} />
           </div>
         </Section>
 
+        <Section n={11} title="Mentoring standards and declarations" text="As a Study Abroad Mentor, I agree to:">
+          <ul className="apply-list">{CODE_OF_CONDUCT.map((t) => <li key={t}><Check size={16} aria-hidden /> {t}</li>)}</ul>
+          {AGREEMENTS.map((text, i) => (
+            <label key={text} className="check">
+              <input type="checkbox" checked={agreed[i]} onChange={(e) => setAgreed((a) => a.map((v, j) => (j === i ? e.target.checked : v)))} />
+              <span>{text} *</span>
+            </label>
+          ))}
+          <Questions fields={DECLARATION} details={form.details} set={setDetail} />
+        </Section>
+
         <div className="card card-pad stack apply-submit">
-          <label className="check">
-            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-            <span>I will give honest advice, reply to bookings within a day, and point students to official sources for visa rules and fees.</span>
-          </label>
           <FormError>{error}</FormError>
-          <SubmitButton busy={busy} busyText="Sending your application">Send application</SubmitButton>
+          <SubmitButton busy={busy} busyText="Sending your application">Submit mentor application</SubmitButton>
           <p className="faint dash-small">Your answers are saved on this device as you type, so you can finish later. Files need adding again.</p>
         </div>
       </form>
@@ -414,8 +497,8 @@ export default function MentorApply() {
     <div className="container page">
       <header className="page-head">
         <p className="eyebrow">TYM Mentors · Apply</p>
-        <h1>Help the next student get there</h1>
-        <p>Mentors are current students and recent graduates of universities abroad. You share what you learned the hard way, on a one-to-one video call.</p>
+        <h1>Become a Study Abroad Mentor</h1>
+        <p>Thank you for your interest in becoming a mentor with The Youth Matters. We are looking for experienced professionals, educators, international graduates, study-abroad experts and industry professionals who can guide young people through their study-abroad journey.</p>
       </header>
 
       <ul className="apply-benefits">

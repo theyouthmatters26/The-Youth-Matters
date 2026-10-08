@@ -1,7 +1,9 @@
 """Age check (Module 1): a photo ID -> date of birth (OCR, services/identity.py) -> 18+.
 
-A readable date of birth that shows 18 or over verifies the account straight away. The photo is
-read in memory and never stored: we keep the date of birth, not the document.
+The photo has to be a real kind of document (a passport, driving licence, Aadhaar or PAN card:
+identity.document_kind), not any picture with a date on it. Then a date of birth that shows 18 or
+over verifies the account straight away. The photo is read in memory and never stored: we keep
+the date of birth, not the document.
 """
 from flask import Blueprint, abort, current_app, jsonify, request
 from flask_jwt_extended import current_user, jwt_required
@@ -38,7 +40,7 @@ def document():
     if not upload:
         abort(400, "Add a photo of your document to continue.")
     try:
-        dob, source = identity.read_dob(identity.decode(upload.read()))
+        dob, source, doc_type = identity.read_dob(identity.decode(upload.read()))  # what it is, not what was picked
     except identity.IdentityError as e:
         abort(422, str(e))
 
@@ -51,4 +53,4 @@ def document():
     user.date_of_birth, user.status = dob, "active"
     db.session.add(v)
     db.session.commit()
-    return jsonify(dateOfBirth=dob.isoformat(), source=source, user=s.me(user))
+    return jsonify(dateOfBirth=dob.isoformat(), source=source, documentType=doc_type, user=s.me(user))

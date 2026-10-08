@@ -42,8 +42,41 @@ def _summary(a):
         "graduationYear": a.graduation_year, "graduated": a.graduated, "headline": a.headline, "about": a.about,
         "experience": a.experience, "topics": a.topics, "languages": a.languages, "linkedin": a.linkedin,
         "price": a.price_minor // 100, "sessionMinutes": a.session_minutes, "timezone": a.timezone,
-        "weeklyHours": a.weekly_hours,
+        "weeklyHours": a.weekly_hours, "details": a.details or {},
     }
+
+
+# The registration form's own questions (frontend/src/data/mentorForm.js). These must be answered:
+REQUIRED = ("firstName", "lastName", "mobileCode", "mobile", "city", "currentCountry", "qualification", "field",
+            "studiedAbroad", "totalExperience", "employment", "organisation", "jobTitle", "jobDescription",
+            "mentorCountries", "studyAreas", "expertise", "whyMentor", "studentsLearn", "approach", "formats",
+            "availability", "confirmName")
+KEY = re.compile(r"^[A-Za-z]{2,40}$")
+
+
+def _details(raw):
+    """{question: answer} where an answer is text or a list of choices. Cleaned like any other text a
+    member writes, and kept small: it is shown to the team as it was sent."""
+    try:
+        sent = json.loads(raw or "{}")
+        if not isinstance(sent, dict) or len(sent) > 60:
+            raise ValueError
+    except (ValueError, TypeError):
+        abort(400, "We could not read your answers. Reload the page and try again.")
+    clean = {}
+    for key, value in sent.items():
+        if not KEY.match(str(key)):
+            continue
+        if isinstance(value, list):
+            value = [content.clean(str(v), 81)[0][:80] for v in value[:20]]
+            value = [v for v in value if v]
+        else:
+            value = content.clean(str(value), 2001)[0][:2000]
+        if value:
+            clean[key] = value
+    if missing := [k for k in REQUIRED if k not in clean]:
+        abort(400, "Some required answers are missing. Check each section marked with *.")
+    return clean
 
 
 def _text(form, key, label, lo, hi, required=True):
@@ -124,7 +157,7 @@ def apply():
     if not community:
         abort(400, "Choose the country you studied in.")
     year = f.get("graduationYear", type=int)
-    if not year or not 2000 <= year <= 2035:
+    if not year or not 1970 <= year <= 2035:
         abort(400, "Enter your graduation year, or the year you expect to graduate.")
     price = f.get("price", type=int)
     if not price or not 299 <= price <= 9999:
@@ -139,7 +172,8 @@ def apply():
     if linkedin and not LINKEDIN.match(linkedin):
         abort(400, "Use your full LinkedIn profile link, starting with https://www.linkedin.com/")
     if f.get("agree") != "true":
-        abort(400, "Please agree to the mentor guidelines.")
+        abort(400, "Please agree to the Mentor Code of Conduct and the declarations.")
+    details = _details(f.get("details"))
 
     a = MentorApplication(
         user_id=user.id, community=community, graduation_year=year, graduated=f.get("graduated") == "true",
@@ -148,7 +182,7 @@ def apply():
         experience=_text(f, "experience", "Experience", 2, 255, required=False),
         topics=_list(f, "topics", "Topics", 8, 60), languages=_list(f, "languages", "Languages", 6, 30),
         linkedin=linkedin, price_minor=price * 100, session_minutes=minutes, timezone=tz,
-        weekly_hours=weekly_hours(f.get("weeklyHours")),
+        weekly_hours=weekly_hours(f.get("weeklyHours")), details=details,
     )
     a.cv_key = _file("cv", "CV", allow_images=False)
     a.proof_key = _file("proof", "proof of enrolment or degree", allow_images=True)
@@ -160,7 +194,10 @@ def apply():
             ("Studies", f"{a.course}, {a.university}, {'graduated' if a.graduated else 'graduating'} {a.graduation_year}"),
             ("Headline", a.headline), ("Topics", ", ".join(a.topics)), ("Languages", ", ".join(a.languages)),
             ("Sessions", f"{a.session_minutes} min at ₹{price}, {slots} times a week ({a.timezone})"),
-            ("LinkedIn", a.linkedin or "-")]
+            ("LinkedIn", a.linkedin or "-"),
+            ("Mobile", f"{details['mobileCode']} {details['mobile']}"), ("Lives in", f"{details['city']}, {details['currentCountry']}"),
+            ("Work", f"{details['jobTitle']}, {details['organisation']} ({details['totalExperience']})"),
+            ("Mentors for", ", ".join(details["mentorCountries"]) if isinstance(details["mentorCountries"], list) else details["mentorCountries"])]
     html = "".join(f"<p><b>{k}:</b> {escape(v)}</p>" for k, v in rows) + f"<p>{escape(a.about)}</p>"
     # The application is saved: a failed email must not tell the applicant it was lost
     mailer.send_quietly(current_app.config["CONTACT_EMAIL"], f"[Mentor application #{a.id}] {user.display_name}", html,

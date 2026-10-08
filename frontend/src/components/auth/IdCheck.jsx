@@ -7,7 +7,7 @@ import { FormError, Spinner } from './fields'
 const DOCUMENTS = [
   { value: 'passport', label: 'Passport', page: 'the photo page of your passport' },
   { value: 'driving_licence', label: 'Driving licence', page: 'the front of your driving licence' },
-  { value: 'national_id', label: 'National ID', page: 'the front of your ID card (Aadhaar, PAN or similar)' },
+  { value: 'national_id', label: 'Aadhaar or PAN', page: 'the front of your Aadhaar or PAN card, with the number showing' },
 ]
 const SOURCES = { mrz: 'the machine-readable lines', label: 'the date of birth field', date: 'the dates on the document' }
 
@@ -110,7 +110,7 @@ export default function IdCheck({ onDone }) {
         <div className="verify-result" role="status">
           <span className="verify-result-label">Date of birth</span>
           <strong>{formatDate(result.dateOfBirth)}</strong>
-          <span className="verify-result-note">Read from {SOURCES[result.source]} on your {doc.label.toLowerCase()}.</span>
+          <span className="verify-result-note">Read from {SOURCES[result.source]} on your {(DOCUMENTS.find((d) => d.value === result.documentType) || doc).label.toLowerCase()}.</span>
           <div className="verify-actions">
             <button className="btn btn-primary" onClick={() => onDone(result.user)}>
               Continue <span className="btn-arrow" aria-hidden><ArrowRight size={15} /></span>

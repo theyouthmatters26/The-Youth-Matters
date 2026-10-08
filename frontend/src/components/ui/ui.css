@@ -49,7 +49,8 @@
    Black panel on light pages, white on dark bands. Side by side when the column is wide. */
 .gate { position: relative; container-type: inline-size; }
 .gate-preview {
-  max-height: 240px; overflow: hidden; pointer-events: none; user-select: none; filter: blur(2px); opacity: 0.75;
+  /* never shorter than the panel's overlap: with nothing to preview yet, the panel must not ride up over what is above */
+  min-height: 96px; max-height: 240px; overflow: hidden; pointer-events: none; user-select: none; filter: blur(2px); opacity: 0.75;
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 88%); mask-image: linear-gradient(to bottom, #000 0%, transparent 88%);
 }
 .gate-panel {

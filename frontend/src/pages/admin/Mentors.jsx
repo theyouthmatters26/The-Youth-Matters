@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ArrowUpRight, FileText, Star } from 'lucide-react'
 import { FormError, Spinner } from '../../components/auth/fields'
+import { ALL_FIELDS, plain } from '../../data/mentorForm'
 import { adminApi, openAdminFile, useAdminApi } from '../../lib/admin'
 import { formatMoney, plural } from '../../lib/format'
 import { Confirm, Empty, Facts, Loading, PageHead, Person, Pill, Sheet, Tabs, ago, day } from './ui'
@@ -48,6 +49,12 @@ function Application({ a, onClose, onDone }) {
         <h3 className="adm-h2">About them</h3>
         <p className="adm-prose">{a.about}</p>
       </section>
+      {Object.keys(a.details || {}).length > 0 && (
+        <section>
+          <h3 className="adm-h2">Registration form</h3>
+          <Facts items={ALL_FIELDS.map(([key, label]) => [plain(label), [].concat(a.details[key] || []).join(', ')])} />
+        </section>
+      )}
       <section>
         <h3 className="adm-h2">Documents</h3>
         <div className="adm-action-row">

@@ -127,6 +127,7 @@ class MentorApplication(Model):
     session_minutes = db.Column(db.SmallInteger, nullable=False)
     timezone = db.Column(db.String(64), nullable=False)
     weekly_hours = db.Column(db.JSON, nullable=False)
+    details = db.Column(db.JSON)  # the rest of the registration form's answers, for the review team only
     cv_key = db.Column(db.String(255), nullable=False)
     proof_key = db.Column(db.String(255), nullable=False)
     note = db.Column(db.String(500))  # the team's reason when they turn an application down

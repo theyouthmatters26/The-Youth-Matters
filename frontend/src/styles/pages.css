@@ -256,6 +256,8 @@ form.card-pad { padding: var(--s-7); gap: var(--s-5); }
 .about-lede { font-size: var(--step-3); line-height: 1.2; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 6vw, 96px); align-items: start; padding-bottom: var(--section); }
 .prose p { line-height: 1.75; color: var(--muted); font-size: var(--step-1); }
+.prose h2 { font-size: var(--step-1); font-weight: 500; margin-top: var(--s-4); }
+.prose ul { margin: 0; padding-left: 1.2em; display: grid; gap: var(--s-1); line-height: 1.6; color: var(--muted); }
 .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-7); padding-top: var(--s-7); border-top: 1px solid var(--line); }
 .value { display: grid; gap: var(--s-2); align-content: start; }
 .value h3 { font-size: var(--step-1); }
@@ -289,6 +291,9 @@ form.card-pad { padding: var(--s-7); gap: var(--s-5); }
 .apply-photo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-5); }
 .apply-section .segmented { align-self: end; }
 .apply-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.apply-many { border: 0; margin: 0; padding: 0; min-width: 0; }
+.apply-many legend, .apply-q { font-size: var(--step--1); font-weight: 500; padding: 0; margin-bottom: var(--s-2); }
+.apply-many .grid-2 { gap: var(--s-2) var(--s-5); }
 .tag-box {
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 48px; padding: 6px 8px;
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); transition: border-color 0.2s;

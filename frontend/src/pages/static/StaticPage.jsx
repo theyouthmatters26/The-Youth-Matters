@@ -1,8 +1,10 @@
 import { useLocation } from 'react-router-dom'
 import { useMeta } from '../../lib/meta'
+import { policies } from '../../data/policies'
 import NotFound from '../NotFound'
 
-// Footer pages. Final legal copy comes from the client; these are placeholders in the right structure.
+// Footer pages. The policies are the client's own wording (data/policies.js); the first three are ours.
+// A page is [title, introduction, body, last updated]. The body is a list of blocks, or a policy from that file.
 const PAGES = {
   '/news': ['Latest news', 'Updates from the TYM team: new destinations, features and community events.', [
     'Communities are open for the United Kingdom, United States, Canada, Australia, Ireland and Germany, and more destinations will follow as the community grows.',
@@ -13,42 +15,23 @@ const PAGES = {
   '/volunteer': ['Volunteer', 'Help moderate the community, welcome new members or run a country chatroom.', [
     'Volunteers are experienced members with a good standing record. Write to support@theyouthmatters.com with the hub you would like to help with.',
   ]],
-  '/queries': ['Queries and suggestions', 'Found a bug, missing a country, or have an idea that would make TYM better?', [
-    'Write to support@theyouthmatters.com. We read every message and reply to questions within two working days.',
-  ]],
-  '/guidelines': ['Community guidelines', 'How we keep TYM useful, kind and safe for everyone.', [
-    'Answer from experience, say when you are unsure, and link official sources for visa or money rules.',
-    'No harassment, hate, threats or personal attacks. Disagree with ideas, not people.',
-    'Never post passport numbers, bank details or anyone else\'s private information.',
-    'Offensive words are hidden automatically. Repeat behaviour leads to a warning, then a 24 hour mute, then suspension pending review.',
-  ]],
-  '/payment-terms': ['Payment terms', 'How paying for mentor sessions works.', [
-    'Sessions are paid in advance through Razorpay by UPI, card or net banking. Prices are shown in INR.',
-    'Cancel up to 24 hours before a session for a full refund.',
-    'Every payment gets an invoice number, shown with the session in your profile, and a confirmation email.',
-  ]],
-  '/help-safety': ['Help and safety', 'What to do if something goes wrong.', [
-    'Use Report on any post, comment, message or profile. Our team reviews every report.',
-    'Blocking hides someone\'s posts and messages from you and stops them contacting you.',
-    'Never send money to anyone you met on TYM outside of mentor bookings.',
-  ]],
-  '/terms': ['Terms and conditions', 'The rules for using The Youth Matters.', [
-    'You must be 18 or older to create an account.',
-    'Do not post personal identity documents, abusive content or advertising.',
-    'Mentor sessions are agreements between you and the mentor; TYM processes the payment.',
-  ]],
-  '/privacy': ['Privacy statement', 'What we collect, why, and how we protect it.', [
-    'To confirm every member is 18 or over, we read the date of birth from a photo ID on our own servers. The photo is read in memory and never stored; we keep the date of birth and which kind of document you used, not the document itself.',
-    'We follow the Indian IT Act and GDPR principles. You can ask us to export or delete your data at any time.',
-  ]],
-  '/cookies': ['Cookie policy', 'The cookies we use and how to control them.', [
-    'We use essential cookies to keep you logged in and to protect against abuse. We do not use advertising cookies.',
-  ]],
+  '/queries': ['Queries and suggestions', 'Questions, feedback and suggestions that help us improve The Youth Matters.', policies['/queries']],
+  '/guidelines': ['Community guidelines', 'The behaviour expected from everyone using The Youth Matters, a community for people aged 18 to 32.', policies['/guidelines']],
+  '/payment-terms': ['Payment terms and refund/cancellation policy', 'How payments, cancellations and refunds work for paid offerings on The Youth Matters.', [
+    ...policies['/payment-terms'].blocks,
+    // The one paid offering today, and what the site does for it
+    ['h', 'Mentor sessions'],
+    'Mentor sessions are paid in advance through Razorpay, by UPI, card or net banking, with prices shown in INR. You can cancel up to 24 hours before a session for a full refund. Every payment gets an invoice number, shown with the session in your profile, and a confirmation email.',
+  ], policies['/payment-terms'].updated],
+  '/help-safety': ['Help and safety', 'How we keep The Youth Matters a respectful and safer place, and what to do if something goes wrong.', policies['/help-safety']],
+  '/terms': ['Terms and conditions', 'The terms for using The Youth Matters website, platform and services.', policies['/terms']],
+  '/privacy': ['Privacy policy', 'How we collect, use, store and protect your personal data.', policies['/privacy']],
+  '/cookies': ['Cookie policy', 'How The Youth Matters uses cookies and similar technologies.', policies['/cookies']],
 }
 
 export default function StaticPage() {
   const { pathname } = useLocation()
-  const [title, intro, body] = PAGES[pathname] || []
+  const [title, intro, body, updated = body?.updated] = PAGES[pathname] || []
   useMeta({ title, description: intro, path: pathname })
   if (!title) return <NotFound />
   return (
@@ -56,9 +39,14 @@ export default function StaticPage() {
       <header className="page-head">
         <h1>{title}</h1>
         <p>{intro}</p>
+        {updated && <p className="faint dash-small">Last updated: {updated}</p>}
       </header>
       <div className="card card-pad stack prose">
-        {body.map((p) => <p key={p}>{p}</p>)}
+        {(body.blocks || body).map((b, i) => (
+          typeof b === 'string' ? <p key={i}>{b}</p>
+            : b[0] === 'h' ? <h2 key={i}>{b[1]}</h2>
+              : <ul key={i}>{b[1].map((item) => <li key={item}>{item}</li>)}</ul>
+        ))}
       </div>
     </div>
   )
