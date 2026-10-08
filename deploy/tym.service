@@ -1,0 +1,18 @@
+# The API as a service: starts with the server and comes back by itself if it stops.
+# Copy to /etc/systemd/system/, then: systemctl daemon-reload && systemctl enable --now tym
+#
+# One worker on purpose: rate limits are counted in its memory (see RATELIMIT_STORAGE_URI in config.py).
+
+[Unit]
+Description=The Youth Matters API
+After=network.target postgresql.service
+
+[Service]
+User=tym
+WorkingDirectory=/var/www/tym/backend
+ExecStart=/var/www/tym/backend/.venv/bin/gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 --bind 127.0.0.1:8000 wsgi:app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

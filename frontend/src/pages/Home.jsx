@@ -17,13 +17,42 @@ import '../components/home/home.css'
 // Visitors see this many items per list before the sign-up gate.
 const PREVIEW = 2
 
+const WHY = [
+  ['Chatroom', 'Join the chatroom on study abroad matters and connect with peers who share your interests or face the same challenges.'],
+  ['Free and open', 'The chatroom is completely free: an accessible place to express yourself and have meaningful conversations.'],
+  ['Ask TYM AI', 'Take advice from our AI mentor as well, also for free.'],
+  ['Safe environment', 'Your safety comes first. Conversations are monitored to keep the community respectful and supportive.'],
+  ['Mentorship option', 'For personal guidance, premium mentorship is available to help you through your journey with expert advice.'],
+]
+
+function Why() {
+  return (
+    <section className="section" aria-labelledby="why-title">
+      <div className="container">
+        <header className="section-head" data-reveal>
+          <h2 id="why-title" className="display">Where your voice connects</h2>
+          <p>At The Youth Matters (TYM), we are dedicated to creating a vibrant space where young people can discuss the challenges of studying abroad. Join today and be part of a community where your voice truly matters.</p>
+        </header>
+        <div className="value-grid" data-reveal data-reveal-delay="1">
+          {WHY.map(([title, text]) => (
+            <div key={title} className="value">
+              <h3>{title}</h3>
+              <p className="muted">{text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function Subjects() {
   return (
     <section className="section" aria-labelledby="subjects-title">
       <div className="container subjects">
         <header className="section-head" data-reveal>
           <h2 id="subjects-title" className="display">One community. Every next step.</h2>
-          <p>We are starting with Study Abroad. Career, Education, Entrepreneurship and Life &amp; Experiences open next, built the same way: subject, country, chat rooms, mentors.</p>
+          <p>We are starting with Study Abroad. More chat rooms are on the way, among them education, scholarships, career, research, health, family matters, investments, sports, sustainability and global issues.</p>
         </header>
         <ol className="subject-list" data-reveal data-reveal-delay="1">
           {subjects.map((s) => (
@@ -244,6 +273,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <Why />
       <Subjects />
       <Destinations />
       <LiveCommunity />

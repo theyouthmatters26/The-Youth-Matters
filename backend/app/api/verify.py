@@ -26,10 +26,10 @@ def document():
     if user.status == "active":
         abort(409, "Your account is already verified.")
     if user.status != "pending":  # suspended or banned: an ID photo must not switch the account back on
-        abort(403, "This account is suspended. Write to support@theyouthmatters.org if you think this is a mistake.")
+        abort(403, "This account is suspended. Write to support@theyouthmatters.com if you think this is a mistake.")
     v = user.verification or IdentityVerification(user=user)
     if v.status == "rejected":
-        abort(403, "We could not verify this account. Write to support@theyouthmatters.org for help.")
+        abort(403, "We could not verify this account. Write to support@theyouthmatters.com for help.")
 
     doc_type = request.form.get("documentType")
     if doc_type not in DOCUMENT_TYPES:

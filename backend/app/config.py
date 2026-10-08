@@ -51,8 +51,8 @@ class Config:
     RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
     RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
     RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-    MAIL_FROM = os.getenv("MAIL_FROM") or "The Youth Matters <no-reply@theyouthmatters.org>"
-    CONTACT_EMAIL = os.getenv("CONTACT_EMAIL") or "hello@theyouthmatters.org"  # contact form and mentor applications
+    MAIL_FROM = os.getenv("MAIL_FROM") or "The Youth Matters <no-reply@theyouthmatters.com>"
+    CONTACT_EMAIL = os.getenv("CONTACT_EMAIL") or "support@theyouthmatters.com"  # contact form and mentor applications
 
     # Admin panel: the owner's login. The password is only ever stored as a bcrypt hash.
     ADMIN_EMAIL = (os.getenv("ADMIN_EMAIL") or "").strip().lower()

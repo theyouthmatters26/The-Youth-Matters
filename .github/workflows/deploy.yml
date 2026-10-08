@@ -1,0 +1,114 @@
+# Puts main on the server: code, settings, database changes, then the website built against the live API.
+#
+# The server is set up once by hand (deploy/tym.service, deploy/nginx.conf, the `tym` user). Everything
+# in .env comes from this repository's Actions secrets and variables: change one there and run this again.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency: deploy   # one at a time; a second push waits for the first to finish
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SERVER: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+      APP: /var/www/tym
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Key for the server
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ vars.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      # One settings file for the API and the website build, as on a developer's machine
+      - name: Write .env
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ADMIN_PASSWORD_HASH: ${{ secrets.ADMIN_PASSWORD_HASH }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
+          RAZORPAY_WEBHOOK_SECRET: ${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SPACES_KEY: ${{ secrets.SPACES_KEY }}
+          SPACES_SECRET: ${{ secrets.SPACES_SECRET }}
+        run: |
+          cat > .env <<EOF
+          FLASK_APP=wsgi.py
+          SECRET_KEY=$SECRET_KEY
+          JWT_SECRET_KEY=$JWT_SECRET_KEY
+          CORS_ORIGINS=${{ vars.CORS_ORIGINS }}
+          TRUSTED_PROXIES=${{ vars.TRUSTED_PROXIES }}
+          DATABASE_URL=$DATABASE_URL
+          ADMIN_EMAIL=${{ vars.ADMIN_EMAIL }}
+          ADMIN_PASSWORD_HASH='$ADMIN_PASSWORD_HASH'
+          RESEND_API_KEY=$RESEND_API_KEY
+          MAIL_FROM=${{ vars.MAIL_FROM }}
+          CONTACT_EMAIL=${{ vars.CONTACT_EMAIL }}
+          GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+          VITE_GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
+          RAZORPAY_KEY_ID=${{ vars.RAZORPAY_KEY_ID }}
+          RAZORPAY_KEY_SECRET=$RAZORPAY_KEY_SECRET
+          RAZORPAY_WEBHOOK_SECRET=$RAZORPAY_WEBHOOK_SECRET
+          ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
+          AI_MODEL=${{ vars.AI_MODEL }}
+          SPACES_ENDPOINT=${{ vars.SPACES_ENDPOINT }}
+          SPACES_REGION=${{ vars.SPACES_REGION }}
+          SPACES_KEY=$SPACES_KEY
+          SPACES_SECRET=$SPACES_SECRET
+          SPACES_BUCKET=${{ vars.SPACES_BUCKET }}
+          VITE_SITE_URL=${{ vars.VITE_SITE_URL }}
+          EOF
+          chmod 600 .env
+
+      # What lives only on the server is left alone: its Python packages, members' uploads, the built website
+      - name: Send the code
+        run: |
+          rsync -az --delete \
+            --exclude .git --exclude .github --exclude __pycache__ \
+            --exclude backend/.venv --exclude backend/instance \
+            --exclude frontend/dist --exclude frontend/node_modules \
+            ./ "$SERVER:$APP/"
+
+      - name: Packages, database changes, restart the API
+        run: |
+          ssh "$SERVER" "set -e
+            cd $APP/backend
+            [ -d .venv ] || python3 -m venv .venv
+            .venv/bin/pip install --quiet --no-cache-dir -r requirements.txt
+            .venv/bin/flask --app wsgi db upgrade
+            .venv/bin/python ../database/seed.py
+            sudo systemctl restart tym"
+
+      # The public pages are drawn from live data, so the build talks to the API through the server
+      - name: Reach the API
+        run: |
+          ssh -f -N -L 5000:127.0.0.1:8000 "$SERVER"
+          for i in $(seq 30); do curl -fs http://localhost:5000/api/health && exit 0; sleep 2; done
+          echo "The API did not start. On the server: journalctl -u tym -n 50" && exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the website
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Send the website
+        run: rsync -az --delete frontend/dist/ "$SERVER:$APP/frontend/dist/"

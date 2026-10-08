@@ -7,4 +7,4 @@ Disallow: /settings
 Disallow: /notifications
 Allow: /
 
-Sitemap: https://theyouthmatters.org/sitemap.xml
+Sitemap: https://theyouthmatters.com/sitemap.xml

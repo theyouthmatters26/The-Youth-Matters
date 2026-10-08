@@ -80,7 +80,7 @@ function Teammate({ person, areas, onClose, onSaved }) {
         {adding && (
           <div className="field">
             <label htmlFor="tm-email">Email</label>
-            <input id="tm-email" type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="sam@theyouthmatters.org" />
+            <input id="tm-email" type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="sam@theyouthmatters.com" />
             <span className="hint">They sign in with this. Reply and waiting-student emails also go here.</span>
           </div>
         )}

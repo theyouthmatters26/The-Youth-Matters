@@ -83,7 +83,7 @@ class ErrorBoundary extends Component {
       <div className="container page narrow" role="alert">
         <p className="eyebrow">A short delay</p>
         <h1 className="error-title">This page did not load properly.</h1>
-        <p className="muted error-text">Reloading usually fixes it. If it keeps happening, write to hello@theyouthmatters.org.</p>
+        <p className="muted error-text">Reloading usually fixes it. If it keeps happening, write to support@theyouthmatters.com.</p>
         <button className="btn btn-primary" onClick={() => window.location.reload()}>Reload the page</button>
       </div>
     )

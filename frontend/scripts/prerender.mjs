@@ -35,7 +35,7 @@ function setting(name) {
     return line?.slice(name.length + 1).trim().replace(/^['"]|['"]$/g, '') || ''
   } catch { return '' }
 }
-const SITE = (setting('VITE_SITE_URL') || 'https://theyouthmatters.org').replace(/\/$/, '')
+const SITE = (setting('VITE_SITE_URL') || 'https://theyouthmatters.com').replace(/\/$/, '')
 
 function chrome() {
   const places = [

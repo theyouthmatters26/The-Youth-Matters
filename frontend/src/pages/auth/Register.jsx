@@ -148,7 +148,7 @@ function Finished({ account, from, logout }) {
   }
   return (
     <AuthLayout title="We could not verify this account" aside={<WhyWeCheck />}
-      subtitle="If you think this is a mistake, write to support@theyouthmatters.org and we will look again.">
+      subtitle="If you think this is a mistake, write to support@theyouthmatters.com and we will look again.">
       <Link to="/contact" className="btn btn-primary btn-block">Contact us</Link>
       <p className="auth-switch"><button className="btn-text" onClick={logout}>Log out</button></p>
     </AuthLayout>

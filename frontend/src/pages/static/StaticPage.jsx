@@ -8,13 +8,13 @@ const PAGES = {
     'Communities are open for the United Kingdom, United States, Canada, Australia, Ireland and Germany, and more destinations will follow as the community grows.',
   ]],
   '/careers': ['Work for us', 'We are a small team building a calmer way to prepare for studying abroad.', [
-    'We do not have open roles right now. Send your CV and a short note to careers@theyouthmatters.org and we will keep you in mind.',
+    'We do not have open roles right now. Send your CV and a short note to support@theyouthmatters.com and we will keep you in mind.',
   ]],
   '/volunteer': ['Volunteer', 'Help moderate the community, welcome new members or run a country chatroom.', [
-    'Volunteers are experienced members with a good standing record. Write to volunteer@theyouthmatters.org with the hub you would like to help with.',
+    'Volunteers are experienced members with a good standing record. Write to support@theyouthmatters.com with the hub you would like to help with.',
   ]],
   '/queries': ['Queries and suggestions', 'Found a bug, missing a country, or have an idea that would make TYM better?', [
-    'Write to hello@theyouthmatters.org. We read every message and reply to questions within two working days.',
+    'Write to support@theyouthmatters.com. We read every message and reply to questions within two working days.',
   ]],
   '/guidelines': ['Community guidelines', 'How we keep TYM useful, kind and safe for everyone.', [
     'Answer from experience, say when you are unsure, and link official sources for visa or money rules.',

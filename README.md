@@ -173,8 +173,8 @@ committed. Only names that start with `VITE_` are sent to the browser.
 | `ADMIN_EMAIL` | The owner of the admin panel. This account always has every part of it. | Nobody can sign in to the panel. |
 | `ADMIN_PASSWORD_HASH` | A bcrypt hash of the owner's first password. | Nobody can sign in to the panel. |
 | `RESEND_API_KEY` | Sends email: sign-up codes, booking confirmations, contact messages, and alerts to the team when a student asks for a person. | No email is sent. |
-| `MAIL_FROM` | The "from" name and address on those emails. | `The Youth Matters <no-reply@theyouthmatters.org>` |
-| `CONTACT_EMAIL` | Where the contact form and mentor applications are sent. | `hello@theyouthmatters.org` |
+| `MAIL_FROM` | The "from" name and address on those emails. | `The Youth Matters <no-reply@theyouthmatters.com>` |
+| `CONTACT_EMAIL` | Where the contact form and mentor applications are sent. | `support@theyouthmatters.com` |
 | `GOOGLE_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID` | Google sign-in. The same client ID goes in both. | The Google button says it is not switched on yet. |
 | `GOOGLE_CLIENT_SECRET` | Not used by the sign-in flow. | Nothing changes. |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Mentor session payments. Test keys (`rzp_test_...`) work end to end without real money. | Bookings cannot be paid for. |
@@ -399,7 +399,7 @@ A few habits that keep the code consistent:
    `payment.captured` and `order.paid` events, and put its secret in `RAZORPAY_WEBHOOK_SECRET`. Keep
    automatic capture switched on.
 7. In Google Cloud Console, add your domain to the sign-in client's JavaScript origins.
-8. Update the domain in `frontend/public/robots.txt` if it is not `theyouthmatters.org`. The sitemap is
+8. Update the domain in `frontend/public/robots.txt` if it is not `theyouthmatters.com`. The sitemap is
    written by the build from `VITE_SITE_URL`.
 9. Before opening the doors, replace the placeholders: the legal pages (terms, privacy, cookies,
    payment terms), the example journeys on the Case Studies page, and the social links in

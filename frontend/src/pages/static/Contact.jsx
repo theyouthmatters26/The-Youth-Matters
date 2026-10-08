@@ -39,7 +39,7 @@ export default function Contact() {
         <div className="stack">
           <h1 style={{ fontSize: 'var(--step-4)' }}>Talk to the team</h1>
           <p className="muted">Questions about your account, payments, safety or partnerships. A person reads every message, and we reply within two working days.</p>
-          <a href="mailto:hello@theyouthmatters.org" className="contact-line"><Mail size={16} /> hello@theyouthmatters.org</a>
+          <a href="mailto:support@theyouthmatters.com" className="contact-line"><Mail size={16} /> support@theyouthmatters.com</a>
           <ul className="contact-routes">
             {ROUTES.map(([to, title, text]) => (
               <li key={to}><Link to={to}><strong>{title}</strong><span>{text}</span><ArrowUpRight size={16} aria-hidden /></Link></li>

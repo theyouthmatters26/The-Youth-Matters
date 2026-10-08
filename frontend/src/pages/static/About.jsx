@@ -9,11 +9,11 @@ const VALUES = [
 ]
 
 export default function About() {
-  useMeta({ title: 'About TYM', description: 'The Youth Matters is built by students who wished it had existed: one place to ask before you go abroad, and to answer once you are there.', path: '/about' })
+  useMeta({ title: 'About TYM', description: 'The Youth Matters connects young people through honest conversation about studying abroad. Founded in 2026 by a team of alumni who wanted to guide the youth through that decision.', path: '/about' })
   return (
     <div className="container page">
       <header className="page-head">
-        <h1>Built by students who wished this <em>existed.</em></h1>
+        <h1>Our mission is simple: to connect <em>youth.</em></h1>
       </header>
 
       <section className="about-story">
@@ -21,10 +21,11 @@ export default function About() {
           <Photo src="/images/hero-students.jpg" alt="Four students talking around a table" sizes="(max-width: 1240px) 92vw, 1160px" priority />
         </figure>
         <div className="about-copy">
-          <h2 className="display about-lede">One place for every question between the offer letter and the flight.</h2>
+          <h2 className="display about-lede">Communication is the solution for the youth.</h2>
           <div className="prose stack">
-            <p>The Youth Matters started with a group chat. A handful of us were applying to UK universities, swapping screenshots of visa checklists and asking the same questions over and over. The answers existed, but they were scattered across forums, agents with something to sell, and friends of friends.</p>
-            <p>So we built one place for it. Ask anything about studying abroad, get answers from people who have just done it, and talk to them live. We are starting with the UK and adding destinations as the community grows.</p>
+            <p>At TYM, we connect young people through seamless, intuitive and engaging chat. Founded in 2026, TYM was created by a team of passionate alumni who wanted to guide the youth through the critical decisions that come with studying abroad. We saw the chance to build a chat platform that puts its members first, and set out to make something special.</p>
+            <p>The Youth Matters grew out of our founder's own experience of how hard those decisions were during her study abroad journey. She holds a master's in Artificial Intelligence from a reputed university in the UK, and brings an international outlook from a childhood spent in the multicultural atmosphere of Dubai.</p>
+            <p>Thank you for being part of our journey. The TYM team</p>
           </div>
           <Link to="/register" className="btn btn-primary">Join the community</Link>
         </div>

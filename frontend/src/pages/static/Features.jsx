@@ -11,6 +11,17 @@ const FEATURES = [
   { Icon: ShieldCheck, title: 'A safer community', text: 'Every member is 18+ and checked with a photo ID, abuse is filtered automatically, and there is a three-strike policy and one-click reporting.', to: '/faq', cta: 'How moderation works' },
 ]
 
+// From the client's feature list: only what the site does today
+const INCLUDED = [
+  ['Accounts', 'Sign up and sign in with your email or Google, confirm your age once, and reset a forgotten password by email.'],
+  ['Your profile', 'A profile with your own photo, cover and personal details.'],
+  ['Notifications', 'Alerts in the site when someone answers you or there is an update that matters.'],
+  ['Chat history and search', 'Chat room messages are saved, and you can search questions, answers and members.'],
+  ['Free chat rooms', 'Specialised chat rooms on study abroad matters, free to join.'],
+  ['Your data', 'The security of your personal data is our top priority.'],
+]
+const MENTOR_KINDS = ['Higher education', 'Study abroad', 'Migration', 'Career', 'Finance management', 'Social matters', 'Friendship', 'Marriage', 'Investment', 'Mental health']
+
 export default function Features() {
   useMeta({ title: 'Features', description: 'Country communities, questions and answers, live chat rooms, Ask TYM AI and one-to-one sessions with student mentors: everything between the offer letter and the flight.', path: '/features' })
   return (
@@ -28,6 +39,26 @@ export default function Features() {
           </article>
         ))}
       </div>
+
+      <section className="value-grid">
+        {INCLUDED.map(([title, text]) => (
+          <div key={title} className="value">
+            <h3>{title}</h3>
+            <p className="muted">{text}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="value-grid" style={{ marginTop: 'var(--s-7)' }}>
+        <div className="value">
+          <h3>TYM Mentors</h3>
+          <p className="muted">Mentor sessions are a premium service: one-to-one time with an experienced person from the field. Study abroad mentors are open now, and we are bringing in counsellors for {MENTOR_KINDS.join(', ').toLowerCase()}.</p>
+        </div>
+        <div className="value">
+          <h3>More chat rooms</h3>
+          <p className="muted">After Study Abroad: education, scholarships, career, research, health, family matters, investments, social concerns, sports, entertainment, politics, sustainability, global issues and climate.</p>
+        </div>
+      </section>
     </div>
   )
 }

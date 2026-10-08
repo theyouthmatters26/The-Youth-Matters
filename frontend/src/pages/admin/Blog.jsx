@@ -176,7 +176,7 @@ function Editor({ id, onClose }) {
               <label htmlFor="b-slug">Web address</label>
               <input id="b-slug" className="input mono" value={a.slug} maxLength={160} placeholder="made-from-the-title"
                 onChange={(e) => { setSlugTouched(true); setA({ ...a, slug: slugify(e.target.value) }) }} />
-              <span className="hint">theyouthmatters.org/blogs/{a.slug || '...'}</span>
+              <span className="hint">theyouthmatters.com/blogs/{a.slug || '...'}</span>
             </div>
           </div>
 

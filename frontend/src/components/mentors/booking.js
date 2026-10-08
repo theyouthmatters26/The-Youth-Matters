@@ -36,7 +36,7 @@ export function downloadIcs(booking) {
   const who = booking.mentor.user.displayName
   const text = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//The Youth Matters//Sessions//EN', 'BEGIN:VEVENT',
-    `UID:tym-booking-${booking.id}@theyouthmatters.org`, `DTSTAMP:${icsDate(new Date().toISOString())}`,
+    `UID:tym-booking-${booking.id}@theyouthmatters.com`, `DTSTAMP:${icsDate(new Date().toISOString())}`,
     `DTSTART:${icsDate(booking.startsAt)}`, `DTEND:${icsDate(booking.endsAt)}`,
     `SUMMARY:TYM session with ${who}`, `DESCRIPTION:Join the call: ${booking.meetingUrl}`,
     `URL:${booking.meetingUrl}`, 'END:VEVENT', 'END:VCALENDAR',

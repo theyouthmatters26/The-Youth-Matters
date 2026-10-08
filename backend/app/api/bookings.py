@@ -167,7 +167,7 @@ def verify(booking_id):
     if not b.payment or order_id != b.payment.razorpay_order_id or not payments.valid_payment(
             order_id, payment_id, data.get("razorpay_signature")):
         abort(400, "We could not confirm this payment. If money left your account, write to "
-                   "support@theyouthmatters.org with your payment ID and we will sort it out.")
+                   "support@theyouthmatters.com with your payment ID and we will sort it out.")
     try:
         confirmed = confirm(b.payment, payment_id)
     except payments.PaymentError:
@@ -238,7 +238,7 @@ def cancel(booking_id):
         abort(409, "This session can no longer be cancelled.")
     if b.slot.starts_at - utcnow() < FREE_CANCEL:
         abort(409, "Sessions can be cancelled up to 24 hours before they start. "
-                   "If something urgent came up, write to support@theyouthmatters.org.")
+                   "If something urgent came up, write to support@theyouthmatters.com.")
     try:
         refund = payments.refund(b.payment.razorpay_payment_id, b.payment.amount_minor)
     except payments.PaymentError:

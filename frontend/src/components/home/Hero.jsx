@@ -92,8 +92,8 @@ export default function Hero() {
       <div className="container hero-grid">
         <div className="hero-copy">
           <p className="hero-eyebrow">Study abroad community</p>
-          <h1>Every question before you go, answered by someone who went.</h1>
-          <p className="hero-sub">Honest answers on visas, money and housing from students who made the move last year.</p>
+          <h1>We guide you to the future.</h1>
+          <p className="hero-sub">A free space where young people aged 18 to 32 come together on studying abroad: seek advice, share experiences, or talk about what is on your mind.</p>
           <div className="hero-actions">
             <Link to="/register" className="btn btn-light">
               Join the community <span className="btn-arrow" aria-hidden><ArrowUpRight size={15} /></span>

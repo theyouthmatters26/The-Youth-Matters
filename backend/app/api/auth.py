@@ -100,7 +100,7 @@ def _use_code(user, code):
 
 def _check_allowed(user):
     if user.status in ("suspended", "banned"):
-        abort(403, "This account is suspended. Write to support@theyouthmatters.org if you think this is a mistake.")
+        abort(403, "This account is suspended. Write to support@theyouthmatters.com if you think this is a mistake.")
 
 
 def _session(user):
