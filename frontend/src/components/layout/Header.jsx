@@ -11,6 +11,7 @@ import './layout.css'
 export const NAV = [
   { to: '/', label: 'Home', end: true },
   { to: '/about', label: 'About TYM' },
+  { to: '/features', label: 'Features' },
   { to: '/community', label: 'Community ChatRoom' },
   { to: '/ai', label: 'Ask TYM AI', highlight: true },
   { to: '/mentors', label: 'TYM Mentors' },
