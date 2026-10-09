@@ -158,7 +158,7 @@ function Sessions() {
   )
 }
 
-function MentorHours() {
+export function MentorHours() {
   const list = useAdminApi('/admin/earnings')
   if (list.error) return <Empty title="We could not load mentor hours" text={list.error.message} />
   if (!list.data) return <Loading what="mentor hours" />
@@ -216,7 +216,7 @@ function PackageForm({ p, onSaved, onClose }) {
   )
 }
 
-function Packages() {
+export function Packages() {
   const list = useAdminApi('/admin/packages')
   const [open, setOpen] = useState(null) // a package, or 'new'
   if (list.error) return <Empty title="We could not load packages" text={list.error.message} />

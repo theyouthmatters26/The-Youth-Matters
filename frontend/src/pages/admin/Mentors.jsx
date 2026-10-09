@@ -4,6 +4,7 @@ import { FormError, Spinner } from '../../components/auth/fields'
 import { ALL_FIELDS, plain } from '../../data/mentorForm'
 import { adminApi, openAdminFile, useAdminApi } from '../../lib/admin'
 import { plural } from '../../lib/format'
+import { MentorHours, Packages } from './Payments'
 import { Confirm, Empty, Facts, Loading, PageHead, Person, Pill, Sheet, Tabs, ago, day } from './ui'
 
 const DAYS = [['mon', 'Mon'], ['tue', 'Tue'], ['wed', 'Wed'], ['thu', 'Thu'], ['fri', 'Fri'], ['sat', 'Sat'], ['sun', 'Sun']]
@@ -262,13 +263,15 @@ export default function Mentors({ onChanged }) {
   const pending = useAdminApi('/admin/mentor-applications?status=pending')
   return (
     <>
-      <PageHead eyebrow="Mentors" title="Applications and the directory"
-        text="When someone fills in the mentor form on the site, their application lands here with their CV and proof of study. Approve it and their profile goes live in TYM Mentors, bookable straight away. Turn it down with a note and they can fix it and apply again." />
+      <PageHead eyebrow="Mentors" title="Applications, the directory and charges"
+        text="When someone fills in the mentor form on the site, their application lands here with their CV and proof of study. Approve it and their profile goes live in TYM Mentors, bookable straight away. Turn it down with a note and they can fix it and apply again. Under Charges you set what counselling hours cost: every mentor costs the same, and students pay with hours." />
       <div className="adm-toolbar">
         <Tabs label="Mentors" value={tab} onChange={setTab}
-          items={[['pending', 'New applications', pending.data?.length], ['approved', 'Approved'], ['rejected', 'Turned down'], ['directory', 'Mentors on the site']]} />
+          items={[['pending', 'New applications', pending.data?.length], ['approved', 'Approved'], ['rejected', 'Turned down'], ['directory', 'Mentors on the site'], ['charges', 'Charges'], ['hours', 'Mentor hours']]} />
       </div>
-      {tab === 'directory' ? <Directory /> : <Applications key={tab} status={tab} onChanged={() => { pending.reload(); onChanged?.() }} />}
+      {/* What students pay and what each mentor gave: the same screens as under Payments, where people also look for them */}
+      {tab === 'charges' ? <Packages /> : tab === 'hours' ? <MentorHours />
+        : tab === 'directory' ? <Directory /> : <Applications key={tab} status={tab} onChanged={() => { pending.reload(); onChanged?.() }} />}
     </>
   )
 }
