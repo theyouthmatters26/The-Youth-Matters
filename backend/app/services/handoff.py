@@ -72,8 +72,11 @@ def alert_team(conversation, heading):
             f"<p><b>{escape(conversation.title)}</b></p>"
             f"<blockquote>{escape(conversation.last_preview or '')}</blockquote>"
             f"<p><a href='{link}'>Open the conversation</a></p>")
-    for member in support_team():
-        mailer.send_quietly(member.email, f"A student is waiting: {conversation.title}", html, reply_to=student.email)
+    # Everyone on the team who answers support, and the support inbox itself, so a request for a
+    # person is seen even when nobody on the team has been given support access yet
+    to = {member.email for member in support_team()} | {current_app.config["CONTACT_EMAIL"]}
+    for address in sorted(a for a in to if a):
+        mailer.send_quietly(address, f"A student is waiting: {conversation.title}", html, reply_to=student.email)
 
 
 def tell_student(conversation, member, text):

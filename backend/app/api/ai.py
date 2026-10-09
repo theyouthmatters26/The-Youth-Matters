@@ -8,6 +8,8 @@ step in (services/handoff.py); the student sees their replies in the same conver
     POST   /ai/conversations/<id>/human            ask for a person, or {cancel: true} to go back to TYMAi
     DELETE /ai/conversations/<id>
 """
+import re
+
 from flask import Blueprint, abort, jsonify, request
 from flask_jwt_extended import current_user, jwt_required
 
@@ -20,6 +22,15 @@ from .posts import member
 bp = Blueprint("ai", __name__)
 
 HISTORY = 20  # earlier turns sent with each question
+# "can I talk to a human", "connect me to a real person", "I want an agent": asking in words works like the button
+WANTS_PERSON = re.compile(
+    r"\b(?:talk|speak|chat|connect|transfer|get|need|want|reach)\b[^.?!\n]{0,40}\b"
+    r"(?:(?:a|an|the|real|actual|live) human(?! (?:rights|resources?|biology|anatomy|geography|sciences?|behaviou?r))|"
+    r"real person|a person|someone real|an? agent|live agent|representative|someone from (?:the|your) team|"
+    r"the team|your team|support team|customer (?:care|support|service))\b", re.I)
+ASKED = ("Done. I have told the TYM team that you would like to talk to a person. Someone will reply right "
+         "here, and we will email you when they do. I am not going anywhere in the meantime, so keep "
+         "asking me things if you like.")
 
 
 def _conversation(conversation_id):
@@ -95,6 +106,12 @@ def ask():
     if c.status == "human":
         # A person is handling this one: TYMAi stays quiet and the team hears the student wrote
         handoff.alert_team(c, "replied and is waiting for you")
+        db.session.commit()
+    elif c.status == "ai" and len(question) <= 200 and WANTS_PERSON.search(question):
+        # They asked for a person in their own words: tell the team, as the button does
+        c.status, c.human_requested_at = "waiting", utcnow()
+        handoff.alert_team(c, "asked to talk to a person")
+        sent.append(handoff.add_message(c, "assistant", ASKED))
         db.session.commit()
     else:
         db.session.commit()

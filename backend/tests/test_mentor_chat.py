@@ -3,6 +3,7 @@ import json
 import pytest
 from werkzeug.exceptions import BadRequest
 
+from app.api.ai import WANTS_PERSON
 from app.api.chat import ASKS_TYMAI
 from app.api.mentor_applications import weekly_hours
 
@@ -23,3 +24,13 @@ def test_tymai_is_asked_only_by_a_real_mention():
     assert ASKS_TYMAI.search("hey @tymai, help")
     assert not ASKS_TYMAI.search("mail me at me@tymai.com")
     assert not ASKS_TYMAI.search("@tymaibot hello")
+
+
+def test_asking_for_a_person_in_words_is_understood():
+    for text in ("Can I talk to a human please?", "connect me to a real person", "I want to speak with someone from your team",
+                 "I need an agent", "please transfer me to customer support"):
+        assert WANTS_PERSON.search(text), text
+    for text in ("How do I talk to my professor about an extension?", "Which person signs the CAS?",
+                 "What is the best way to reach the embassy?", "I want to study human biology",
+                 "I want to do a human rights course in the UK"):
+        assert not WANTS_PERSON.search(text), text
