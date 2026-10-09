@@ -34,7 +34,7 @@ export default function Footer() {
         <div className="footer-brand">
           <Link to="/" className="footer-logo" aria-label="The Youth Matters, home">
             <Photo src="/logo.png" width="48" height="50" sizes="48px" />
-            <span>The Youth Matters</span>
+            <span><b>T</b>he <b>Y</b>outh <b>M</b>atters</span>
           </Link>
           <p className="footer-line display">Ask before you fly.</p>
           <p className="muted">A community of students helping each other take the next step, one honest answer at a time.</p>

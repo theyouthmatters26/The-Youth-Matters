@@ -44,6 +44,9 @@ class User(Model):
     course = db.Column(db.String(120))
     intake = db.Column(db.String(40))  # e.g. "September 2026"
 
+    # Counselling time bought and not yet spent, in minutes: whole numbers, so half-hour sessions add up exactly
+    counseling_minutes = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+
     last_seen_at = db.Column(db.DateTime(timezone=True), default=utcnow)
 
     target_country = db.relationship("Country")

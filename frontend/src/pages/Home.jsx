@@ -9,7 +9,7 @@ import Photo from '../components/ui/Photo'
 import { caseStudies, countries, subjects } from '../data/sample'
 import { useArticles } from '../lib/blog'
 import { useApi } from '../lib/api'
-import { formatCount, formatMoney } from '../lib/format'
+import { formatCount } from '../lib/format'
 import { useAuth } from '../lib/auth'
 import { SITE, siteUrl, useMeta } from '../lib/meta'
 import '../components/home/home.css'
@@ -168,7 +168,7 @@ function MentorCard({ m, featured = false }) {
       <p>{m.headline}</p>
       <footer>
         <span>{m.rating ? <><Star size={13} /> {m.rating} · {m.reviewCount} reviews</> : 'New mentor'}</span>
-        <span>{formatMoney(m.priceMinor, m.currency)} / {m.sessionMinutes} min</span>
+        <span>{m.sessionMinutes} min · counselling hours</span>
       </footer>
     </Link>
   )
@@ -195,7 +195,7 @@ function MentorsBand() {
         <div className="mentor-band-grid" data-reveal data-reveal-delay="1">
           {(user ? list : list.slice(0, PREVIEW)).map((m, i) => <MentorCard key={m.id} m={m} featured={i === 0} />)}
           {!user && list[PREVIEW] && (
-            <Gate tone="dark" title={`${all.length - PREVIEW} more mentors`} text="Sign up to see every mentor, their open times and prices.">
+            <Gate tone="dark" title={`${all.length - PREVIEW} more mentors`} text="Sign up to see every mentor and their open times.">
               <MentorCard m={list[PREVIEW]} />
             </Gate>
           )}

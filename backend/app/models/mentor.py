@@ -21,8 +21,7 @@ class MentorProfile(Model):
     links = db.Column(db.JSON)  # e.g. {"linkedin": "..."}
     topics = db.Column(db.JSON)  # what they help with, shown as a list
     languages = db.Column(db.JSON)
-    price_minor = db.Column(db.Integer, nullable=False)  # paise
-    currency = db.Column(db.String(3), nullable=False, default="INR")
+    # No price of their own: students spend counselling hours (CounselingPackage) on any mentor
     session_minutes = db.Column(db.SmallInteger, nullable=False, default=30)
     # Bookable hours in the mentor's own time zone, e.g. {"mon": ["18:00", "19:00"], "sat": ["10:30"]}
     timezone = db.Column(db.String(64), nullable=False, default="Europe/London")
@@ -50,7 +49,8 @@ class AvailabilitySlot(Model):
 class Booking(Model):
     __tablename__ = "bookings"
     __table_args__ = (
-        db.Index("uq_bookings_active_slot", "slot_id", unique=True, postgresql_where=db.text(ACTIVE_BOOKING)),
+        db.Index("uq_bookings_active_slot", "slot_id", unique=True, postgresql_where=db.text(ACTIVE_BOOKING),
+                 sqlite_where=db.text(ACTIVE_BOOKING)),  # the same rule in the tests' database
     )
 
     slot_id = db.Column(db.Integer, db.ForeignKey("availability_slots.id"), nullable=False)
@@ -63,6 +63,8 @@ class Booking(Model):
     hold_expires_at = db.Column(db.DateTime(timezone=True))  # slot is held while the student pays
     meeting_url = db.Column(db.String(255))
     note = db.Column(db.String(255))
+    # Counselling time taken from the student's balance for this session; goes back if it is cancelled in time
+    minutes_deducted = db.Column(db.SmallInteger)
 
     slot = db.relationship("AvailabilitySlot")
     mentor = db.relationship("MentorProfile")
@@ -71,12 +73,27 @@ class Booking(Model):
     review = db.relationship("MentorReview", back_populates="booking", uselist=False)
 
 
+class CounselingPackage(Model):
+    """A block of counselling hours at a fixed price, the same for every mentor. Students buy one with
+    Razorpay; the hours are added to User.counseling_minutes and spent by booking sessions."""
+    __tablename__ = "counseling_packages"
+
+    title = db.Column(db.String(80), nullable=False)
+    hours = db.Column(db.SmallInteger, nullable=False)
+    price_minor = db.Column(db.Integer, nullable=False)  # paise
+    currency = db.Column(db.String(3), nullable=False, default="INR")
+    is_active = db.Column(db.Boolean, nullable=False, default=True)  # off = no longer sold; old payments keep it
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+
+
 class Payment(Model):
     __tablename__ = "payments"
 
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    booking_id = db.Column(db.Integer, db.ForeignKey("bookings.id"))
-    kind = db.Column(enum("session", "subscription", name="payment_kind"), nullable=False)
+    booking_id = db.Column(db.Integer, db.ForeignKey("bookings.id"))  # only on payments from before packages
+    kind = db.Column(enum("session", "subscription", "package", name="payment_kind"), nullable=False)
+    package_id = db.Column(db.Integer, db.ForeignKey("counseling_packages.id"))
+    minutes = db.Column(db.Integer)  # counselling time this payment adds to the member's balance
     amount_minor = db.Column(db.Integer, nullable=False)
     currency = db.Column(db.String(3), nullable=False, default="INR")
     razorpay_order_id = db.Column(db.String(64), unique=True)
@@ -87,6 +104,7 @@ class Payment(Model):
     invoice_number = db.Column(db.String(32), unique=True)
 
     booking = db.relationship("Booking", back_populates="payment")
+    package = db.relationship("CounselingPackage")
 
 
 class MentorReview(Model):
@@ -123,7 +141,6 @@ class MentorApplication(Model):
     topics = db.Column(db.JSON, nullable=False)
     languages = db.Column(db.JSON, nullable=False)
     linkedin = db.Column(db.String(255))
-    price_minor = db.Column(db.Integer, nullable=False)
     session_minutes = db.Column(db.SmallInteger, nullable=False)
     timezone = db.Column(db.String(64), nullable=False)
     weekly_hours = db.Column(db.JSON, nullable=False)

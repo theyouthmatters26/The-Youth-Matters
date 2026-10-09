@@ -4,12 +4,14 @@
 
 .brand { display: inline-flex; align-items: center; gap: var(--s-3); flex-shrink: 0; }
 .brand img { flex-shrink: 0; width: 42px; height: 44px; border-radius: 50%; }
-/* The wordmark. The headline face comes in one weight, so a hairline stroke gives the name the
-   presence of a logo; the nudge sets the capitals on the centre line of the roundel beside it. */
+/* The wordmark, as the client drew it: plain bold letters, with the T, Y and M that make "TYM" in the
+   logo's blue. */
 .brand-name {
-  font-family: var(--font-display); font-size: 1.5rem; line-height: 1; letter-spacing: -0.015em; white-space: nowrap;
-  color: var(--ink); -webkit-text-stroke: 0.3px currentColor; transform: translateY(var(--brand-nudge, 0.12em));
+  font-family: var(--font-body); font-weight: 600; font-size: 1.375rem; line-height: 1; letter-spacing: -0.01em;
+  white-space: nowrap; color: var(--ink);
 }
+.brand-name b, .footer-logo b { font-weight: inherit; color: #1b9ad6; }
+.footer-logo b { color: #4fb8ec; } /* a step lighter on the dark footer */
 
 .account { display: flex; align-items: center; gap: var(--s-1); }
 .account-link {
@@ -104,7 +106,7 @@
 .footer-brand { display: grid; justify-items: start; max-width: 440px; }
 .footer-logo { display: inline-flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-5); }
 .footer-logo img { width: 44px; height: 46px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.24); }
-.footer-logo span { font-family: var(--font-display); font-size: 1.25rem; line-height: 1; letter-spacing: -0.01em; color: var(--on-ink); }
+.footer-logo span { font-family: var(--font-body); font-weight: 600; font-size: 1.1875rem; line-height: 1; letter-spacing: -0.01em; color: var(--on-ink); }
 .footer-line { margin-bottom: var(--s-3); font-size: clamp(2rem, 1.5rem + 1.4vw, 2.75rem); line-height: 1.05; letter-spacing: -0.03em; }
 .footer-brand > p.muted { max-width: 40ch; margin-bottom: var(--s-5); line-height: 1.6; }
 /* Column titles sit on the same line as the logo row */

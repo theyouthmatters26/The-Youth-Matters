@@ -21,7 +21,7 @@ const PAGES = {
     ...policies['/payment-terms'].blocks,
     // The one paid offering today, and what the site does for it
     ['h', 'Mentor sessions'],
-    'Mentor sessions are paid in advance through Razorpay, by UPI, card or net banking, with prices shown in INR. You can cancel up to 24 hours before a session for a full refund. Every payment gets an invoice number, shown with the session in your profile, and a confirmation email.',
+    'Mentor sessions are paid for with counselling hours. You buy a package of hours in advance through Razorpay, by UPI, card or net banking, with prices shown in INR, and every payment gets an invoice number and a receipt by email. Each session you book takes its length from your hours, at the same rate for every mentor. Cancel up to 24 hours before a session and the time goes back on your hours. To ask about a refund for hours you have not used, write to info@theyouthmatters.com.',
   ], policies['/payment-terms'].updated],
   '/help-safety': ['Help and safety', 'How we keep The Youth Matters a respectful and safer place, and what to do if something goes wrong.', policies['/help-safety']],
   '/terms': ['Terms and conditions', 'The terms for using The Youth Matters website, platform and services.', policies['/terms']],

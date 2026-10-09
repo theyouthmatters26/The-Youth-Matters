@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowLeft, CalendarPlus, Check, ChevronLeft, ChevronRight, Copy, Lock, RotateCcw, Video } from 'lucide-react'
+import { ArrowLeft, CalendarPlus, Check, ChevronLeft, ChevronRight, Copy, MessageSquare, RotateCcw, Video } from 'lucide-react'
 import { api, useApi } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
-import { formatMoney } from '../../lib/format'
 import { FormError, Spinner } from '../auth/fields'
-import { city, dayKey, downloadIcs, formatDay, formatTime, loadRazorpay, viewerZone, zoneName } from './booking'
+import { city, dayKey, downloadIcs, formatDay, formatTime, hoursText, viewerZone, zoneName } from './booking'
+import { chatLink } from './MentorChat'
+import Packages from './Packages'
 import './mentors.css'
 
 const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
@@ -49,6 +50,7 @@ function Calendar({ month, onMonth, days, selected, onSelect, first, last }) {
 }
 
 function Booked({ booking }) {
+  const { account } = useAuth()
   const [copied, setCopied] = useState(false)
   const copy = async () => {
     try { await navigator.clipboard.writeText(booking.meetingUrl); setCopied(true) } catch { /* clipboard blocked */ }
@@ -61,14 +63,17 @@ function Booked({ booking }) {
       <div className="book-done-actions">
         <button className="btn btn-primary btn-sm" onClick={() => downloadIcs(booking)}><CalendarPlus size={15} /> Add to calendar</button>
         <button className="btn btn-ghost btn-sm" onClick={copy}><Copy size={15} /> {copied ? 'Link copied' : 'Copy join link'}</button>
+        <Link to={chatLink(account.username, booking.mentor.id, account.id)} className="btn btn-ghost btn-sm">
+          <MessageSquare size={15} /> Message {booking.mentor.user.displayName.split(' ')[0]}
+        </Link>
       </div>
-      <p className="book-fine">We emailed you the details{booking.invoiceNumber ? `, receipt ${booking.invoiceNumber}` : ''}. Your sessions are always in <Link to="/my?tab=Sessions" className="link">My TYM</Link>.</p>
+      <p className="book-fine">{hoursText(booking.minutes)} came off your counselling hours. We emailed you the details, and your sessions are always in <Link to="/my?tab=Sessions" className="link">My TYM</Link>.</p>
     </div>
   )
 }
 
 export default function BookingPanel({ mentor }) {
-  const { user, account } = useAuth()
+  const { user, account, setAccount } = useAuth()
   const location = useLocation()
   const availability = useApi(`/mentors/${mentor.id}/availability`)
   const slots = availability.data?.slots || []
@@ -85,51 +90,28 @@ export default function BookingPanel({ mentor }) {
   const [topic, setTopic] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [note, setNote] = useState('')
   const [booked, setBooked] = useState(null)
 
   const first = slots.length ? new Date(slots[0].startsAt) : new Date()
   const last = slots.length ? new Date(slots[slots.length - 1].startsAt) : new Date()
   const month = new Date(first.getFullYear(), first.getMonth() + monthOffset, 1)
-  const price = formatMoney(mentor.priceMinor, mentor.currency)
+  const need = mentor.sessionMinutes
+  const balance = account?.counselingMinutes || 0
   const firstName = mentor.user.displayName.split(' ')[0]
 
-  const checkout = async (res) => {
-    await loadRazorpay()
-    const c = res.checkout
-    const rzp = new window.Razorpay({
-      key: c.key, order_id: c.orderId, amount: c.amount, currency: c.currency,
-      name: c.name, description: c.description, prefill: c.prefill,
-      theme: { color: '#0b0b0c' },
-      handler: async (paid) => {
-        setBusy(true)
-        try {
-          const { booking } = await api(`/bookings/${res.booking.id}/verify`, { method: 'POST', body: paid })
-          setBooked(booking)
-          setStage('done')
-        } catch (e) {
-          setError(e.message)
-        } finally {
-          setBusy(false)
-        }
-      },
-      modal: {
-        ondismiss: () => setNote(`Payment not finished. We are holding ${formatTime(slot.startsAt)} for you until ${formatTime(res.booking.holdExpiresAt)}.`),
-      },
-    })
-    rzp.on('payment.failed', (r) => setError(`${r.error?.description || 'The payment did not go through.'} No money was taken. Try again or use another method.`))
-    rzp.open()
-  }
-
-  const pay = async () => {
+  // Booking takes the session's length from the member's counselling hours. Not enough: the server
+  // answers 402 and the packages are offered here instead.
+  const book = async () => {
     setBusy(true)
     setError('')
-    setNote('')
     try {
       const res = await api('/bookings', { method: 'POST', body: { slotId: slot.id, topic, timezone: viewerZone } })
-      await checkout(res)
+      setAccount({ ...account, counselingMinutes: res.counselingMinutes })
+      setBooked(res.booking)
+      setStage('done')
     } catch (e) {
-      setError(e.message)
+      if (e.status === 402) setAccount({ ...account, counselingMinutes: 0 }) // the balance shown was out of date
+      else setError(e.message)
       if (e.status === 409) {
         availability.reload()
         setStage('pick')
@@ -145,8 +127,8 @@ export default function BookingPanel({ mentor }) {
   return (
     <aside className="book" id="book" aria-label={`Book a session with ${firstName}`}>
       <header className="book-head">
-        <p className="book-price">{price}<span> / {mentor.sessionMinutes} min</span></p>
-        <p className="book-sub"><Video size={15} aria-hidden /> One-to-one video call</p>
+        <p className="book-price">{mentor.sessionMinutes} min<span> session</span></p>
+        <p className="book-sub"><Video size={15} aria-hidden /> One-to-one video call · requires counselling hours</p>
       </header>
 
       {stage === 'pick' && (
@@ -190,7 +172,7 @@ export default function BookingPanel({ mentor }) {
 
       {stage === 'details' && slot && (
         <div className="book-details">
-          <button className="book-back" onClick={() => { setStage('pick'); setError(''); setNote('') }}><ArrowLeft size={15} /> Change time</button>
+          <button className="book-back" onClick={() => { setStage('pick'); setError('') }}><ArrowLeft size={15} /> Change time</button>
           <div className="book-summary">
             <strong>{formatDay(slot.startsAt)}</strong>
             <span>{formatTime(slot.startsAt)} – {formatTime(slot.endsAt)} · {zoneName()}</span>
@@ -201,15 +183,20 @@ export default function BookingPanel({ mentor }) {
             <textarea id="topic" className="textarea" rows={4} maxLength={1000} value={topic} onChange={(e) => setTopic(e.target.value)}
               placeholder={`For example: "Can you look at my SOP opening and my funds evidence?" ${firstName} reads this before the call.`} />
           </div>
-          <div className="book-total"><span>Total</span><strong>{price}</strong></div>
+          <div className="book-total"><span>This session uses</span><strong>{hoursText(need)}</strong></div>
+          {user && <div className="book-total book-balance"><span>Your counselling hours</span><strong>{hoursText(balance)}</strong></div>}
 
           <FormError>{error}</FormError>
-          {note && <p className="book-note" role="status">{note}</p>}
 
-          {user ? (
-            <button className="btn btn-primary btn-block" onClick={pay} disabled={busy}>
-              {busy ? <><Spinner /> Opening secure payment</> : <><Lock size={15} /> Pay {price}</>}
+          {user && balance >= need ? (
+            <button className="btn btn-primary btn-block" onClick={book} disabled={busy}>
+              {busy ? <><Spinner /> Booking</> : `Confirm booking (deducts ${hoursText(need)})`}
             </button>
+          ) : user ? (
+            <div className="stack book-buy">
+              <p className="book-label">Buy hours to book</p>
+              <Packages />
+            </div>
           ) : account ? (
             <Link to="/register" state={{ from: location.pathname }} className="btn btn-primary btn-block">Finish verifying to book</Link>
           ) : (
@@ -218,7 +205,7 @@ export default function BookingPanel({ mentor }) {
               <p className="book-fine" style={{ textAlign: 'center' }}>Already a member? <Link to="/login" state={{ from: location.pathname }} className="link">Log in</Link></p>
             </div>
           )}
-          <p className="book-fine">Secure checkout by Razorpay: UPI, cards, net banking and wallets. Free cancellation up to 24 hours before, refunded in full.</p>
+          <p className="book-fine">Free cancellation up to 24 hours before: the time goes back on your counselling hours.</p>
         </div>
       )}
     </aside>

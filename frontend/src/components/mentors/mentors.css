@@ -184,3 +184,52 @@
 .star-pick button:hover { transform: scale(1.1); }
 .star-pick button.is-on { color: var(--ink); }
 .star-pick button.is-on svg { fill: currentColor; }
+
+/* Counselling hours: the packages on sale, and the member's balance */
+.package-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--s-4); }
+.package { display: grid; gap: var(--s-1); align-content: start; padding: var(--s-5); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--paper); }
+.package-hours { font-weight: 500; }
+.package-price { font-family: var(--font-display); font-size: var(--step-3); line-height: 1.1; }
+.package-note { font-size: var(--step--1); min-height: 1.5em; margin-bottom: var(--s-3); }
+.packages { display: grid; gap: var(--s-4); }
+.mentor-pricing { max-width: 760px; margin-bottom: var(--s-8); }
+.mentor-choose { font-size: var(--step-3); margin-bottom: var(--s-5); }
+.mentor-pricing h2 { font-size: var(--step-3); }
+.mentor-pricing .section-head { margin-bottom: var(--s-5); }
+.hours-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-4); }
+.hours-balance { font-size: var(--step-3); line-height: 1.15; margin: var(--s-1) 0; }
+.hours { display: grid; gap: var(--s-5); }
+.book-balance { border-top: 0; padding-top: 0; }
+.book-buy .package { padding: var(--s-4); }
+
+/* Messages between a student and a mentor they booked: the people on the left, the conversation on the right */
+.mchat { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 460px; overflow: hidden; }
+.mchat-list { list-style: none; margin: 0; padding: var(--s-2); border-right: 1px solid var(--line); overflow-y: auto; }
+.mchat-list button { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: var(--s-3); align-items: center; width: 100%; padding: var(--s-3); border-radius: var(--radius); text-align: left; }
+.mchat-list button:hover, .mchat-list button.is-on { background: var(--chalk); }
+.mchat-who { display: grid; min-width: 0; }
+.mchat-who span { font-size: var(--step--1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mchat-unread { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--ink); color: var(--paper); font-size: 0.75rem; line-height: 20px; text-align: center; }
+.mchat-pick { display: grid; place-items: center; padding: var(--s-7); }
+.mchat-thread { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 460px; max-height: 70vh; }
+.mchat-head { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: var(--s-3); align-items: center; padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--line); }
+.mchat-head div { display: grid; }
+.mchat-head div span { font-size: var(--step--1); }
+.mchat-head .btn { justify-self: end; width: auto; }
+.mchat-back { display: none; }
+.mchat-log { list-style: none; margin: 0; padding: var(--s-4); display: flex; flex-direction: column; gap: var(--s-2); overflow-y: auto; }
+.mchat-note { margin: auto; color: var(--muted); text-align: center; max-width: 36ch; }
+.mchat-msg { max-width: min(78%, 520px); padding: var(--s-2) var(--s-3); border-radius: var(--radius-lg); background: var(--chalk); align-self: flex-start; }
+.mchat-msg p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.mchat-msg time { font-size: 0.6875rem; }
+.mchat-msg.is-mine { align-self: flex-end; background: var(--ink); color: var(--paper); }
+.mchat-msg.is-mine time { color: rgba(255, 255, 255, 0.6); }
+.mchat-msg.is-pending { opacity: 0.6; }
+.mchat-input { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-2); padding: var(--s-3) var(--s-4); border-top: 1px solid var(--line); }
+.mchat-input .form-error { grid-column: 1 / -1; }
+@media (max-width: 760px) {
+  .mchat { grid-template-columns: minmax(0, 1fr); }
+  .mchat.has-open .mchat-list, .mchat-pick { display: none; }
+  .mchat-list { border-right: 0; }
+  .mchat-back { display: inline-flex; }
+}

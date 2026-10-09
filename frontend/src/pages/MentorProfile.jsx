@@ -5,7 +5,6 @@ import BookingPanel from '../components/mentors/BookingPanel'
 import { city, formatTime } from '../components/mentors/booking'
 import { Spinner } from '../components/auth/fields'
 import { useApi } from '../lib/api'
-import { formatMoney } from '../lib/format'
 import NotFound from './NotFound'
 import Photo from '../components/ui/Photo'
 import { useMeta } from '../lib/meta'
@@ -14,7 +13,7 @@ import '../components/mentors/mentors.css'
 const STEPS = [
   ['Pick a time', 'Every time is shown in your own time zone, so there is no maths to do.'],
   ['Pay securely', 'UPI, cards, net banking or wallets through Razorpay. You get a receipt by email.'],
-  ['Meet on video', 'The join link arrives by email and in My TYM. Cancel up to 24 hours before for a full refund.'],
+  ['Meet on video', 'The join link arrives by email and in My TYM. Cancel up to 24 hours before and the time goes back on your counselling hours.'],
 ]
 
 function Stars({ value }) {
@@ -51,7 +50,7 @@ export default function MentorProfile() {
           <p className="mp-headline">{m.headline}</p>
           <dl className="mp-facts">
             {m.rating && <div><dt><Star size={15} aria-hidden /> Rating</dt><dd>{m.rating} from {m.reviewCount} {m.reviewCount === 1 ? 'review' : 'reviews'}</dd></div>}
-            <div><dt><Clock size={15} aria-hidden /> Session</dt><dd>{m.sessionMinutes} min · {formatMoney(m.priceMinor, m.currency)}</dd></div>
+            <div><dt><Clock size={15} aria-hidden /> Session</dt><dd>{m.sessionMinutes} min · counselling hours</dd></div>
             {m.languages.length > 0 && <div><dt><Languages size={15} aria-hidden /> Speaks</dt><dd>{m.languages.join(', ')}</dd></div>}
             <div><dt><Globe2 size={15} aria-hidden /> Local time</dt><dd>{formatTime(new Date().toISOString(), m.timezone)} in {city(m.timezone)}</dd></div>
           </dl>
@@ -105,7 +104,7 @@ export default function MentorProfile() {
       </div>
 
       <a href="#book" className="mp-mobile-bar">
-        <span><strong>{formatMoney(m.priceMinor, m.currency)}</strong> / {m.sessionMinutes} min</span>
+        <span><strong>{m.sessionMinutes} min</strong> · counselling hours</span>
         <span className="btn btn-light btn-sm">See times</span>
       </a>
     </div>

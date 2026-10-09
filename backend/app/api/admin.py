@@ -17,10 +17,12 @@ each limited to the areas chosen for them (services/staff.py). The support inbox
     GET    /admin/reports?status=&page=       POST /admin/reports/<id>/resolve {action}
     DELETE /admin/content/<kind>/<id>         remove a post, answer or chat message
     GET    /admin/mentors                     POST /admin/mentors/<id>/listed {listed}
-    GET    /admin/mentors/<id>                PATCH {headline, university, course, about, price}, DELETE
+    GET    /admin/mentors/<id>                PATCH {headline, university, course, about}, DELETE
     DELETE /admin/reviews/<id>                take a mentor review down
     GET    /admin/bookings?status=&page=      POST /admin/bookings/<id>/cancel {refund, reason}
-    GET    /admin/payments?status=&page=      GET /admin/earnings (what each mentor's sessions brought in)
+    GET    /admin/payments?status=&page=      GET /admin/earnings (the counselling time each mentor gave)
+    GET    /admin/packages                    POST {title, hours, price}, PATCH /<id> {title, hours, price, isActive}
+    POST   /admin/members/<id>/hours          {minutes, reason}: add or take away counselling time
 
 Blog, community, the contact inbox, setup and exports are in admin_content.py.
 """
@@ -33,14 +35,16 @@ from flask_jwt_extended import create_access_token, create_refresh_token, curren
 from markupsafe import escape
 
 from ..extensions import db, limiter
-from ..models import (AiConversation, AvailabilitySlot, BlogPost, Booking, ChatMessage, ChatRoom, Comment,
+from ..models import (AiConversation, AvailabilitySlot, BlogPost, Booking, ChatMessage, ChatRoom, Comment, CounselingPackage,
                       ContactMessage, IdentityVerification, MentorApplication, MentorProfile, MentorReview,
                       ModerationLog, Payment, Post, Report, Strike, User, Vote)
 from ..models.base import utcnow
-from ..services import handoff, mailer, payments, staff, storage
+from ..services import handoff, mailer, staff, storage
 from ..services.moderation import MUTE_DURATION, strike_action
 from ..services.notify import notify
 from . import serializers as s
+from .bookings import give_back
+from .packages import add_minutes, hours_text, take_minutes
 from .auth import EMAIL, _body, _by_email, _password_hash, _username
 
 bp = Blueprint("admin", __name__)
@@ -507,6 +511,7 @@ def member_detail(user_id):
         "mutedUntil": u.muted_until.isoformat() if u.muted_until and u.muted_until > utcnow() else None,
         "verification": v and {"status": v.status, "documentType": v.document_type, "dobSource": v.dob_source,
                                "note": v.note, "decidedAt": v.decided_at.isoformat() if v.decided_at else None},
+        "counselingMinutes": u.counseling_minutes or 0,
         "counts": {"questions": count(Post.author_id == u.id, ~Post.is_deleted),
                    "answers": count(Comment.author_id == u.id, ~Comment.is_deleted),
                    "openReports": count(Report.target_type == "user", Report.target_id == u.id, Report.status == "open"),
@@ -723,7 +728,7 @@ def mentors():
                                        .where(Booking.status.in_(("confirmed", "completed"))).group_by(Booking.mentor_id)).all())
     return jsonify([{
         "id": m.id, "user": {**s.user_brief(m.user), "email": m.user.email}, "university": m.university, "course": m.course,
-        "country": m.community.country.name, "priceMinor": m.price_minor, "currency": m.currency,
+        "country": m.community.country.name,
         "sessionMinutes": m.session_minutes, "listed": m.is_verified, "sessions": sessions.get(m.id, 0),
         "rating": round(float(ratings[m.id][0]), 1) if m.id in ratings else None,
         "reviewCount": ratings[m.id][1] if m.id in ratings else 0,
@@ -752,7 +757,7 @@ def mentor_detail(mentor_id):
     m = _mentor(mentor_id)
     reviews = db.session.scalars(db.select(MentorReview).where(MentorReview.mentor_id == m.id).order_by(MentorReview.id.desc()))
     return jsonify(id=m.id, headline=m.headline, about=m.about or "", university=m.university, course=m.course,
-                   price=m.price_minor // 100, sessionMinutes=m.session_minutes, bookings=count(Booking.mentor_id == m.id),
+                   sessionMinutes=m.session_minutes, bookings=count(Booking.mentor_id == m.id),
                    reviews=[{"id": r.id, "rating": r.rating, "body": r.body, "by": r.author.display_name,
                              "at": r.created_at.isoformat()} for r in reviews])
 
@@ -771,11 +776,6 @@ def edit_mentor(mentor_id):
             if not shortest <= len(value) <= longest:
                 abort(400, f"The {label} should be {shortest} to {longest} characters.")
             setattr(m, field, value)
-    if "price" in data:
-        price = data["price"] if isinstance(data["price"], int) else 0
-        if not 299 <= price <= 9999:
-            abort(400, "Set a session price between ₹299 and ₹9,999.")
-        m.price_minor = price * 100
     record("mentor_edited", "user", m.user_id, name=m.user.display_name)
     db.session.commit()
     return jsonify(saved=True)
@@ -832,12 +832,11 @@ def bookings():
         return int(db.session.scalar(db.select(db.func.coalesce(db.func.sum(Payment.amount_minor), 0)).where(*where)))
 
     def row(b):
-        pay = b.payment
         return {"id": b.id, "status": b.status, "startsAt": b.slot.starts_at.isoformat(), "topic": b.topic,
                 "student": {**s.user_brief(b.student), "email": b.student.email},
-                "mentor": s.user_brief(b.mentor.user), "amountMinor": pay.amount_minor if pay else b.mentor.price_minor,
-                "currency": pay.currency if pay else b.mentor.currency, "payment": pay.status if pay else None,
-                "invoice": pay.invoice_number if pay else None, "bookedAt": b.created_at.isoformat()}
+                "mentor": s.user_brief(b.mentor.user), "minutes": b.minutes_deducted or b.mentor.session_minutes,
+                # a cancelled session whose time went back to the student no longer holds any
+                "returned": b.status == "cancelled" and not b.minutes_deducted, "bookedAt": b.created_at.isoformat()}
 
     return jsonify(**paged(q, row), summary={
         "earnedThisMonthMinor": total(Payment.status == "paid", Payment.created_at >= month),
@@ -851,7 +850,7 @@ def bookings():
 @jwt_required()
 def cancel_booking(booking_id):
     """Cancel a session on someone's behalf (a mentor fell ill, a student wrote in). With refund: true the
-    money goes back through Razorpay first; if that fails nothing is changed."""
+    session's time goes back on the student's counselling hours."""
     team_member("bookings")
     b = db.session.get(Booking, booking_id) or abort(404, "We could not find that booking.")
     if b.status not in ("confirmed", "pending_payment"):
@@ -860,19 +859,12 @@ def cancel_booking(booking_id):
     reason = str(data.get("reason") or "").strip()[:255]
     if len(reason) < 5:
         abort(400, "Write a short reason. The student and the mentor are told.")
-    pay = b.payment
-    refunded = False
-    if data.get("refund") and pay and pay.status == "paid":
-        try:
-            pay.razorpay_refund_id = payments.refund(pay.razorpay_payment_id, pay.amount_minor)["id"]
-        except payments.PaymentError:
-            abort(502, "Razorpay did not accept the refund. Refund it in the Razorpay dashboard, then cancel here without a refund.")
-        pay.status, refunded = "refunded", True
+    refunded = bool(data.get("refund")) and give_back(b)
     b.status, b.note = "cancelled", reason
     record("booking_cancelled", "user", b.student_id, name=b.student.display_name, refunded=refunded)
-    db.session.commit()  # the money has moved: save that before anything else can go wrong
+    db.session.commit()
     when = b.slot.starts_at.strftime("%d %b %Y, %H:%M UTC")
-    money = " The payment has been refunded and should reach the account within a few working days." if refunded else ""
+    money = " The session's time has been returned to the student's counselling hours." if refunded else ""
     for person, other in ((b.student, b.mentor.user), (b.mentor.user, b.student)):
         notify(person.id, current_user, "booking", message=f"cancelled your session with {other.display_name}: {reason}")
     db.session.commit()
@@ -881,7 +873,7 @@ def cancel_booking(booking_id):
                             f"<p>Hi {escape(person.display_name.split()[0])},</p><p>The session with {escape(other.display_name)} on "
                             f"{when} has been cancelled by The Youth Matters.</p><p>Reason: {escape(reason)}</p><p>{money}</p>",
                             reply_to=current_app.config["CONTACT_EMAIL"])
-    return jsonify(status=b.status, payment=pay.status if pay else None, refunded=refunded)
+    return jsonify(status=b.status, refunded=refunded)
 
 
 @bp.get("/admin/payments")
@@ -896,11 +888,9 @@ def payment_list():
 
     def row(pay):
         who = members.setdefault(pay.user_id, db.session.get(User, pay.user_id))
-        b = pay.booking
         return {"id": pay.id, "status": pay.status, "amountMinor": pay.amount_minor, "currency": pay.currency,
                 "at": pay.created_at.isoformat(), "member": {**s.user_brief(who), "email": who.email},
-                "mentor": b.mentor.user.display_name if b else None, "sessionAt": b.slot.starts_at.isoformat() if b else None,
-                "bookingId": b.id if b else None, "bookingStatus": b.status if b else None, "invoice": pay.invoice_number,
+                "package": pay.package.title if pay.package else None, "minutes": pay.minutes, "invoice": pay.invoice_number,
                 "orderId": pay.razorpay_order_id, "paymentId": pay.razorpay_payment_id, "refundId": pay.razorpay_refund_id}
 
     def total(*where):
@@ -916,16 +906,95 @@ def payment_list():
 @bp.get("/admin/earnings")
 @jwt_required()
 def earnings():
-    """What each mentor's paid sessions brought in, for working out what they are owed."""
+    """The counselling time each mentor's sessions used, for working out what they are owed. Students pay
+    the platform for hours, not the mentor for a session, so this counts time, not money."""
     team_member("bookings")
     month = utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    paid = db.case((Payment.status == "paid", Payment.amount_minor), else_=0)
-    total = db.func.coalesce(db.func.sum(paid), 0)
+    kept = Booking.status.in_(("confirmed", "completed"))
+    minutes = db.func.coalesce(Booking.minutes_deducted, MentorProfile.session_minutes)
+    total = db.func.coalesce(db.func.sum(minutes), 0)
     rows = db.session.execute(
-        db.select(MentorProfile, db.func.count(Payment.id).filter(Payment.status == "paid"), total,
-                  db.func.coalesce(db.func.sum(db.case((Payment.created_at >= month, paid), else_=0)), 0))
-        .join(Booking, Booking.mentor_id == MentorProfile.id).join(Payment, Payment.booking_id == Booking.id)
-        .group_by(MentorProfile.id).order_by(total.desc())).all()
+        db.select(MentorProfile, db.func.count(Booking.id), total,
+                  db.func.coalesce(db.func.sum(db.case((AvailabilitySlot.starts_at >= month, minutes), else_=0)), 0))
+        .join(Booking, Booking.mentor_id == MentorProfile.id).join(AvailabilitySlot, Booking.slot_id == AvailabilitySlot.id)
+        .where(kept).group_by(MentorProfile.id).order_by(total.desc())).all()
     return jsonify([{"mentor": {**s.user_brief(m.user), "email": m.user.email}, "mentorId": m.id, "sessions": n,
-                     "paidMinor": int(all_time), "thisMonthMinor": int(this_month), "currency": m.currency}
+                     "minutes": int(all_time), "thisMonthMinutes": int(this_month)}
                     for m, n, all_time, this_month in rows])
+
+
+# ---------------------------------------------------------------- counselling hours
+
+def _package_row(p):
+    return {**s.package(p), "price": p.price_minor // 100, "isActive": p.is_active, "sortOrder": p.sort_order,
+            "sold": count(Payment.package_id == p.id, Payment.status == "paid")}
+
+
+def _package_fields(data, p):
+    title = str(data.get("title", p.title or "")).strip()
+    hours, price = data.get("hours", p.hours), data.get("price", (p.price_minor or 0) // 100)
+    if not 2 <= len(title) <= 80:
+        abort(400, "Give the package a name, like \"10 hours\".")
+    if not isinstance(hours, int) or isinstance(hours, bool) or not 1 <= hours <= 500:
+        abort(400, "Hours should be a whole number from 1 to 500.")
+    if not isinstance(price, int) or isinstance(price, bool) or not 1 <= price <= 500000:
+        abort(400, "Set a price in rupees, from ₹1 to ₹5,00,000.")
+    p.title, p.hours, p.price_minor, p.currency = title, hours, price * 100, "INR"
+    if "isActive" in data:
+        p.is_active = bool(data["isActive"])
+    if isinstance(data.get("sortOrder"), int):
+        p.sort_order = data["sortOrder"]
+
+
+@bp.get("/admin/packages")
+@jwt_required()
+def packages():
+    team_member("bookings")
+    rows = db.session.scalars(db.select(CounselingPackage).order_by(CounselingPackage.sort_order, CounselingPackage.hours))
+    return jsonify([_package_row(p) for p in rows])
+
+
+@bp.post("/admin/packages")
+@jwt_required()
+def add_package():
+    team_member("bookings")
+    p = CounselingPackage()
+    _package_fields(request.get_json(silent=True) or {}, p)
+    db.session.add(p)
+    record("package_added", "user", current_user.id, name=p.title)
+    db.session.commit()
+    return jsonify(_package_row(p)), 201
+
+
+@bp.patch("/admin/packages/<int:package_id>")
+@jwt_required()
+def edit_package(package_id):
+    """Change what a package costs or holds from now on. Hours already bought are not touched."""
+    team_member("bookings")
+    p = db.session.get(CounselingPackage, package_id) or abort(404, "We could not find that package.")
+    _package_fields(request.get_json(silent=True) or {}, p)
+    record("package_edited", "user", current_user.id, name=p.title)
+    db.session.commit()
+    return jsonify(_package_row(p))
+
+
+@bp.post("/admin/members/<int:user_id>/hours")
+@jwt_required()
+def adjust_hours(user_id):
+    """Add counselling time to a member (a goodwill gesture, a payment taken outside the site) or take
+    some away. {minutes: 60 | -30, reason}. The reason is kept in the activity log."""
+    team_member("bookings")
+    u = _member(user_id)
+    data = request.get_json(silent=True) or {}
+    minutes, reason = data.get("minutes"), str(data.get("reason") or "").strip()[:255]
+    if not isinstance(minutes, int) or isinstance(minutes, bool) or minutes == 0 or abs(minutes) > 6000:
+        abort(400, "Enter how much time to add or take away, up to 100 hours at once.")
+    if len(reason) < 5:
+        abort(400, "Write a short reason. It is kept in the activity log.")
+    if minutes > 0:
+        add_minutes(u.id, minutes)
+    elif not take_minutes(u.id, -minutes):
+        abort(409, f"{u.display_name} only has {hours_text(u.counseling_minutes or 0)}.")
+    record("hours_adjusted", "user", u.id, name=u.display_name, minutes=minutes, reason=reason)
+    db.session.commit()
+    return jsonify(counselingMinutes=u.counseling_minutes)

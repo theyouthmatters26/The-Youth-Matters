@@ -14,8 +14,8 @@ import { PictureField } from '../Settings'
 import '../../components/auth/auth.css'
 
 const BENEFITS = [
-  [CalendarClock, 'Your hours, your price', 'Choose the weekly hours that suit you, in your own time zone, and what a session costs.'],
-  [Wallet, 'Paid before you meet', 'Students pay upfront through Razorpay when they book, so there is nothing to chase.'],
+  [CalendarClock, 'Your hours, your way', 'Choose the weekly hours that suit you, in your own time zone, and how long a session lasts.'],
+  [Wallet, 'Paid before you meet', 'Students buy counselling hours from TYM and spend them when they book, so there is nothing to chase.'],
   [HeartHandshake, 'Help someone like you', 'You remember how confusing your own move was. A single hour can save someone months.'],
 ]
 const LOOK_FOR = [
@@ -43,7 +43,7 @@ const myZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe
 const ZONES = (() => { try { return Intl.supportedValuesOf('timeZone') } catch { return [myZone()] } })()
 const EMPTY = {
   country: 'uk', university: '', course: '', graduated: false, graduationYear: '', headline: '', about: '', experience: '',
-  topics: [], languages: ['English'], linkedin: '', price: 1299, sessionMinutes: 30, timezone: myZone(), weeklyHours: {},
+  topics: [], languages: ['English'], linkedin: '', sessionMinutes: 30, timezone: myZone(), weeklyHours: {},
   details: {},
 }
 const slotCount = (hours) => Object.values(hours).reduce((n, t) => n + t.length, 0)
@@ -288,7 +288,7 @@ export default function MentorApply() {
     user: user || account || { displayName: 'You' }, community: { country: { name: country?.name } },
     course: form.course || 'Your course', university: form.university || 'your university',
     headline: form.headline || 'Your one-line headline shows here. Make it specific.',
-    priceMinor: (Number(form.price) || 0) * 100, currency: 'INR', sessionMinutes: Number(form.sessionMinutes),
+    sessionMinutes: Number(form.sessionMinutes),
   }
 
   let panel
@@ -322,7 +322,7 @@ export default function MentorApply() {
     panel = (
       <StatusCard icon={Clock3} title="Application received">
         <p className="muted">Sent on {fullDate(current.createdAt)}. Our team will check your documents and email {user.email} within a week, sometimes to set up a short call.</p>
-        <MentorCard preview m={{ ...preview, course: current.course, university: current.university, headline: current.headline, priceMinor: current.price * 100, sessionMinutes: current.sessionMinutes, community: { country: { name: countries.find((c) => c.slug === current.country)?.name } } }} />
+        <MentorCard preview m={{ ...preview, course: current.course, university: current.university, headline: current.headline, sessionMinutes: current.sessionMinutes, community: { country: { name: countries.find((c) => c.slug === current.country)?.name } } }} />
         <p className="muted dash-small">This is how students will see you once you are approved.</p>
       </StatusCard>
     )
@@ -431,7 +431,7 @@ export default function MentorApply() {
           <Questions fields={MOTIVATION} details={form.details} set={setDetail} />
         </Section>
 
-        <Section n={8} title="Availability and mentoring format" text="Bookings on TYM are one-to-one video calls. Most TYM mentors charge ₹1,199 to ₹1,999.">
+        <Section n={8} title="Availability and mentoring format" text="Bookings on TYM are one-to-one video calls. Students pay with counselling hours bought from TYM, so there is no price for you to set.">
           <Questions fields={AVAILABILITY} details={form.details} set={setDetail} />
           <div className="grid-2">
             <fieldset className="segmented" aria-label="Session length">
@@ -442,14 +442,6 @@ export default function MentorApply() {
                 </label>
               ))}
             </fieldset>
-            <div className="field">
-              <label htmlFor="a-price">Price per session</label>
-              <div className="price-input">
-                <span aria-hidden>₹</span>
-                <input id="a-price" className="input" type="number" inputMode="numeric" min={299} max={9999} step={50}
-                  value={form.price} onChange={set('price')} required />
-              </div>
-            </div>
           </div>
           <div className="field">
             <label htmlFor="a-tz">Your time zone</label>

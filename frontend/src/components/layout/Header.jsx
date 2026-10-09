@@ -145,7 +145,7 @@ export default function Header() {
         <div className="container masthead-inner">
           <Link to="/" className="brand" aria-label="The Youth Matters, home">
             <Photo src="/logo.png" width="44" height="46" sizes="44px" loading="eager" />
-            <span className="brand-name">The Youth Matters</span>
+            <span className="brand-name"><b>T</b>he <b>Y</b>outh <b>M</b>atters</span>
           </Link>
 
           <div className="account">

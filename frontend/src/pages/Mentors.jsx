@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CalendarCheck, Lock, Search, ShieldCheck } from 'lucide-react'
 import Gate from '../components/ui/Gate'
 import MentorCard, { MentorCardSkeleton } from '../components/mentors/MentorCard'
+import Packages from '../components/mentors/Packages'
 import { countries } from '../data/sample'
 import { useApi } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -11,7 +12,7 @@ import '../components/mentors/mentors.css'
 const PREVIEW = 2 // visitors see this many, the rest after signing up
 
 export default function Mentors() {
-  useMeta({ title: 'TYM Mentors', description: 'Book a one-to-one video session with a verified student or recent graduate who studied where you are going. Pay securely, cancel up to 24 hours before.', path: '/mentors' })
+  useMeta({ title: 'TYM Mentors', description: 'Book a one-to-one video session with a verified mentor who studied where you are going. Buy counselling hours once and use them with any mentor; cancel up to 24 hours before.', path: '/mentors' })
   const { user } = useAuth()
   const { data, error, loading, reload } = useApi('/mentors')
   const [country, setCountry] = useState('')
@@ -29,7 +30,7 @@ export default function Mentors() {
       <header className="page-head">
         <p className="eyebrow">TYM Mentors · One-to-one sessions</p>
         <h1>Book a student who has done it</h1>
-        <p>Every mentor is a current student or recent graduate, checked by our team. Pick a time in your own time zone, pay securely, and meet on a video call.</p>
+        <p>Every mentor is checked by our team. Buy counselling hours, pick any mentor and a time in your own time zone, and meet on a video call.</p>
       </header>
 
       <ul className="trust-row">
@@ -38,6 +39,15 @@ export default function Mentors() {
         <li><Lock size={16} aria-hidden /> Secure payment with Razorpay</li>
       </ul>
 
+      <section className="mentor-pricing" id="hours" aria-labelledby="hours-title">
+        <header className="section-head">
+          <h2 id="hours-title" className="display">First, get counselling hours</h2>
+          <p>One price for every mentor. Buy hours once, then choose any mentor below and book a time with them: a 30 minute session uses half an hour.</p>
+        </header>
+        <Packages />
+      </section>
+
+      <h2 className="display mentor-choose">Then choose any mentor</h2>
       <div className="mentor-filters">
         <div className="chip-row" role="group" aria-label="Country">
           <button className={`chip${country ? '' : ' is-on'}`} aria-pressed={!country} onClick={() => setCountry('')}>All countries</button>
@@ -66,7 +76,7 @@ export default function Mentors() {
         {hidden.length > 0 && (
           <div className="mcard-gate">
             <Gate title={`${hidden.length} more ${hidden.length === 1 ? 'mentor' : 'mentors'} to meet`}
-              text="Create a free account to see every mentor, their open times and prices.">
+              text="Create a free account to see every mentor and their open times.">
               <MentorCard m={hidden[0]} />
             </Gate>
           </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ArrowUpRight, Download, Plus } from 'lucide-react'
 import { FormError, Spinner, SubmitButton } from '../../components/auth/fields'
+import { hoursText } from '../../components/mentors/booking'
 import { adminApi, downloadAdminFile, useAdmin, useAdminApi } from '../../lib/admin'
 import { plural } from '../../lib/format'
 import { Confirm, Empty, Facts, Loading, PageHead, Pager, PasswordBox, Person, Pill, SearchBox, Sheet, StatusPill, Tabs, ago, day, newPassword, useDebounced } from './ui'
@@ -124,6 +125,7 @@ function Member({ id, onClose, onChanged }) {
   const { data: m, error, reload } = useAdminApi(`/admin/members/${id}`)
   const [reason, setReason] = useState('')
   const [dob, setDob] = useState('')
+  const [hours, setHours] = useState('')
   const [problem, setProblem] = useState('')
   const [said, setSaid] = useState('')
 
@@ -179,6 +181,7 @@ function Member({ id, onClose, onChanged }) {
         ['Studying', [m.course, m.university].filter(Boolean).join(', ')],
         ['Starts', m.intake],
         ['Activity', `${plural(m.counts.questions, 'question')}, ${plural(m.counts.answers, 'answer')}, ${plural(m.counts.sessions, 'mentor session')}`],
+        ['Counselling hours', hoursText(m.counselingMinutes)],
         ['Muted until', m.mutedUntil && new Date(m.mutedUntil).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })],
         ['Open reports', m.counts.openReports || null],
       ]} />
@@ -188,6 +191,19 @@ function Member({ id, onClose, onChanged }) {
       {m.canAct ? (
         <section className="adm-actions" aria-label="Actions">
           <h3 className="adm-h2">Actions</h3>
+          {can('bookings') && (
+            <div className="adm-action">
+              <p><strong>Counselling hours.</strong> They have {hoursText(m.counselingMinutes)}. Add time as a goodwill gesture or for a payment taken outside the site, or take some away with a minus number.</p>
+              <div className="adm-action-row">
+                <input type="number" className="input" step="0.5" min={-100} max={100} value={hours} onChange={(e) => setHours(e.target.value)} placeholder="Hours, for example 1 or -0.5" aria-label="Hours to add or take away" />
+                <button className="btn btn-primary btn-sm" disabled={!Number(hours) || needsReason}
+                  onClick={() => act('hours', { minutes: Math.round(Number(hours) * 60), reason }, (res) => { setHours(''); return `Done. They now have ${hoursText(res.counselingMinutes)}.` })}>
+                  {Number(hours) < 0 ? 'Take away' : 'Add hours'}
+                </button>
+              </div>
+              <p className="adm-hint">Write the reason in the box below first. It is kept in the activity log.</p>
+            </div>
+          )}
           {m.status === 'pending' && (
             <div className="adm-action">
               <p><strong>Verify by hand.</strong> Only after you have seen their ID another way, for example by email. Enter the date of birth on it.</p>

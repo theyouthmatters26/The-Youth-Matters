@@ -17,7 +17,8 @@ def me(u):
     else:
         step = "document"
     return {**user_brief(u), "email": u.email, "emailVerified": u.email_verified, "status": u.status,
-            "verification": step, "dateOfBirth": u.date_of_birth.isoformat() if u.date_of_birth else None}
+            "verification": step, "dateOfBirth": u.date_of_birth.isoformat() if u.date_of_birth else None,
+            "counselingMinutes": u.counseling_minutes or 0}
 
 
 def subject(s):
@@ -134,8 +135,6 @@ def mentor(m, stats=(None, 0), reviews=None):
         "topics": m.topics or [],
         "languages": m.languages or [],
         "links": m.links or {},
-        "priceMinor": m.price_minor,
-        "currency": m.currency,
         "sessionMinutes": m.session_minutes,
         "timezone": m.timezone,
         "isVerified": m.is_verified,
@@ -150,6 +149,10 @@ def mentor(m, stats=(None, 0), reviews=None):
 def review(r):
     return {"id": r.id, "rating": r.rating, "body": r.body, "author": user_brief(r.author),
             "createdAt": r.created_at.isoformat()}
+
+
+def package(p):
+    return {"id": p.id, "title": p.title, "hours": p.hours, "priceMinor": p.price_minor, "currency": p.currency}
 
 
 def slot(sl):
@@ -168,10 +171,7 @@ def booking(b):
         "holdExpiresAt": b.hold_expires_at.isoformat() if b.hold_expires_at else None,
         "mentor": {"id": m.id, "user": user_brief(m.user), "university": m.university, "course": m.course,
                    "timezone": m.timezone},
-        "amountMinor": b.payment.amount_minor if b.payment else m.price_minor,
-        "currency": b.payment.currency if b.payment else m.currency,
-        "paymentStatus": b.payment.status if b.payment else None,
-        "invoiceNumber": b.payment.invoice_number if b.payment else None,
+        "minutes": b.minutes_deducted or m.session_minutes,
         "reviewed": b.review is not None,
         "note": b.note,
     }

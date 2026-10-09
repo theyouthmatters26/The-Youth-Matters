@@ -1,34 +1,39 @@
-"""Paid mentor sessions (Module 10): hold a slot, pay with Razorpay, confirm.
+"""Mentor sessions (Module 10), paid for with counselling hours.
 
-    POST /bookings                       hold a slot for HOLD and open a Razorpay order
-    POST /bookings/<id>/verify           Checkout's success callback: check the signature, confirm
-    POST /payments/razorpay/webhook      the same confirmation from Razorpay (browser closed early)
+    POST /bookings                       book a time: the session's length comes off the student's hours
     GET  /bookings                       my sessions: the ones I booked and, for a mentor, the ones I give
-    POST /bookings/<id>/cancel           free cancellation until FREE_CANCEL before, fully refunded
+    POST /bookings/<id>/cancel           free until FREE_CANCEL before: the hours go back on the balance
     POST /bookings/<id>/review           rate a session after it happened
+
+Hours are bought as packages (api/packages.py). Mentors have no price of their own.
 """
 import secrets
 from datetime import timedelta
 from zoneinfo import ZoneInfo, available_timezones
 
-from flask import Blueprint, abort, current_app, jsonify, request
+from flask import Blueprint, abort, jsonify, request
 from flask_jwt_extended import current_user, jwt_required
 from markupsafe import escape
-from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
+from werkzeug.exceptions import HTTPException
 
 from ..extensions import db, limiter
-from ..models import AvailabilitySlot, Booking, MentorProfile, MentorReview, Payment
+from ..models import AvailabilitySlot, Booking, MentorMessage, MentorProfile, MentorReview
 from ..models.base import utcnow
-from ..services import availability, mailer, payments
+from ..services import availability, content, handoff, mailer
 from . import serializers as s
+from .packages import add_minutes, hours_text, take_minutes
 
 bp = Blueprint("bookings", __name__)
 
-HOLD = timedelta(minutes=15)
-MAX_HOLDS = 2  # times one student can keep back without paying, so nobody can sit on a calendar
 FREE_CANCEL = timedelta(hours=24)
 TAKEN = "Someone has just booked this time. Pick another one."
+
+
+class NeedsHours(HTTPException):
+    """402: not enough counselling time. The website offers the packages when it sees this."""
+    code = 402
+    name = "Payment Required"
 
 
 def _body():
@@ -47,15 +52,6 @@ def _mine(booking_id):
     return b
 
 
-def _checkout(b):
-    """What the browser needs to open Razorpay Checkout for this booking."""
-    m, p = b.mentor, b.payment
-    return {"key": payments.key_id(), "orderId": p.razorpay_order_id, "amount": p.amount_minor,
-            "currency": p.currency, "name": "The Youth Matters",
-            "description": f"{m.session_minutes} min session with {m.user.display_name}",
-            "prefill": {"name": current_user.display_name, "email": current_user.email}}
-
-
 def _when(b, tz_name):
     tz_name = tz_name if tz_name in available_timezones() else "UTC"
     start = b.slot.starts_at.astimezone(ZoneInfo(tz_name))
@@ -71,35 +67,13 @@ def _email_confirmation(b):
     mailer.send_quietly(b.student.email, f"Booked: your session with {m.user.display_name}",
                         f"<p>You are booked with {mentor} on {_when(b, b.student_timezone)}.</p>"
                         f"<p>Join here at the time: {b.meeting_url}</p>"
-                        f"<p>Need to change plans? Cancel from My TYM up to 24 hours before for a full refund.</p>")
+                        f"<p>{hours_text(b.minutes_deducted)} came off your counselling hours. Need to change plans? "
+                        f"Cancel from My TYM up to 24 hours before and the time goes back on your balance.</p>")
+    chat = f"{handoff.site_url()}/u/{m.user.username}?tab=Messages&with={m.id}-{b.student_id}"
     mailer.send_quietly(m.user.email, f"New session: {b.student.display_name}",
                         f"<p>{student} booked a {m.session_minutes} minute session on "
-                        f"{_when(b, m.timezone)}.</p>{topic}<p>Meeting link: {b.meeting_url}</p>")
-
-
-def confirm(payment, razorpay_payment_id):
-    """Mark a payment paid and its booking confirmed. True when this call did it, so the caller can
-    send the emails once the change is saved. Checkout and two webhooks can arrive in the same second:
-    one statement claims the payment, and only the call that changed the row carries on.
-    If the hold ran out and someone else took the slot meanwhile, the money goes straight back."""
-    claimed = db.session.execute(update(Payment).where(Payment.id == payment.id, Payment.status == "created")
-                                 .values(status="paid", razorpay_payment_id=razorpay_payment_id)).rowcount
-    if not claimed:
-        return False
-    db.session.refresh(payment)
-    b = payment.booking
-    try:
-        with db.session.begin_nested():
-            b.status = "confirmed"
-            b.meeting_url = f"https://meet.jit.si/TYM-{secrets.token_urlsafe(10)}"
-    except IntegrityError:  # the partial unique index: another active booking holds this slot
-        refund = payments.refund(razorpay_payment_id, payment.amount_minor)
-        payment.status, payment.razorpay_refund_id = "refunded", refund["id"]
-        b.status, b.note = "cancelled", "The time was taken while the payment was pending. Refunded in full."
-        return False
-    db.session.flush()
-    payment.invoice_number = f"TYM-{utcnow():%Y}-{payment.id:06d}"
-    return True
+                        f"{_when(b, m.timezone)}.</p>{topic}<p>Meeting link: {b.meeting_url}</p>"
+                        f"<p>You can message {student} before the call: <a href='{chat}'>{chat}</a></p>")
 
 
 @bp.post("/bookings")
@@ -107,8 +81,6 @@ def confirm(payment, razorpay_payment_id):
 @limiter.limit("30 per hour")
 def create():
     _member()
-    if not payments.configured():
-        abort(503, "Payments are not switched on yet. Please try again soon.")
     data = _body()
     slot_id = data.get("slotId")
     slot = db.session.get(AvailabilitySlot, slot_id, with_for_update=True) if isinstance(slot_id, int) else None
@@ -120,93 +92,34 @@ def create():
     if not mentor.is_verified or mentor.user.status != "active":  # hidden by the team, or the account is suspended
         abort(409, "This mentor is not taking bookings at the moment.")
 
-    # Came back to the same time after closing Checkout: reuse the hold and the order
-    mine = db.session.scalar(db.select(Booking).where(
-        Booking.slot_id == slot.id, Booking.student_id == current_user.id,
-        Booking.status == "pending_payment", Booking.hold_expires_at > utcnow()))
-    if mine:
-        return jsonify(booking=s.booking(mine), checkout=_checkout(mine))
-    held = db.session.scalar(db.select(db.func.count(Booking.id)).where(
-        Booking.student_id == current_user.id, Booking.status == "pending_payment", Booking.hold_expires_at > utcnow()))
-    if held >= MAX_HOLDS:
-        abort(409, "You already have two times on hold. Finish paying for one, or wait 15 minutes for a hold to run out.")
-
-    # Holds that ran out no longer count, so the slot can be taken again
-    db.session.execute(update(Booking).where(
-        Booking.slot_id == slot.id, Booking.status == "pending_payment",
-        Booking.hold_expires_at <= utcnow()).values(status="expired"))
-    b = Booking(slot=slot, mentor=mentor, student=current_user, hold_expires_at=utcnow() + HOLD,
+    minutes = mentor.session_minutes
+    if not take_minutes(current_user.id, minutes):
+        raise NeedsHours(f"This session needs {hours_text(minutes)} of counselling time and you do not have enough. "
+                         "Buy hours to book.")
+    b = Booking(slot=slot, mentor=mentor, student=current_user, status="confirmed", minutes_deducted=minutes,
+                meeting_url=f"https://meet.jit.si/TYM-{secrets.token_urlsafe(10)}",
                 topic=str(data.get("topic") or "").strip()[:1000] or None,
                 student_timezone=data.get("timezone") if data.get("timezone") in available_timezones() else None)
     db.session.add(b)
     try:
         db.session.flush()
-    except IntegrityError:
-        db.session.rollback()
+    except IntegrityError:  # the partial unique index: another active booking holds this slot
+        db.session.rollback()  # the hours taken above go back with it
         abort(409, TAKEN)
-
-    try:
-        order = payments.create_order(mentor.price_minor, mentor.currency, receipt=f"booking-{b.id}",
-                                      notes={"booking_id": str(b.id), "mentor": mentor.user.display_name})
-    except payments.PaymentError:
-        db.session.rollback()
-        abort(502, "We could not reach the payment provider. Try again in a moment.")
-    db.session.add(Payment(user_id=current_user.id, booking=b, kind="session", amount_minor=mentor.price_minor,
-                           currency=mentor.currency, razorpay_order_id=order["id"]))
+    if b.topic:  # booking opens their private conversation (api/mentor_chat.py): what they want to cover starts it
+        db.session.add(MentorMessage(mentor_id=mentor.id, student_id=current_user.id, author_id=current_user.id,
+                                     body=content.clean(b.topic, 2000)[0] or b.topic))
     db.session.commit()
-    return jsonify(booking=s.booking(b), checkout=_checkout(b)), 201
-
-
-@bp.post("/bookings/<int:booking_id>/verify")
-@jwt_required()
-@limiter.limit("30 per hour")
-def verify(booking_id):
-    b = _mine(booking_id)
-    data = _body()
-    order_id, payment_id = data.get("razorpay_order_id"), data.get("razorpay_payment_id")
-    if not b.payment or order_id != b.payment.razorpay_order_id or not payments.valid_payment(
-            order_id, payment_id, data.get("razorpay_signature")):
-        abort(400, "We could not confirm this payment. If money left your account, write to "
-                   "support@theyouthmatters.com with your payment ID and we will sort it out.")
-    try:
-        confirmed = confirm(b.payment, payment_id)
-    except payments.PaymentError:
-        db.session.rollback()
-        mailer.send_quietly(current_app.config["CONTACT_EMAIL"], f"Booking {booking_id} needs a look",
-                            f"<p>Payment {escape(str(payment_id))} was taken for booking {booking_id}, but the time had gone "
-                            "and the automatic refund did not go through. Confirm or refund it in Razorpay.</p>")
-        abort(502, "Your payment went through, but we could not finish the booking. Our team has been "
-                   "alerted and will confirm or refund it within a day.")
-    db.session.commit()
-    if confirmed:
-        _email_confirmation(b)
-    return jsonify(booking=s.booking(b))
-
-
-@bp.post("/payments/razorpay/webhook")
-@limiter.exempt
-def webhook():
-    if not payments.valid_webhook(request.get_data(), request.headers.get("X-Razorpay-Signature")):
-        abort(400, "Invalid signature.")
-    event = request.get_json(silent=True) or {}
-    if event.get("event") in ("payment.captured", "order.paid"):
-        entity = event["payload"]["payment"]["entity"]
-        payment = db.session.scalar(db.select(Payment).where(Payment.razorpay_order_id == entity["order_id"]))
-        if payment:
-            confirmed = confirm(payment, entity["id"])
-            db.session.commit()
-            if confirmed:
-                _email_confirmation(payment.booking)
-    return jsonify(ok=True)
+    _email_confirmation(b)
+    return jsonify(booking=s.booking(b), counselingMinutes=current_user.counseling_minutes), 201
 
 
 def session_row(b, viewer_id):
     """A booking as the person looking at it should see it. The mentor giving the session gets the
-    student's name and photo, never their email or receipt."""
+    student's name and photo, never their email."""
     row = s.booking(b)
     if b.mentor.user_id != viewer_id:
         return row
-    del row["invoiceNumber"]
     return {**row, "asMentor": True, "student": s.user_brief(b.student)}
 
 
@@ -225,31 +138,32 @@ def mine():
     return jsonify([session_row(b, me) for b in rows])
 
 
+def give_back(b):
+    """Return a cancelled session's time to the student. Only once: the amount is cleared as it goes."""
+    if b.minutes_deducted:
+        add_minutes(b.student_id, b.minutes_deducted)
+        b.minutes_deducted = None
+        return True
+    return False
+
+
 @bp.post("/bookings/<int:booking_id>/cancel")
 @jwt_required()
 @limiter.limit("20 per hour")
 def cancel(booking_id):
     b = _mine(booking_id)
-    if b.status == "pending_payment":
-        b.status = "cancelled"
-        db.session.commit()
-        return jsonify(booking=s.booking(b))
     if b.status != "confirmed" or b.slot.starts_at <= utcnow():
         abort(409, "This session can no longer be cancelled.")
     if b.slot.starts_at - utcnow() < FREE_CANCEL:
         abort(409, "Sessions can be cancelled up to 24 hours before they start. "
                    "If something urgent came up, write to support@theyouthmatters.com.")
-    try:
-        refund = payments.refund(b.payment.razorpay_payment_id, b.payment.amount_minor)
-    except payments.PaymentError:
-        abort(502, "We could not start the refund just now. Try again in a few minutes.")
-    b.payment.status, b.payment.razorpay_refund_id = "refunded", refund["id"]
+    give_back(b)
     b.status = "cancelled"
     db.session.commit()
     mailer.send_quietly(b.mentor.user.email, f"Cancelled: session with {current_user.display_name}",
                         f"<p>{escape(current_user.display_name)} cancelled the session on {_when(b, b.mentor.timezone)}. "
                         "The time is open for booking again.</p>")
-    return jsonify(booking=s.booking(b))
+    return jsonify(booking=s.booking(b), counselingMinutes=current_user.counseling_minutes)
 
 
 @bp.post("/bookings/<int:booking_id>/review")

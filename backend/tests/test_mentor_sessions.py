@@ -10,25 +10,23 @@ def person(uid, name):
              email=f"{name.lower()}@example.com")
 
 
-def test_a_mentor_sees_who_booked_but_not_their_email_or_receipt():
+def test_a_mentor_sees_who_booked_but_not_their_email():
     student, mentor = person(1, "Asha"), person(2, "Ravi")
     booking = N(
         id=7, status="confirmed", topic="My SOP opening", meeting_url="https://meet.jit.si/TYM-abc", note=None,
-        hold_expires_at=None, review=None, student_id=student.id, student=student,
+        hold_expires_at=None, review=None, student_id=student.id, student=student, minutes_deducted=30,
         slot=N(starts_at=datetime(2026, 11, 2, 9, 0, tzinfo=timezone.utc),
                ends_at=datetime(2026, 11, 2, 9, 30, tzinfo=timezone.utc)),
         mentor=N(id=3, user_id=mentor.id, user=mentor, university="Leeds", course="MSc Data Science",
-                 timezone="Europe/London", price_minor=129900, currency="INR"),
-        payment=N(amount_minor=129900, currency="INR", status="paid", invoice_number="TYM-2026-000007",
-                  razorpay_order_id="order_1", razorpay_payment_id="pay_1"))
+                 timezone="Europe/London", session_minutes=30))
 
     booked = session_row(booking, student.id)
     assert "asMentor" not in booked and "student" not in booked
-    assert booked["invoiceNumber"] == "TYM-2026-000007"  # the student keeps their receipt
+    assert booked["minutes"] == 30  # what came off the student's counselling hours
 
     given = session_row(booking, mentor.id)
     assert given["asMentor"] is True
     assert given["student"] == {"id": 1, "username": "asha", "displayName": "Asha", "role": "student", "avatar": None}
     assert given["topic"] == "My SOP opening" and given["meetingUrl"] == "https://meet.jit.si/TYM-abc"
     sent = json.dumps(given)
-    assert not any(secret in sent for secret in ("asha@example.com", "TYM-2026-000007", "order_1", "pay_1"))
+    assert "asha@example.com" not in sent

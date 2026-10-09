@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { CalendarDays, CheckCircle2, GraduationCap, MapPin, Pencil, School } from 'lucide-react'
 import PostList from '../components/feed/PostList'
 import { MoreMenu } from '../components/feed/PostActions'
+import MentorChat from '../components/mentors/MentorChat'
 import MySessions from '../components/mentors/MySessions'
 import Avatar from '../components/ui/Avatar'
 import RoleBadge from '../components/ui/RoleBadge'
@@ -69,7 +70,7 @@ export default function Profile() {
   const [params, setParams] = useSearchParams()
   const { data: u, error, loading } = useApi(`/users/${username}`)
   const own = account?.username === username
-  const tabs = own ? ['Questions', 'Answers', 'Saved', 'Sessions'] : ['Questions', 'Answers']
+  const tabs = own ? ['Questions', 'Answers', 'Saved', 'Sessions', 'Messages'] : ['Questions', 'Answers']
   const tab = tabs.includes(params.get('tab')) ? params.get('tab') : 'Questions'
   useMeta(u ? { title: `${u.displayName} (@${u.username})`, description: u.bio || `${u.displayName} on The Youth Matters.`, path: `/u/${u.username}` } : {})
 
@@ -88,7 +89,7 @@ export default function Profile() {
   return (
     <div className="container page profile">
       <header className="profile-card card">
-        <div className="profile-cover">{u.cover && <img src={u.cover} alt="" />}</div>
+        <div className="profile-cover" />
         <div className="profile-main">
           <div className="profile-avatar"><Avatar user={u} size={120} /></div>
           <div className="profile-actions">
@@ -135,6 +136,7 @@ export default function Profile() {
             empty={<div className="card empty"><h2 className="display">Nothing saved yet</h2><p className="muted">Tap the bookmark on any question to keep it here. Only you can see this list.</p></div>} />
         )}
         {tab === 'Sessions' && own && <MySessions />}
+        {tab === 'Messages' && own && <MentorChat />}
       </div>
     </div>
   )

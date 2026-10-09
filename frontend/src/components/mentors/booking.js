@@ -19,6 +19,13 @@ export const formatTime = (iso, timeZone) =>
 export const formatDay = (iso, opts = {}) =>
   new Date(iso).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', ...opts })
 
+// Counselling time, as people say it: 30 -> "30 minutes", 60 -> "1 hour", 90 -> "1.5 hours"
+export const hoursText = (minutes) => {
+  if (minutes < 60) return `${minutes} minutes`
+  const hours = +(minutes / 60).toFixed(2)
+  return `${hours} ${hours === 1 ? 'hour' : 'hours'}`
+}
+
 export function loadRazorpay() {
   if (window.Razorpay) return Promise.resolve()
   return new Promise((resolve, reject) => {

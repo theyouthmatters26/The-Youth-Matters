@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarPlus, Star, Video } from 'lucide-react'
+import { CalendarPlus, MessageSquare, Star, Video } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import { FormError, Spinner } from '../auth/fields'
 import { api, useApi } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
-import { formatMoney } from '../../lib/format'
-import { downloadIcs, formatDay, formatTime } from './booking'
+import { downloadIcs, formatDay, formatTime, hoursText } from './booking'
+import { chatLink } from './MentorChat'
+import Packages from './Packages'
 import './mentors.css'
 
 const DAY = 24 * 3600_000
@@ -47,6 +48,7 @@ function ReviewForm({ booking, onDone }) {
 }
 
 function Session({ b, onChange }) {
+  const { account } = useAuth()
   const [confirming, setConfirming] = useState(false)
   const [reviewing, setReviewing] = useState(false)
   const [error, setError] = useState('')
@@ -79,23 +81,28 @@ function Session({ b, onChange }) {
       <div className="session-main">
         <p className="session-who"><Link to={to}>{giving ? `With ${who.displayName}` : who.displayName}</Link>
           <span className={`session-status is-${upcoming ? 'upcoming' : past ? 'past' : 'cancelled'}`}>
-            {upcoming ? 'Upcoming' : past ? 'Completed' : b.paymentStatus === 'refunded' ? 'Cancelled · refunded' : 'Cancelled'}
+            {upcoming ? 'Upcoming' : past ? 'Completed' : 'Cancelled'}
           </span>
         </p>
         <p className="session-when">{formatDay(b.startsAt)} · {formatTime(b.startsAt)} – {formatTime(b.endsAt)}</p>
         {b.topic && <p className="session-topic">{giving && 'They want to cover: '}“{b.topic}”</p>}
         {b.note && <p className="faint">{b.note}</p>}
-        <p className="faint session-meta">{formatMoney(b.amountMinor, b.currency)}{b.invoiceNumber ? ` · Receipt ${b.invoiceNumber}` : ''}</p>
+        {!giving && <p className="faint session-meta">{hoursText(b.minutes)} of counselling</p>}
 
         <FormError>{error}</FormError>
         <div className="session-actions">
           {upcoming && <a href={b.meetingUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm"><Video size={15} /> Join call</a>}
           {/* The calendar entry is named after the other person, which downloadIcs reads from mentor.user */}
           {upcoming && <button className="btn btn-ghost btn-sm" onClick={() => downloadIcs(giving ? { ...b, mentor: { user: who } } : b)}><CalendarPlus size={15} /> Add to calendar</button>}
+          {b.status !== 'cancelled' && (
+            <Link to={chatLink(account.username, b.mentor.id, giving ? b.student.id : account.id)} className="btn btn-ghost btn-sm">
+              <MessageSquare size={15} /> Message {who.displayName.split(' ')[0]}
+            </Link>
+          )}
           {canCancel && !confirming && <button className="btn-text" onClick={() => setConfirming(true)}>Cancel session</button>}
           {canCancel && confirming && (
             <span className="session-confirm">
-              Cancel and refund {formatMoney(b.amountMinor, b.currency)}?
+              Cancel and get {hoursText(b.minutes)} back?
               <button className="btn btn-ghost btn-sm" onClick={cancel} disabled={busy}>{busy ? <Spinner /> : 'Yes, cancel'}</button>
               <button className="btn-text" onClick={() => setConfirming(false)}>Keep it</button>
             </span>
@@ -107,6 +114,26 @@ function Session({ b, onChange }) {
         {reviewing && <ReviewForm booking={b} onDone={onChange} />}
       </div>
     </li>
+  )
+}
+
+// What the member has to spend, and where to get more
+function Hours() {
+  const { account } = useAuth()
+  const [buying, setBuying] = useState(false)
+  const minutes = account?.counselingMinutes || 0
+  return (
+    <section className="card card-pad hours" aria-label="Your counselling hours">
+      <div className="hours-row">
+        <div>
+          <p className="eyebrow">Counselling hours</p>
+          <p className="hours-balance display">{hoursText(minutes)}</p>
+          <p className="faint">{minutes ? 'Ready to book with any TYM mentor.' : 'Buy hours, then book any TYM mentor with them.'}</p>
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={() => setBuying(!buying)}>{buying ? 'Close' : 'Buy hours'}</button>
+      </div>
+      {buying && <Packages />}
+    </section>
   )
 }
 
@@ -122,10 +149,13 @@ export default function MySessions() {
         <p className="muted">When a student books you, the session appears here with their name, the time, what they want to cover and the call link.</p>
       </div>
     ) : (
-      <div className="empty card">
-        <h2 className="display">No sessions yet</h2>
-        <p className="muted">Book a one-to-one with a student who has already done what you are planning.</p>
-        <Link to="/mentors" className="btn btn-primary btn-sm">Find a mentor</Link>
+      <div className="stack">
+        <Hours />
+        <div className="empty card">
+          <h2 className="display">No sessions yet</h2>
+          <p className="muted">Book a one-to-one with a student who has already done what you are planning.</p>
+          <Link to="/mentors" className="btn btn-primary btn-sm">Find a mentor</Link>
+        </div>
       </div>
     )
   }
@@ -138,9 +168,10 @@ export default function MySessions() {
   // A mentor's own sessions with students come first, apart from any they booked as a student
   const giving = sorted.filter((b) => b.asMentor)
   const booked = sorted.filter((b) => !b.asMentor)
-  if (!giving.length) return list(booked)
+  if (!giving.length) return <div className="stack"><Hours />{list(booked)}</div>
   return (
     <div className="stack">
+      {booked.length > 0 && <Hours />}
       <h2 className="eyebrow">Sessions you are giving</h2>
       {list(giving)}
       {booked.length > 0 && <h2 className="eyebrow">Sessions you booked</h2>}

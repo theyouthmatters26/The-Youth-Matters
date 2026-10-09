@@ -98,15 +98,14 @@ export default function Settings() {
       </header>
 
       <section className="card settings-pictures" aria-label="Photos">
-        <div className="settings-cover">{profile.cover && <img src={profile.cover} alt="Your cover" />}</div>
+        <div className="settings-cover" />
         <div className="settings-pictures-row">
           <div className="settings-avatar"><Avatar user={profile} size={104} /></div>
           <div className="settings-pictures-text">
-            <strong>Profile photo and cover</strong>
-            <p className="muted">A clear photo of your face helps people trust your answers. JPG, PNG or WebP, up to 6 MB.</p>
+            <strong>Profile photo</strong>
+            <p className="muted">A clear photo of your face helps people trust your answers. JPG, PNG or WebP. We resize it and keep it small.</p>
             <div className="settings-pictures-buttons">
               <PictureField kind="avatar" current={profile.avatar} onChange={applied} />
-              <PictureField kind="cover" current={profile.cover} onChange={applied} />
             </div>
           </div>
         </div>

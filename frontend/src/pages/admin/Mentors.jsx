@@ -3,7 +3,7 @@ import { ArrowUpRight, FileText, Star } from 'lucide-react'
 import { FormError, Spinner } from '../../components/auth/fields'
 import { ALL_FIELDS, plain } from '../../data/mentorForm'
 import { adminApi, openAdminFile, useAdminApi } from '../../lib/admin'
-import { formatMoney, plural } from '../../lib/format'
+import { plural } from '../../lib/format'
 import { Confirm, Empty, Facts, Loading, PageHead, Person, Pill, Sheet, Tabs, ago, day } from './ui'
 
 const DAYS = [['mon', 'Mon'], ['tue', 'Tue'], ['wed', 'Wed'], ['thu', 'Thu'], ['fri', 'Fri'], ['sat', 'Sat'], ['sun', 'Sun']]
@@ -35,7 +35,7 @@ function Application({ a, onClose, onDone }) {
       <Facts items={[
         ['Studied', `${a.course}, ${a.university}`],
         ['Status', `${a.graduated ? 'Graduated' : 'Graduating'} ${a.graduationYear}`],
-        ['Sessions', `${a.sessionMinutes} minutes for ${formatMoney(a.price * 100)}`],
+        ['Sessions', `${a.sessionMinutes} minutes, paid for with counselling hours`],
         ['Helps with', a.topics.join(', ')],
         ['Languages', a.languages.join(', ')],
         ['Work', a.experience],
@@ -103,7 +103,7 @@ function Applications({ status, onChanged }) {
             <button className="adm-row adm-apps" onClick={() => setOpen(a)}>
               <Person user={a.user} sub={a.user.email} />
               <span className="adm-cell adm-cell-wide">{a.course}, {a.university}</span>
-              <span className="adm-cell">{formatMoney(a.price * 100)} · {a.sessionMinutes} min</span>
+              <span className="adm-cell">{a.sessionMinutes} min sessions</span>
               <time className="adm-cell adm-cell-time" dateTime={a.createdAt}>Applied {ago(a.createdAt)}</time>
             </button>
           </li>
@@ -116,7 +116,7 @@ function Applications({ status, onChanged }) {
 
 // What students read on a mentor's page. Session length and weekly hours stay the mentor's own.
 function Listing({ id, start, onSaved }) {
-  const [f, setF] = useState({ headline: start.headline, university: start.university, course: start.course, about: start.about, price: start.price })
+  const [f, setF] = useState({ headline: start.headline, university: start.university, course: start.course, about: start.about })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -127,7 +127,7 @@ function Listing({ id, start, onSaved }) {
     setBusy(true)
     setError('')
     try {
-      await adminApi(`/admin/mentors/${id}`, { method: 'PATCH', body: { ...f, price: Number(f.price) } })
+      await adminApi(`/admin/mentors/${id}`, { method: 'PATCH', body: f })
       setSaved(true)
       onSaved()
     } catch (err) {
@@ -148,11 +148,7 @@ function Listing({ id, start, onSaved }) {
         <div className="field"><label htmlFor="ml-course">Course</label><input id="ml-course" className="input" value={f.course} onChange={set('course')} required minLength={2} maxLength={120} /></div>
         <div className="field"><label htmlFor="ml-uni">University</label><input id="ml-uni" className="input" value={f.university} onChange={set('university')} required minLength={2} maxLength={120} /></div>
       </div>
-      <div className="field">
-        <label htmlFor="ml-price">Price of one session, in rupees</label>
-        <input id="ml-price" type="number" className="input" value={f.price} onChange={set('price')} required min={299} max={9999} step={1} />
-        <span className="hint">Each session is {start.sessionMinutes} minutes. A new price applies to sessions booked from now on.</span>
-      </div>
+      <p className="adm-hint">Each session is {start.sessionMinutes} minutes and uses that much of the student's counselling hours. Prices are set on the packages, under Payments.</p>
       <div className="field">
         <label htmlFor="ml-about">About them</label>
         <textarea id="ml-about" className="textarea adm-textarea" rows={5} value={f.about} onChange={set('about')} maxLength={4000} />
@@ -241,7 +237,7 @@ function Directory() {
           <li key={m.id} className="adm-row adm-directory">
             <Person user={m.user} sub={`${m.course}, ${m.university}`} />
             <span className="adm-cell adm-cell-drop">{m.country}</span>
-            <span className="adm-cell">{formatMoney(m.priceMinor, m.currency)} · {m.sessionMinutes} min</span>
+            <span className="adm-cell">{m.sessionMinutes} min sessions</span>
             <span className="adm-cell">
               {m.rating ? <><Star size={13} aria-hidden /> {m.rating} ({m.reviewCount})</> : 'No reviews yet'} · {m.sessions} sessions
             </span>

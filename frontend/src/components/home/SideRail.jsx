@@ -4,7 +4,6 @@ import RoomCard from '../feed/RoomCard'
 import Avatar from '../ui/Avatar'
 import { countryBySlug } from '../../data/sample'
 import { useApi } from '../../lib/api'
-import { formatMoney } from '../../lib/format'
 import './home.css'
 
 // Right rail for country and post pages: the live chatroom, mentors who studied there,
@@ -37,7 +36,7 @@ export default function SideRail({ country }) {
                 <div>
                   <strong>{m.user.displayName}</strong>
                   <span>{m.university}</span>
-                  {m.rating && <span className="mini-rating"><Star size={11} aria-hidden /> {m.rating} · {formatMoney(m.priceMinor, m.currency)}</span>}
+                  {m.rating && <span className="mini-rating"><Star size={11} aria-hidden /> {m.rating} · {m.sessionMinutes} min</span>}
                 </div>
               </Link>
             ))}

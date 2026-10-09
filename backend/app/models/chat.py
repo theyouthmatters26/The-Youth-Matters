@@ -65,3 +65,16 @@ class AiMessage(Model):
     sources = db.Column(db.JSON)  # [{"postId", "title"}] community questions the answer drew on
 
     author = db.relationship("User")
+
+
+class MentorMessage(Model):
+    """A private message between a student and a mentor they have booked (api/mentor_chat.py).
+    The two of them are the conversation: (mentor_id, student_id)."""
+    __tablename__ = "mentor_messages"
+    __table_args__ = (db.Index("ix_mentor_messages_thread", "mentor_id", "student_id", "id"),)
+
+    mentor_id = db.Column(db.Integer, db.ForeignKey("mentor_profiles.id", ondelete="CASCADE"), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    body = db.Column(db.String(2000), nullable=False)
+    read_at = db.Column(db.DateTime(timezone=True))  # when the other person saw it

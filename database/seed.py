@@ -116,7 +116,7 @@ STUDENTS = [
 # Weekly hours are in each mentor's own time zone, picked to land in Indian evenings and weekends.
 MENTORS = [
     dict(username="priya.s", name="Priya Sharma", country="uk", university="University of Leeds",
-         course="MSc Data Science", year=2025, price=1499, minutes=30, timezone="Europe/London",
+         course="MSc Data Science", year=2025, minutes=30, timezone="Europe/London",
          languages=["English", "Hindi", "Telugu"],
          headline="I review SOPs line by line and check UK visa files before you submit.",
          about="I moved from Hyderabad to Leeds in 2024 for an MSc in Data Science, and spent most of that "
@@ -135,7 +135,7 @@ MENTORS = [
                   ("meera.n", 4, "Very helpful on CAS. We ran short on time for my housing questions, but she "
                                  "sent notes afterwards.", 75)]),
     dict(username="arjun.r", name="Arjun Rao", country="uk", university="King's College London",
-         course="LLM International Law", year=2025, price=1799, minutes=30, timezone="Europe/London",
+         course="LLM International Law", year=2025, minutes=30, timezone="Europe/London",
          languages=["English", "Hindi", "Kannada"],
          headline="London living costs, part-time work and law applications, from someone doing all three.",
          about="I came to London from Bengaluru for an LLM and work part-time at a legal aid clinic. I can tell you "
@@ -148,7 +148,7 @@ MENTORS = [
          reviews=[("kavya.r", 5, "His spreadsheet of his own London costs was worth the session on its own.", 9),
                   ("varun.p", 5, "Straight answers on part-time work and what is allowed. No sugar-coating.", 33)]),
     dict(username="daniel.o", name="Daniel Okafor", country="canada", university="Toronto Metropolitan University",
-         course="BEng Computer Engineering", year=2027, price=1299, minutes=30, timezone="America/Toronto",
+         course="BEng Computer Engineering", year=2027, minutes=30, timezone="America/Toronto",
          languages=["English"],
          headline="Co-op job search, study permits and your first month in Toronto.",
          about="Third-year computer engineering student and co-op intern. I came to Toronto from Lagos, so I went "
@@ -162,7 +162,7 @@ MENTORS = [
                                  "three weeks later.", 18),
                   ("ishaan.g", 4, "Good practical advice on co-op, even though I ended up choosing Australia.", 51)]),
     dict(username="sara.t", name="Sara Thomas", country="usa", university="Northeastern University",
-         course="MS Information Systems", year=2026, price=1999, minutes=45, timezone="America/New_York",
+         course="MS Information Systems", year=2026, minutes=45, timezone="America/New_York",
          languages=["English", "Malayalam", "Hindi"],
          headline="US shortlists, funding and F-1 interview practice.",
          about="I got into four of six US programmes with a partial scholarship, applying from Kochi without a "
@@ -177,7 +177,7 @@ MENTORS = [
                                   "chance at.", 28),
                   ("rohan.m", 5, "Honest about my profile, which is what I needed.", 64)]),
     dict(username="kabir.s", name="Kabir Singh", country="germany", university="TU Munich",
-         course="MSc Mechanical Engineering", year=2026, price=1199, minutes=30, timezone="Europe/Berlin",
+         course="MSc Mechanical Engineering", year=2026, minutes=30, timezone="Europe/Berlin",
          languages=["English", "Hindi", "Punjabi", "German"],
          headline="APS, blocked accounts and finding a WG room in Munich.",
          about="I cleared APS in 2025 and work as a working student at an automotive supplier. Germany rewards "
@@ -190,7 +190,7 @@ MENTORS = [
          reviews=[("varun.p", 5, "His APS timeline was spot on. I booked my interview the week after our call.", 14),
                   ("meera.n", 4, "Useful even for a quick comparison with the US. Very organised.", 90)]),
     dict(username="hannah.l", name="Hannah Lee", country="australia", university="University of Melbourne",
-         course="Master of Teaching", year=2026, price=1399, minutes=30, timezone="Australia/Melbourne",
+         course="Master of Teaching", year=2026, minutes=30, timezone="Australia/Melbourne",
          languages=["English", "Korean"],
          headline="Genuine Student answers and Subclass 500 checklists.",
          about="I taught secondary school in Seoul before moving to Melbourne to train as a teacher here. I have "
@@ -227,7 +227,7 @@ def seed_people():
         m.university, m.course, m.graduation_year = spec["university"], spec["course"], spec["year"]
         m.headline, m.about, m.experience = spec["headline"], spec["about"], spec["experience"]
         m.topics, m.languages, m.links = spec["topics"], spec["languages"], {"linkedin": "https://www.linkedin.com"}
-        m.price_minor, m.currency, m.session_minutes = spec["price"] * 100, "INR", spec["minutes"]
+        m.session_minutes = spec["minutes"]
         m.timezone, m.weekly_hours, m.is_verified = spec["timezone"], spec["hours"], True
         db.session.add(m)
         db.session.flush()

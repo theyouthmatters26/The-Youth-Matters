@@ -41,7 +41,7 @@ def _summary(a):
         "country": a.community.country.slug, "university": a.university, "course": a.course,
         "graduationYear": a.graduation_year, "graduated": a.graduated, "headline": a.headline, "about": a.about,
         "experience": a.experience, "topics": a.topics, "languages": a.languages, "linkedin": a.linkedin,
-        "price": a.price_minor // 100, "sessionMinutes": a.session_minutes, "timezone": a.timezone,
+        "sessionMinutes": a.session_minutes, "timezone": a.timezone,
         "weeklyHours": a.weekly_hours, "details": a.details or {},
     }
 
@@ -159,9 +159,6 @@ def apply():
     year = f.get("graduationYear", type=int)
     if not year or not 1970 <= year <= 2035:
         abort(400, "Enter your graduation year, or the year you expect to graduate.")
-    price = f.get("price", type=int)
-    if not price or not 299 <= price <= 9999:
-        abort(400, "Set a session price between ₹299 and ₹9,999.")
     minutes = f.get("sessionMinutes", type=int)
     if minutes not in (30, 45, 60):
         abort(400, "Choose a session length of 30, 45 or 60 minutes.")
@@ -181,7 +178,7 @@ def apply():
         headline=_text(f, "headline", "Headline", 20, 160), about=_text(f, "about", "About you", 150, 2000),
         experience=_text(f, "experience", "Experience", 2, 255, required=False),
         topics=_list(f, "topics", "Topics", 8, 60), languages=_list(f, "languages", "Languages", 6, 30),
-        linkedin=linkedin, price_minor=price * 100, session_minutes=minutes, timezone=tz,
+        linkedin=linkedin, session_minutes=minutes, timezone=tz,
         weekly_hours=weekly_hours(f.get("weeklyHours")), details=details,
     )
     a.cv_key = _file("cv", "CV", allow_images=False)
@@ -193,7 +190,7 @@ def apply():
     rows = [("Member", f"{user.display_name} (@{user.username}, {user.email})"), ("Country", community.country.name),
             ("Studies", f"{a.course}, {a.university}, {'graduated' if a.graduated else 'graduating'} {a.graduation_year}"),
             ("Headline", a.headline), ("Topics", ", ".join(a.topics)), ("Languages", ", ".join(a.languages)),
-            ("Sessions", f"{a.session_minutes} min at ₹{price}, {slots} times a week ({a.timezone})"),
+            ("Sessions", f"{a.session_minutes} min, {slots} times a week ({a.timezone})"),
             ("LinkedIn", a.linkedin or "-"),
             ("Mobile", f"{details['mobileCode']} {details['mobile']}"), ("Lives in", f"{details['city']}, {details['currentCountry']}"),
             ("Work", f"{details['jobTitle']}, {details['organisation']} ({details['totalExperience']})"),
@@ -260,7 +257,7 @@ def decide(application_id):
         m.community_id, m.university, m.course, m.graduation_year = a.community_id, a.university, a.course, a.graduation_year
         m.headline, m.about, m.experience = a.headline, a.about, a.experience
         m.topics, m.languages, m.links = a.topics, a.languages, {"linkedin": a.linkedin} if a.linkedin else None
-        m.price_minor, m.currency, m.session_minutes = a.price_minor, "INR", a.session_minutes
+        m.session_minutes = a.session_minutes
         m.timezone, m.weekly_hours, m.is_verified = a.timezone, a.weekly_hours, True
         db.session.add(m)
         if a.user.role == "student":  # someone on the team who also mentors keeps their place on the team

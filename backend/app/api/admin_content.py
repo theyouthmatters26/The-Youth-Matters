@@ -494,10 +494,9 @@ def payments_csv():
     rows = db.session.execute(db.select(Payment, User).join(User, Payment.user_id == User.id).order_by(Payment.id)).all()
 
     def line(pay, member):
-        b = pay.booking
-        return [pay.created_at.date().isoformat(), member.display_name, member.email, b.mentor.user.display_name if b else "",
-                b.slot.starts_at.isoformat() if b else "", f"{pay.amount_minor / 100:.2f}", pay.currency, pay.status,
+        return [pay.created_at.date().isoformat(), member.display_name, member.email, pay.package.title if pay.package else "",
+                f"{(pay.minutes or 0) / 60:g}", f"{pay.amount_minor / 100:.2f}", pay.currency, pay.status,
                 pay.invoice_number or "", pay.razorpay_payment_id or "", pay.razorpay_refund_id or ""]
 
-    return _csv("tym-payments.csv", ["Date", "Member", "Email", "Mentor", "Session time (UTC)", "Amount", "Currency", "Status",
+    return _csv("tym-payments.csv", ["Date", "Member", "Email", "Package", "Hours", "Amount", "Currency", "Status",
                                      "Invoice", "Razorpay payment", "Razorpay refund"], [line(p, u) for p, u in rows])

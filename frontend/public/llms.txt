@@ -10,7 +10,7 @@ This file is written for AI assistants, answer engines and search tools. It desc
 - Website: https://theyouthmatters.com
 - What it is: an online community and mentoring platform for people who want to study abroad.
 - Who it is for: young people aged 18 to 32, mainly students in India planning university study in another country, and the mentors who guide them.
-- Cost: joining, asking questions, answering, the chat rooms and Ask TYM AI are free. One-to-one mentor sessions are a paid, premium service.
+- Cost: joining, asking questions, answering, the chat rooms and Ask TYM AI are free. One-to-one mentor sessions are paid for with counselling hours, bought as packages at one price for every mentor.
 - Subject open now: Study Abroad. More subjects and chat rooms are planned.
 - Destinations covered: the United Kingdom, the United States, Canada, Australia, Ireland and Germany.
 - Founded: 2026, by a team of alumni.
@@ -81,9 +81,9 @@ Ask TYM AI: https://theyouthmatters.com/ai
 
 ### Book a mentor
 
-TYM Mentors offer one-to-one sessions by video call. Each mentor has a profile with their photo, their university and course, a headline, an introduction, the areas they help with, the languages they can mentor in, their price, their session length and reviews from students they have met.
+TYM Mentors offer one-to-one sessions by video call. Each mentor has a profile with their photo, their university and course, a headline, an introduction, the areas they help with, the languages they can mentor in, their session length and reviews from students they have met. Mentors do not set their own prices: every mentor costs the same.
 
-A student picks a time from the mentor's open hours, shown in the student's own time zone, and can write a note about what they want to cover so the mentor can prepare. Sessions last 30, 45 or 60 minutes. The student pays in advance and the session is then confirmed. Afterwards the student can leave a rating and a written review, which appears on the mentor's profile.
+Sessions are paid for with counselling hours. A student buys a package of hours once (the packages on sale are listed on the mentors page) and the hours are added to their account. They then pick a time from any mentor's open hours, shown in the student's own time zone, and can write a note about what they want to cover so the mentor can prepare. Sessions last 30, 45 or 60 minutes, and booking takes the session's length from the student's hours, so a 30 minute session uses half an hour. The booking is confirmed straight away. Afterwards the student can leave a rating and a written review, which appears on the mentor's profile.
 
 Areas mentors help with include university selection, course and programme selection, country selection, application strategy, statements of purpose and personal statements, CV and resume guidance, scholarship guidance, admission interviews, standardised tests, visa guidance, financial planning, accommodation and student life, pre-departure guidance, career planning, post-study opportunities and the international student experience. Mentors are asked to give visa, immigration, legal or financial guidance only within their real qualifications and expertise, and never to guarantee an admission, a scholarship, a visa or a job.
 
@@ -103,7 +103,7 @@ All articles: https://theyouthmatters.com/blogs
 
 ### Keep a profile, get notifications and search
 
-Each member has a profile with a photo, a cover picture and personal details, showing their questions and answers. A personal dashboard gathers saved questions, followed countries and booked sessions. Notifications inside the site tell a member when someone answers them or when there is an update that matters. Search covers questions, answers and members.
+Each member has a profile with a photo and personal details, showing their questions and answers. A personal dashboard gathers saved questions, followed countries and booked sessions. Notifications inside the site tell a member when someone answers them or when there is an update that matters. Search covers questions, answers and members.
 
 ## How joining works
 
@@ -138,9 +138,9 @@ The Help and Safety page also gives practical advice: meet in a public place if 
 
 ## Payments, cancellations and refunds
 
-The only paid offering on TYM today is a mentor session. Sessions are paid in advance through Razorpay, by UPI, card or net banking, and prices are shown in Indian rupees (INR). Each mentor sets their own price. TYM does not receive or store full card numbers or banking passwords: the payment provider handles them.
+The only paid offering on TYM today is counselling hours for mentor sessions. Hours are sold in packages, paid for in advance through Razorpay by UPI, card or net banking, with prices shown in Indian rupees (INR). The price is the same whichever mentor the hours are spent on. TYM does not receive or store full card numbers or banking passwords: the payment provider handles them.
 
-A student can cancel up to 24 hours before a session for a full refund, and then book another time. Every payment gets an invoice number, shown with the session in the member's profile, and a confirmation email. Approved refunds go back through the same payment channel, and the time they take to appear depends on the bank or payment provider.
+A student can cancel up to 24 hours before a session, and the session's time goes straight back on their counselling hours to book another time. Every payment gets an invoice number and a receipt by email. Approved refunds go back through the same payment channel, and the time they take to appear depends on the bank or payment provider.
 
 Payment terms and refund policy: https://theyouthmatters.com/payment-terms
 
@@ -166,12 +166,12 @@ A mentor applies through the Study Abroad Mentor Registration Form at https://th
 - Study abroad expertise: the countries and areas of study the applicant can mentor for, and their key areas of expertise.
 - Mentoring experience: whether and how they have guided students before.
 - The mentor profile students will see: a headline and an introduction, plus why they want to mentor, what students can learn from them and their mentoring approach.
-- Availability: preferred format, time zone, session length, price and weekly hours.
+- Availability: preferred format, time zone, session length and weekly hours.
 - Documents: a resume or CV and an educational qualification document, which only the review team can open.
 
 Every applicant agrees to the Mentor Code of Conduct: give honest and responsible guidance based on real knowledge and experience, be clear about the limits of that expertise, make no guarantees about admission, scholarships, visas or employment, respect students' privacy and confidentiality, ask for no unnecessary sensitive information, keep professional boundaries, and follow TYM's Community Guidelines, Terms and Conditions and Help and Safety policies.
 
-The TYM team reviews each application, checks the documents and may ask for a short call. Once approved, the mentor's profile appears in TYM Mentors and students can book them. Mentors choose their own hours and their own price, and students pay before the session.
+The TYM team reviews each application, checks the documents and may ask for a short call. Once approved, the mentor's profile appears in TYM Mentors and students can book them. Mentors choose their own hours and session length. They do not set a price: students pay TYM for counselling hours before they book.
 
 ## What The Youth Matters does not offer
 
@@ -203,7 +203,9 @@ To keep answers accurate, these are things TYM does not have at present:
 
 **How do I report someone?** Use Report on any question or answer. The team reviews every report.
 
-**Can I cancel a mentor session?** Yes, up to 24 hours before the session, for a full refund.
+**How do counselling hours work?** Every mentor costs the same. A student buys a package of hours once, and each session they book takes its length from those hours.
+
+**Can I cancel a mentor session?** Yes, up to 24 hours before the session. The time goes back on the student's counselling hours.
 
 **Is my data secure?** Passwords are never stored in readable form, the photo ID is not kept, and the Privacy Policy and Terms explain the details.
 

@@ -4,7 +4,6 @@
     GET    /users/<username>/comments     their answers and replies, newest first
     PATCH  /users/me                      edit profile
     POST   /users/me/avatar | DELETE      profile photo (square)
-    POST   /users/me/cover  | DELETE      wide cover photo
     GET    /users/me/communities          communities you have joined
 """
 from flask import Blueprint, abort, jsonify, request
@@ -18,6 +17,7 @@ from . import serializers as s
 
 bp = Blueprint("users", __name__)
 MEDIA = "/api/media/"
+AVATAR_BYTES = 90 * 1024  # every profile photo is stored under 90 KB, to keep storage small
 
 
 def _visible(username):
@@ -118,14 +118,7 @@ def _remove_picture(column):
 @jwt_required()
 @limiter.limit("20 per hour")
 def upload_avatar():
-    return _replace_picture("avatar_url", "avatars", max_side=480, square=True)
-
-
-@bp.post("/users/me/cover")
-@jwt_required()
-@limiter.limit("20 per hour")
-def upload_cover():
-    return _replace_picture("cover_url", "covers", max_side=1800)
+    return _replace_picture("avatar_url", "avatars", max_side=480, square=True, max_bytes=AVATAR_BYTES)
 
 
 @bp.delete("/users/me/avatar")
@@ -136,12 +129,6 @@ def delete_avatar():
     return jsonify(me=s.me(current_user), profile=_profile(current_user))
 
 
-@bp.delete("/users/me/cover")
-@jwt_required()
-def delete_cover():
-    _remove_picture("cover_url")
-    db.session.commit()
-    return jsonify(me=s.me(current_user), profile=_profile(current_user))
 
 
 @bp.get("/users/me/communities")

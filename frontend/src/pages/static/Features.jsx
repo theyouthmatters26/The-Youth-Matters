@@ -7,14 +7,14 @@ const FEATURES = [
   { Icon: Globe2, title: 'Destination hubs', text: 'Join the UK, US, Canada and more to fill your feed with the countries you care about.', to: '/community', cta: 'See every country' },
   { Icon: MessagesSquare, title: 'Live chatrooms', text: 'Free public rooms by country. Find flatmates, compare CAS timelines, ask quick questions.', to: '/chat', cta: 'Open chatrooms' },
   { Icon: Bot, title: 'AI Counsellor', text: 'Private help with SOPs, visa steps and shortlists. Type @TYMAi in any chatroom for a quick answer.', to: '/ai', cta: 'Try the AI Lounge' },
-  { Icon: Vote, title: 'Verified mentors', text: 'Book a paid one-to-one with a student at the university you want, at a time that suits you.', to: '/mentors', cta: 'Browse mentors' },
+  { Icon: Vote, title: 'Verified mentors', text: 'Buy counselling hours once, then book a one-to-one with any mentor at a time that suits you.', to: '/mentors', cta: 'Browse mentors' },
   { Icon: ShieldCheck, title: 'A safer community', text: 'Every member is 18+ and checked with a photo ID, abuse is filtered automatically, and there is a three-strike policy and one-click reporting.', to: '/faq', cta: 'How moderation works' },
 ]
 
 // From the client's feature list: only what the site does today
 const INCLUDED = [
   ['Accounts', 'Sign up and sign in with your email or Google, confirm your age once, and reset a forgotten password by email.'],
-  ['Your profile', 'A profile with your own photo, cover and personal details.'],
+  ['Your profile', 'A profile with your own photo and personal details.'],
   ['Notifications', 'Alerts in the site when someone answers you or there is an update that matters.'],
   ['Chat history and search', 'Chat room messages are saved, and you can search questions, answers and members.'],
   ['Free chat rooms', 'Specialised chat rooms on study abroad matters, free to join.'],

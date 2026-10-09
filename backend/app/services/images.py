@@ -12,7 +12,8 @@ class ImageError(Exception):
     """Shown to the person who uploaded the file."""
 
 
-def prepare(upload, max_side=1600, square=False):
+def prepare(upload, max_side=1600, square=False, max_bytes=None):
+    """max_bytes: keep the saved file under this size, by saving it at a lower quality if it has to be."""
     data = upload.read()
     if len(data) > MAX_BYTES:
         raise ImageError("That picture is too large. Use one under 6 MB.")
@@ -29,6 +30,9 @@ def prepare(upload, max_side=1600, square=False):
         img = ImageOps.fit(img, (max_side, max_side))
     else:
         img.thumbnail((max_side, max_side))
-    out = BytesIO()
-    img.save(out, "JPEG", quality=85, optimize=True)
+    for quality in (85, 75, 65, 55, 45, 35):
+        out = BytesIO()
+        img.save(out, "JPEG", quality=quality, optimize=True)
+        if not max_bytes or out.tell() <= max_bytes:
+            break
     return out.getvalue()
