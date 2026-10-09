@@ -145,7 +145,7 @@
 }
 .connect { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2); }
 .connect span { margin-right: var(--s-2); letter-spacing: 0.14em; text-transform: uppercase; font-size: var(--step--2); }
-.connect a {
+.connect a, .connect i {
   display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
   border: 1px solid var(--night-line); color: var(--on-ink-muted); transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
@@ -196,7 +196,7 @@
   .account-link { width: 34px; }
   .account-me { height: 36px; padding: 0 2px; border: 0; }
   .connect { gap: 6px; }
-  .connect a { width: 32px; height: 32px; }
+  .connect a, .connect i { width: 32px; height: 32px; }
 }
 
 /* Notification bell with unread count */
@@ -249,3 +249,24 @@ button.account-me { background: var(--paper); cursor: pointer; }
   .account-pop { position: fixed; top: 76px; right: var(--gutter); left: var(--gutter); width: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .account-pop { animation: none; } }
+
+/* The floating WhatsApp button: bottom right on every page. Its label only appears when the button is pointed at, touched or focused */
+.whatsapp { position: fixed; right: 20px; bottom: 20px; z-index: 40; display: flex; align-items: center; gap: 12px; }
+.whatsapp-label {
+  padding: 10px 16px; border-radius: 999px; background: var(--night); color: var(--on-ink); font-size: var(--step--1);
+  font-weight: 500; white-space: nowrap; box-shadow: var(--shadow-lg);
+  opacity: 0; transform: translateX(8px); pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+}
+.whatsapp:hover .whatsapp-label, .whatsapp:focus-visible .whatsapp-label, .whatsapp:active .whatsapp-label { opacity: 1; transform: none; }
+.whatsapp-icon {
+  display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #25d366; color: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), var(--shadow-lg); transition: transform 0.3s var(--ease);
+}
+.whatsapp:hover .whatsapp-icon { transform: scale(1.06); }
+@media (max-width: 720px) {
+  .whatsapp { right: 14px; bottom: 14px; }
+  .whatsapp-icon { width: 50px; height: 50px; }
+}
+/* Room under the last footer row, so the floating button never sits on the Connect icons */
+.footer-bottom { padding-bottom: 88px; }
+@media (max-width: 720px) { .footer-bottom { padding-bottom: 80px; } }
