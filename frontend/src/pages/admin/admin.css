@@ -450,3 +450,6 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
 .adm-faq-by { margin-top: var(--s-2); font-size: var(--step--1); color: var(--muted); }
 .adm-faq-body { display: grid; gap: var(--s-3); margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--line-soft); }
 .adm-faq-new { flex: 1 1 100%; margin-bottom: 0; padding: var(--s-4); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); background: var(--paper); }
+
+.adm-thread-delete { color: var(--danger); }
+.adm-thread-delete:hover { border-color: var(--danger); }

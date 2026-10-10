@@ -270,7 +270,6 @@
   .mchat-head-actions { grid-column: 1 / -1; justify-content: flex-start; }
   .mchat-share-form { grid-template-columns: minmax(0, 1fr) auto; }
 }
-}
 
 .mentor-search-hint { margin: calc(-1 * var(--s-3)) 0 var(--s-4); font-size: var(--step--1); max-width: 70ch; }
 

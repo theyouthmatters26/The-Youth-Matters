@@ -309,7 +309,7 @@ export default function MentorApply() {
   } else if (!me) {
     panel = (
       <StatusCard icon={KeyRound} title="Mentors have their own account">
-        <p className="muted">You are signed in as a student. Mentoring runs on a separate account, so sign up with another email address to apply.</p>
+        <p className="muted">You are signed in with a student account. Mentoring runs on a separate account, so log out and sign up with another email address to apply.</p>
         <Link to="/mentors/signup" className="btn btn-primary btn-sm apply-status-btn">Become a mentor</Link>
       </StatusCard>
     )

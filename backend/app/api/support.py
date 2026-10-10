@@ -5,12 +5,13 @@
     GET  /admin/support/conversations/<id>/messages?after= new messages since `after` (the page polls)
     POST /admin/support/conversations/<id>/messages        {body}: reply as yourself; TYMAi goes quiet
     POST /admin/support/conversations/<id>/status          {status: human | ai}: step in, or hand back
+    DELETE /admin/support/conversations/<id>               remove the conversation and its messages
 """
 from flask import Blueprint, abort, jsonify, request
 from flask_jwt_extended import jwt_required
 
 from ..extensions import db
-from ..models import AiConversation, AiMessage, Comment, Post, User
+from ..models import AiConversation, AiMessage, Comment, ModerationLog, Post, User
 from ..services import content, handoff
 from . import serializers as s
 from .admin import count, paged, team_member, waiting_for_a_person
@@ -96,6 +97,19 @@ def reply(conversation_id):
     c.status, c.assigned_to_id = "human", me.id
     db.session.commit()
     return jsonify(conversation=_row(c), message=handoff.message_json(m)), 201
+
+
+@bp.delete("/admin/support/conversations/<int:conversation_id>")
+@jwt_required()
+def delete_conversation(conversation_id):
+    """Gone for the student too, messages and all. Used for spam and for test threads."""
+    me = team_member("support")
+    c = _conversation(conversation_id)
+    db.session.add(ModerationLog(actor_id=me.id, action="support_deleted", target_type="user",
+                                 target_id=c.user_id, detail={"title": c.title}))
+    db.session.delete(c)
+    db.session.commit()
+    return jsonify(deleted=True)
 
 
 @bp.post("/admin/support/conversations/<int:conversation_id>/status")

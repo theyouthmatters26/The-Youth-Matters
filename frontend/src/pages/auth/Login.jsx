@@ -28,7 +28,14 @@ export default function Login() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
-  if (account) return <Navigate to={account.verification === 'verified' ? from : resumePath(account)} replace state={{ from }} />
+  if (account) {
+    // Signed in with a student or team account on the mentor page: sign-up explains how to switch,
+    // and sending them to `from` here would bounce them between the two pages for ever.
+    if (mentor && account.role !== 'mentor' && account.verification !== 'mentor') {
+      return <Navigate to="/mentors/signup" replace />
+    }
+    return <Navigate to={account.verification === 'verified' ? from : resumePath(account)} replace state={{ from }} />
+  }
 
   const submit = async (e) => {
     e.preventDefault()

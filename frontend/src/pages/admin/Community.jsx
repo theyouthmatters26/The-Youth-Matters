@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { ArrowUpRight, ImagePlus, Pin, Plus } from 'lucide-react'
 import { FormError, Spinner, SubmitButton } from '../../components/auth/fields'
-import { adminApi, adminClient, useAdminApi } from '../../lib/admin'
+import { adminApi, useAdminApi } from '../../lib/admin'
 import { cityPhoto } from '../../components/ui/Photo'
 import { plural } from '../../lib/format'
 import { Confirm, Empty, Loading, PageHead, Pager, Person, Pill, SearchBox, Sheet, Tabs, ago, useDebounced } from './ui'

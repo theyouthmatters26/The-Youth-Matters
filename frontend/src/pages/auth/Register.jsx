@@ -161,6 +161,18 @@ function Finished({ account, from, logout }) {
   )
 }
 
+// On /mentors/signup with somebody else's account. Bouncing them back to the page that sent them
+// here just loops, so the way on is to log out and sign up with another email address.
+function SwitchAccount({ account, logout }) {
+  return (
+    <AuthLayout title="Mentors need their own account" aside={<MemberQuote />}
+      subtitle={`You are signed in as ${account.email}. Mentoring runs on a separate account, so log out and sign up with another email address.`}>
+      <button type="button" className="btn btn-primary btn-block" onClick={logout}>Log out and sign up as a mentor</button>
+      <p className="auth-switch">Already applied? <Link to="/mentors/login" className="link">Mentor log in</Link></p>
+    </AuthLayout>
+  )
+}
+
 export default function Register() {
   const location = useLocation()
   const mentor = location.pathname === '/mentors/signup'
@@ -172,9 +184,14 @@ export default function Register() {
   const [sent, setSent] = useState(location.state?.confirm || null) // { email, devCode } after the code is sent
   const [arrivedVerified] = useState(account?.verification === 'verified')
 
-  if (arrivedVerified) return <Navigate to={from} replace />
-  // The mentor account exists now, so the rest of signing up is the application itself
-  if (account?.verification === 'mentor') return <Navigate to="/mentors/register" replace />
+  // A mentor account already, waiting or approved: the rest of signing up is the application itself
+  if (account?.verification === 'mentor' || (mentor && account?.role === 'mentor')) {
+    return <Navigate to="/mentors/register" replace />
+  }
+  if (mentor && account) return <SwitchAccount account={account} logout={logout} />
+  // `account` is checked again because arrivedVerified is frozen at the first render: after logging
+  // out above, it must not fire and send them straight back out of the page.
+  if (arrivedVerified && account) return <Navigate to={from} replace />
   const step = !account ? (sent ? 1 : 0) : { document: 2 }[account.verification]
   if (step === undefined) return <Finished account={account} from={from} logout={logout} />
 

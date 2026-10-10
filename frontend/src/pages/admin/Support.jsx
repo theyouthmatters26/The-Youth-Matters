@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ArrowLeft, BookOpen, Bot, CornerUpLeft, Send, UserRound } from 'lucide-react'
+import { ArrowLeft, BookOpen, Bot, CornerUpLeft, Send, Trash2, UserRound } from 'lucide-react'
 import RichText from '../../components/feed/RichText'
 import Avatar from '../../components/ui/Avatar'
 import { FormError } from '../../components/auth/fields'
@@ -99,6 +99,19 @@ function Thread({ id, onBack, onChanged }) {
     }
   }
 
+  // Gone for the student too, so it asks first. Used for spam and for test threads.
+  const remove = async () => {
+    if (!window.confirm(`Delete this conversation with ${c.student.displayName}? The student loses it too.`)) return
+    setError('')
+    try {
+      await adminApi(`/admin/support/conversations/${id}`, { method: 'DELETE' })
+      onChanged()
+      onBack()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   if (error && !c) return <Empty title="We could not open this conversation" text={error} />
   if (!c) return <Loading what="the conversation" />
 
@@ -119,6 +132,7 @@ function Thread({ id, onBack, onChanged }) {
           {c.status === 'human'
             ? <button className="btn btn-ghost btn-sm" onClick={() => setStatus('ai')}><CornerUpLeft size={14} /> Hand back to TYMAi</button>
             : <button className="btn btn-ghost btn-sm" onClick={() => setStatus('human')}><UserRound size={14} /> Step in</button>}
+          <button className="btn btn-ghost btn-sm adm-thread-delete" onClick={remove}><Trash2 size={14} /> Delete</button>
         </div>
       </header>
 
