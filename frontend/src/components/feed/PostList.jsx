@@ -70,9 +70,9 @@ export default function PostList({ endpoint = '/posts', query = '', preview = 2,
         {shown.map((p) => <PostCard key={p.id} post={p} onDeleted={remove} />)}
         {loading && [0, 1, 2].slice(0, all.length ? 1 : 3).map((i) => <PostSkeleton key={i} />)}
       </div>
-      {locked.length > 0 && (
+      {!user && !loading && (
         <Gate title={gateTitle} text={gateText}>
-          <div className="feed-list">{locked.map((p) => <PostCard key={p.id} post={p} />)}</div>
+          {locked.length > 0 ? <div className="feed-list">{locked.map((p) => <PostCard key={p.id} post={p} />)}</div> : null}
         </Gate>
       )}
       {error && (

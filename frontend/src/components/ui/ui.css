@@ -82,3 +82,6 @@
 .gate-dark .gate-panel > .gate-note { color: var(--faint); }
 .gate-dark .gate-faces > * { box-shadow: 0 0 0 2px var(--paper); }
 .gate-dark .gate-login { text-decoration-color: var(--line); }
+
+/* No preview above it, so the panel must not pull up over whatever is there instead */
+.gate-bare .gate-panel { margin-top: 0; }

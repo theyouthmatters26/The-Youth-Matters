@@ -38,9 +38,6 @@ export default function Mentors() {
         <p>Mentors are students as well as consultants, and every one is checked by our team. Buy counselling
           hours, pick any mentor and a time in your own time zone, and meet on a video call. Your mentor opens a
           private chat with you before the call.</p>
-        <Link to="/mentors/register" className="btn btn-ghost btn-sm mentor-join">
-          <GraduationCap size={15} aria-hidden /> Register as a mentor
-        </Link>
       </header>
 
       <ul className="trust-row">
@@ -48,6 +45,16 @@ export default function Mentors() {
         <li><CalendarCheck size={16} aria-hidden /> Free cancellation up to 24 hours before</li>
         <li><Lock size={16} aria-hidden /> Secure payment with Razorpay</li>
       </ul>
+
+      <aside className="mentor-join">
+        <div>
+          <strong>Been there yourself?</strong>
+          <p>Mentor the students coming next, in hours that suit you, and get paid before you meet.</p>
+        </div>
+        <Link to="/mentors/register" className="btn btn-light btn-sm">
+          <GraduationCap size={15} aria-hidden /> Join as a mentor
+        </Link>
+      </aside>
 
       <section className="mentor-pricing" id="hours" aria-labelledby="hours-title">
         <header className="section-head">
