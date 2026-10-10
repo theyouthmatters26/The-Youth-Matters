@@ -56,6 +56,7 @@ export function PictureField({ kind, current, onChange }) {
 function DeleteAccount({ account, onDone }) {
   const [open, setOpen] = useState(false)
   const [word, setWord] = useState('')
+  const [reason, setReason] = useState('')
   const [password, setPassword] = useState('')
   const [agreed, setAgreed] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -67,7 +68,7 @@ function DeleteAccount({ account, onDone }) {
     setBusy(true)
     setError('')
     try {
-      await api('/users/me', { method: 'DELETE', body: { confirm: word.trim(), password } })
+      await api('/users/me', { method: 'DELETE', body: { confirm: word.trim(), password, reason: reason.trim() } })
       onDone()
     } catch (err) {
       setError(err.message)
@@ -97,6 +98,11 @@ function DeleteAccount({ account, onDone }) {
         <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
         <span>I understand my account and my content will be deleted.</span>
       </label>
+      <div className="field">
+        <label htmlFor="del-why">Why are you leaving? (optional)</label>
+        <textarea id="del-why" className="input" rows={3} value={reason} maxLength={1000}
+          onChange={(e) => setReason(e.target.value)} placeholder="It helps us fix what did not work for you." />
+      </div>
       <div className="field">
         <label htmlFor="del-word">Type DELETE to confirm</label>
         <input id="del-word" className="input" value={word} onChange={(e) => setWord(e.target.value)}

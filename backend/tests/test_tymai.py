@@ -28,7 +28,7 @@ def site(monkeypatch):
 def test_hello_gets_a_hello_not_a_search(site):
     for text in ("hi", "Hello!", "hey there", "good morning"):
         reply, sources = tymai.answer(ASHA, text)
-        assert reply.startswith("Hi Asha!") and sources == [], text
+        assert reply.startswith("Hi there, I am SumSam") and sources == [], text
     assert "Anytime, Asha" in tymai.answer(ASHA, "thanks")[0]
     assert tymai.small_talk(ASHA, "hi, how much money for a UK visa?") is None  # a real question is not a greeting
 
@@ -79,7 +79,7 @@ def claude(site, monkeypatch):
 def test_with_a_key_the_question_goes_to_claude_with_the_site_facts(claude):
     claude.reply = message({"type": "thinking", "thinking": "", "signature": "sig"}, {"type": "text", "text": "Hi Asha, here you go."})
     history = [{"role": "user", "content": "earlier question"}, {"role": "assistant", "content": "earlier answer"}]
-    reply, _ = tymai.answer(ASHA, "hi", history)
+    reply, _ = tymai.answer(ASHA, "how much money for a UK visa?", history)
     assert reply == "Hi Asha, here you go."  # the thinking block is skipped, the text is the answer
 
     sent = claude.seen[0]
@@ -90,7 +90,7 @@ def test_with_a_key_the_question_goes_to_claude_with_the_site_facts(claude):
     system = body["system"][0]
     assert system["cache_control"] == {"type": "ephemeral"} and "Counselling hours" in system["text"]
     assert body["messages"][:2] == history and body["messages"][-1]["role"] == "user"
-    assert "My question: hi" in body["messages"][-1]["content"] and "1 hour for ₹850" in body["messages"][-1]["content"]
+    assert "My question: how much money for a UK visa?" in body["messages"][-1]["content"] and "1 hour for ₹850" in body["messages"][-1]["content"]
 
 
 def test_a_refusal_or_a_failing_service_still_gives_the_student_an_answer(claude):

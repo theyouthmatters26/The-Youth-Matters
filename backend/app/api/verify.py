@@ -29,6 +29,9 @@ def document():
         abort(409, "Your account is already verified.")
     if user.status != "pending":  # suspended or banned: an ID photo must not switch the account back on
         abort(403, "This account is suspended. Write to support@theyouthmatters.com if you think this is a mistake.")
+    if user.role == "mentor":  # only the team opens a mentor account, never an ID photo
+        abort(403, "Mentor accounts are not checked with a photo ID. Our team opens yours once they have "
+                   "approved your application.")
     v = user.verification or IdentityVerification(user=user)
     if v.status == "rejected":
         abort(403, "We could not verify this account. Write to support@theyouthmatters.com for help.")

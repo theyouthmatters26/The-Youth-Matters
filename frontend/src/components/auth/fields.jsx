@@ -112,7 +112,9 @@ function GoogleMark() {
   )
 }
 
-export function GoogleButton({ onSession, onError }) {
+// `as` is "mentor" on the mentor sign-up and log-in pages: a new account made there is a mentor
+// account, which shows no photo ID and waits for our team instead (api/auth.py).
+export function GoogleButton({ onSession, onError, as }) {
   const [busy, setBusy] = useState(false)
   useEffect(() => { if (GOOGLE_CLIENT_ID) loadGoogle() }, [])
 
@@ -127,7 +129,7 @@ export function GoogleButton({ onSession, onError }) {
         if (r.error) return onError('Google sign-in was cancelled.')
         setBusy(true)
         try {
-          onSession(await api('/auth/google', { method: 'POST', body: { accessToken: r.access_token } }))
+          onSession(await api('/auth/google', { method: 'POST', body: { accessToken: r.access_token, as } }))
         } catch (e) {
           onError(e.message)
         } finally {

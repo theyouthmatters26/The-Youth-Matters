@@ -3,6 +3,10 @@
 Sign-up order: register -> verify-email (returns a session) -> identity check (api/verify.py),
 which reads the date of birth from a photo ID and checks the member is 18 or over. Until that passes
 the account status stays "pending".
+
+Mentors sign up the same way with {"as": "mentor"} and skip the photo ID: our team checks who they
+are from their application (api/mentor_applications.py), and approving it is what makes the account
+active. A mentor account is its own account, never a student's.
 """
 import hashlib
 import hmac
@@ -54,6 +58,11 @@ def _body(*fields):
 
 def _by_email(email):
     return db.session.scalar(db.select(User).where(User.email == email.lower()))
+
+
+def _signing_up_as_mentor():
+    """The mentor sign-up pages send {"as": "mentor"}: no photo ID, and the team decides instead."""
+    return str((request.get_json(silent=True) or {}).get("as") or "") == "mentor"
 
 
 def _password_hash(password):
@@ -126,13 +135,15 @@ def register():
         abort(400, "Enter your full name.")
     if not EMAIL.match(email) or len(email) > 255:
         abort(400, "Enter a valid email address.")
+    wants_mentor = _signing_up_as_mentor()
     user = _by_email(email)
     # A team account is never taken over by a new sign-up, whatever state it was in when it was added
-    if user and (user.email_verified or user.role != "student"):
+    if user and (user.email_verified or user.role not in ("student", "mentor")):
         abort(409, "There is already an account with this email. Log in instead.")
     if not user:  # an unconfirmed earlier attempt is simply taken over by whoever confirms the email
         user = User(email=email, username=_username(name))
         db.session.add(user)
+    user.role = "mentor" if wants_mentor else "student"
     user.display_name = name
     user.password_hash = _password_hash(password)
     return jsonify(email=email, **_send_code(user, "Your TYM verification code")), 201
@@ -192,7 +203,12 @@ def google():
             or not data.get("email") or not data.get("sub")):
         abort(401, "Google sign-in did not go through. Try again.")
 
+    wants_mentor = _signing_up_as_mentor()
     user = db.session.scalar(db.select(User).where(User.google_id == data["sub"])) or _by_email(data["email"])
+    # Mentor accounts are separate accounts: a student's email cannot become one through this door
+    if user and wants_mentor and user.role == "student" and user.email_verified:
+        abort(409, "This email already has a student account. Mentors need their own account, so use a "
+                   "different email address.")
     if not user:
         try:
             profile = requests.get("https://openidconnect.googleapis.com/v1/userinfo",
@@ -200,16 +216,21 @@ def google():
         except (requests.RequestException, ValueError):
             profile = {}
         name = (profile.get("name") or data["email"].split("@")[0])[:80]
-        user = User(email=data["email"].lower(), username=_username(name), display_name=name)
+        user = User(email=data["email"].lower(), username=_username(name), display_name=name,
+                    role="mentor" if wants_mentor else "student")
         db.session.add(user)
     _check_allowed(user)
     if not user.email_verified:
         # Someone typed this email into the sign-up form but never confirmed it. Google has now shown
         # who owns it, so the password that stranger chose must not open the account.
         user.password_hash = None
+        # ...and an abandoned sign-up on this email is claimed by whoever is signing up now
+        if wants_mentor and user.role == "student":
+            user.role = "mentor"
     user.google_id, user.email_verified = data["sub"], True
     db.session.commit()
-    # A new Google account is "pending" like any other: it still has to pass the photo-ID age check
+    # A new student account is "pending" until the photo-ID age check; a new mentor account is
+    # "pending" until the team approves their application.
     return _session(user)
 
 

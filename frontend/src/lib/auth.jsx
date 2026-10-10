@@ -41,13 +41,17 @@ export function AuthProvider({ children }) {
 
 export const useAuth = () => useContext(AuthContext)
 
+// Where a half-finished account carries on: students show a photo ID, mentors send their application
+// and wait for our team (api/serializers.py sets "mentor" until that decision).
+export const resumePath = (account) => (account?.verification === 'mentor' ? '/mentors/register' : '/register')
+
 // Wrap member-only routes. Visitors log in and come back; half-finished sign-ups finish first.
 export function RequireAuth({ children }) {
   const { user, account } = useAuth()
   const location = useLocation()
   const from = location.pathname + location.search
   if (!account) return <Navigate to="/login" replace state={{ from }} />
-  if (!user) return <Navigate to="/register" replace state={{ from }} />
+  if (!user) return <Navigate to={resumePath(account)} replace state={{ from }} />
   return children
 }
 
@@ -59,7 +63,7 @@ export function useMemberGuard() {
   const location = useLocation()
   return () => {
     if (user) return true
-    navigate(account ? '/register' : '/login', { state: { from: location.pathname + location.search } })
+    navigate(account ? resumePath(account) : '/login', { state: { from: location.pathname + location.search } })
     return false
   }
 }

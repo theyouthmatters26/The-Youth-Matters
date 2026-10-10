@@ -59,6 +59,7 @@
 .divider { display: flex; align-items: center; gap: var(--s-3); color: var(--faint); font-size: var(--step--1); }
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .auth-switch { font-size: var(--step--1); text-align: center; color: var(--muted); }
+.auth-switch-top { margin-bottom: var(--s-4); }
 .auth-google { gap: var(--s-3); }
 .field-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); }
 .field-link { font-size: var(--step--1); font-weight: 500; color: var(--muted); transition: color 0.2s; }

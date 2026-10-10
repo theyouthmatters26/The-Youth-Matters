@@ -23,17 +23,20 @@ export default function Mentors() {
   // ponytail: the whole directory is filtered in the browser; move it to /mentors?q= past a few hundred.
   const words = typed(query)
   const list = search((data || []).filter((m) => !country || m.community.country.slug === country), words)
-  const shown = user ? list : list.slice(0, PREVIEW)
-  const hidden = user ? [] : list.slice(PREVIEW)
+  // Nothing matched: fall back to the whole directory so a search is never a dead end.
+  const noMatch = !!data && list.length === 0
+  const results = noMatch ? data : list
+  const shown = user ? results : results.slice(0, PREVIEW)
+  const hidden = user ? [] : results.slice(PREVIEW)
 
   return (
     <div className="container page">
       <header className="page-head">
         <p className="eyebrow">TYM Mentors · One-to-one sessions</p>
         <h1 className="mentor-title">Book a <span>Mentor / student</span> who has done it</h1>
-        <p>Every mentor is checked by our team: students and recent graduates who went where you are going, and
-          study abroad consultants. Buy counselling hours, pick any mentor and a time in your own time zone, and
-          meet on a video call. Your mentor opens a private chat with you before the call.</p>
+        <p>Mentors are students as well as consultants, and every one is checked by our team. Buy counselling
+          hours, pick any mentor and a time in your own time zone, and meet on a video call. Your mentor opens a
+          private chat with you before the call.</p>
       </header>
 
       <ul className="trust-row">
@@ -67,9 +70,11 @@ export default function Mentors() {
         </label>
       </div>
       <p id="mentor-search-hint" className="mentor-search-hint muted">
-        {words.length > 0
-          ? `${list.length} ${list.length === 1 ? 'mentor matches' : 'mentors match'} ${words.join(' + ')}.`
-          : 'Search a country, a university or course, a mentor\u2019s name, a language, or what you need help '
+        {noMatch
+          ? 'No mentor matches that yet. Here is every other mentor you can book.'
+          : words.length > 0
+            ? `${list.length} ${list.length === 1 ? 'mentor matches' : 'mentors match'} ${words.join(' + ')}.`
+            : 'Search a country, a university or course, a mentor\u2019s name, a language, or what you need help '
             + 'with: visas, SOPs, scholarships, housing, part-time work. Every word you add narrows it down.'}
       </p>
 
@@ -78,6 +83,10 @@ export default function Mentors() {
           <p className="form-error">{error.message}</p>
           <button className="btn btn-ghost btn-sm" onClick={reload}>Try again</button>
         </div>
+      )}
+
+      {noMatch && results.length > 0 && (
+        <button className="btn btn-ghost btn-sm mentor-clear" onClick={() => { setCountry(''); setQuery('') }}>Clear filters</button>
       )}
 
       <div className="mcard-grid">
@@ -93,11 +102,10 @@ export default function Mentors() {
         )}
       </div>
 
-      {data && list.length === 0 && (
+      {noMatch && results.length === 0 && (
         <div className="empty card">
-          <h2 className="display">No mentors match that yet</h2>
-          <p className="muted">Try another country or a broader search. New mentors join every month.</p>
-          <button className="btn btn-ghost btn-sm" onClick={() => { setCountry(''); setQuery('') }}>Clear filters</button>
+          <h2 className="display">No mentors yet</h2>
+          <p className="muted">New mentors join every month. Check back soon.</p>
         </div>
       )}
     </div>

@@ -20,12 +20,12 @@ const BENEFITS = [
 ]
 const LOOK_FOR = [
   'You are an experienced professional, educator, international graduate or study-abroad expert',
-  'Your age is checked from photo ID (part of every TYM account)',
   'You can show your CV and proof of your qualification',
   'You reply to bookings and messages within a day',
   'You give honest answers, including "check the official page" when you are not sure',
 ]
 const STEPS = [
+  ['Sign up', 'Create your mentor account with Google or an email address. No photo ID is needed.'],
   ['Apply', 'Complete the form on this page. Please make sure everything is accurate and up to date.'],
   ['Review', 'Our team checks your documents and may ask for a short call.'],
   ['Go live', 'Your profile appears in TYM Mentors and students can book you.'],
@@ -221,8 +221,12 @@ function StatusCard({ icon: Icon, title, children }) {
 
 export default function MentorApply() {
   useMeta({ title: 'Become a TYM mentor', description: 'Become a Study Abroad Mentor with The Youth Matters: for experienced professionals, educators, international graduates and study-abroad experts who can guide young people through their journey.', path: '/mentors/register' })
-  const { account, user, setAccount } = useAuth()
-  const existing = useApi(user ? '/mentor-application' : null)
+  const { account, setAccount } = useAuth()
+  // A mentor account is its own account: "mentor" while our team decides, "verified" once approved
+  // (api/serializers.py). Students never apply from here, they need a mentor account of their own.
+  const me = account && (account.verification === 'mentor' || account.role === 'mentor') ? account : null
+  const approved = me?.verification === 'verified'
+  const existing = useApi(me ? '/mentor-application' : null)
   const [form, setForm] = useState(() => {
     try { return { ...EMPTY, ...JSON.parse(localStorage.getItem(DRAFT) || '{}') } } catch { return EMPTY }
   })
@@ -250,7 +254,7 @@ export default function MentorApply() {
     e.preventDefault()
     setError('')
     const missing = ALL_FIELDS.find((f) => required(f) && !(form.details[f[0]] || '').length)
-    const problem = !user.avatar ? 'Add a profile photo in step 1.'
+    const problem = !me.avatar ? 'Add a profile photo in step 1.'
       : missing ? `Please answer: ${plain(missing[1])}`
         : !form.topics.length ? 'Choose at least one key area of expertise.'
           : !form.languages.length ? 'Add the languages you can mentor in.'
@@ -285,7 +289,7 @@ export default function MentorApply() {
   const current = sent || existing.data
   const country = countries.find((c) => c.slug === form.country)
   const preview = {
-    user: user || account || { displayName: 'You' }, community: { country: { name: country?.name } },
+    user: me || account || { displayName: 'You' }, community: { country: { name: country?.name } },
     course: form.course || 'Your course', university: form.university || 'your university',
     headline: form.headline || 'Your one-line headline shows here. Make it specific.',
     sessionMinutes: Number(form.sessionMinutes),
@@ -294,26 +298,26 @@ export default function MentorApply() {
   let panel
   if (!account) {
     panel = (
-      <StatusCard icon={KeyRound} title="Sign in to apply">
-        <p className="muted">Mentors take paid bookings, so every mentor has a TYM account with an age check from photo ID. It takes about two minutes.</p>
+      <StatusCard icon={KeyRound} title="Create your mentor account">
+        <p className="muted">Mentors take paid bookings, so every mentor has their own TYM account. Sign up with Google or an email address: there is no photo ID to show, because our team checks you from this application.</p>
         <div className="apply-status-actions">
-          <Link to="/register" state={{ from: '/mentors/register' }} className="btn btn-primary btn-sm">Create an account</Link>
-          <Link to="/login" state={{ from: '/mentors/register' }} className="btn btn-ghost btn-sm">Log in</Link>
+          <Link to="/mentors/signup" className="btn btn-primary btn-sm">Become a mentor</Link>
+          <Link to="/mentors/login" className="btn btn-ghost btn-sm">Mentor log in</Link>
         </div>
       </StatusCard>
     )
-  } else if (!user) {
+  } else if (!me) {
     panel = (
-      <StatusCard icon={KeyRound} title="Finish your age check first">
-        <p className="muted">Upload your photo ID to finish signing up, then come back here to apply.</p>
-        <Link to="/register" className="btn btn-primary btn-sm apply-status-btn">Finish sign-up</Link>
+      <StatusCard icon={KeyRound} title="Mentors have their own account">
+        <p className="muted">You are signed in as a student. Mentoring runs on a separate account, so sign up with another email address to apply.</p>
+        <Link to="/mentors/signup" className="btn btn-primary btn-sm apply-status-btn">Become a mentor</Link>
       </StatusCard>
     )
-  } else if (user.role === 'mentor' || current?.status === 'approved') {
+  } else if (approved || current?.status === 'approved') {
     panel = (
       <StatusCard icon={BadgeCheck} title="You are a TYM mentor">
         <p className="muted">Students can find and book you in TYM Mentors. Your upcoming sessions are on your profile.</p>
-        <Link to={`/u/${user.username}?tab=Sessions`} className="btn btn-primary btn-sm apply-status-btn">Your sessions</Link>
+        <Link to={`/u/${me.username}?tab=Sessions`} className="btn btn-primary btn-sm apply-status-btn">Your sessions</Link>
       </StatusCard>
     )
   } else if (existing.loading) {
@@ -321,7 +325,7 @@ export default function MentorApply() {
   } else if (current?.status === 'pending') {
     panel = (
       <StatusCard icon={Clock3} title="Application received">
-        <p className="muted">Sent on {fullDate(current.createdAt)}. Our team will check your documents and email {user.email} within a week, sometimes to set up a short call.</p>
+        <p className="muted">Sent on {fullDate(current.createdAt)}. Our team will check your documents and email {me.email} within a week, sometimes to set up a short call. Your profile goes live on TYM Mentors as soon as it is approved.</p>
         <MentorCard preview m={{ ...preview, course: current.course, university: current.university, headline: current.headline, sessionMinutes: current.sessionMinutes, community: { country: { name: countries.find((c) => c.slug === current.country)?.name } } }} />
         <p className="muted dash-small">This is how students will see you once you are approved.</p>
       </StatusCard>
@@ -340,8 +344,8 @@ export default function MentorApply() {
       <form className="stack apply-sections" onSubmit={submit}>
         <Section n={1} title="Your photo" text="Students book people they can see. Use a clear, recent photo of your face.">
           <div className="apply-photo">
-            <Avatar user={user} size={88} />
-            <PictureField kind="avatar" current={user.avatar} onChange={(res) => setAccount(res.me)} />
+            <Avatar user={me} size={88} />
+            <PictureField kind="avatar" current={me.avatar} onChange={(res) => setAccount(res.me)} />
           </div>
         </Section>
 
@@ -483,7 +487,7 @@ export default function MentorApply() {
     )
   }
 
-  const formShown = user && user.role !== 'mentor' && !existing.loading && (!current || retry)
+  const formShown = me && !approved && !existing.loading && (!current || retry)
 
   return (
     <div className="container page">

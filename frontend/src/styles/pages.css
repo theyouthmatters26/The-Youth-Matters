@@ -454,7 +454,8 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
 .settings-danger-warn { display: flex; align-items: center; gap: 8px; color: var(--danger); font-weight: 500; font-size: var(--step--1); }
 .settings-danger-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
 .settings-danger-actions .btn { width: auto; }
-.settings-danger-actions .btn[type='submit'] { background: var(--danger); border-color: var(--danger); color: var(--on-ink); }
+.settings-danger-actions .btn-primary { background: var(--danger); border-color: var(--danger); color: var(--on-ink); }
+.settings-danger-actions .btn-primary:disabled { opacity: 0.55; }
 
 /* Dashboard (My TYM) */
 .dash-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--s-5); margin-bottom: var(--s-6); }

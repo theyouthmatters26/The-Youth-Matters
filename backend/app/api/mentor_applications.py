@@ -1,6 +1,9 @@
-"""Mentor applications (Module 9). A signed-in member whose age was checked from photo ID applies
-with everything a mentor profile needs. The team reviews it; approval makes the profile live and
-bookable straight away.
+"""Mentor applications (Module 9). Someone who signed up at /mentors/signup applies with everything
+a mentor profile needs. The team reviews it; approval makes the account active and the profile live
+and bookable straight away.
+
+A mentor account is its own account and shows no photo ID: until the team decides, it is "pending"
+and the only thing it can do is write and send this application.
 
     GET  /mentor-application                         your latest application, or null
     POST /mentor-application                         multipart: the fields below, plus cv and proof files
@@ -24,7 +27,6 @@ from ..models.base import utcnow
 from ..services import content, images, mailer, staff, storage
 from ..services.availability import DAYS
 from ..services.notify import notify
-from .posts import member
 
 bp = Blueprint("mentor_applications", __name__)
 
@@ -138,11 +140,21 @@ def mine():
     return jsonify(_summary(a) if a else None)
 
 
+def _applicant():
+    """Who may send an application: a mentor account, waiting for the team or already approved."""
+    user = current_user
+    if user.role != "mentor":
+        abort(403, "Mentor applications come from a mentor account. Sign up on the Become a mentor page.")
+    if user.status not in ("pending", "active"):
+        abort(403, "This account is suspended. Write to support@theyouthmatters.com.")
+    return user
+
+
 @bp.post("/mentor-application")
 @jwt_required()
 @limiter.limit("5 per day")
 def apply():
-    user = member()
+    user = _applicant()
     if db.session.scalar(db.select(MentorProfile.id).where(MentorProfile.user_id == user.id)):
         abort(409, "You are already a TYM mentor.")
     if db.session.scalar(db.select(MentorApplication.id).where(
@@ -262,6 +274,8 @@ def decide(application_id):
         db.session.add(m)
         if a.user.role == "student":  # someone on the team who also mentors keeps their place on the team
             a.user.role = "mentor"
+        if a.user.status == "pending":
+            a.user.status = "active"  # approving the application is what opens a mentor's account
         notify(a.user_id, current_user, "system",
                message="approved your mentor application. Students can book you now.")
     else:

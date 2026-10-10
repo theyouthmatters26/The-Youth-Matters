@@ -38,6 +38,9 @@ const ROUTES = [
   ['/ai', page(() => import('./pages/AiLounge')), true],
   ['/mentors', page(() => import('./pages/Mentors'))],
   ['/mentors/register', page(() => import('./pages/static/MentorApply'))],
+  // Mentors have their own way in: the same two pages, without the photo-ID step (pages/auth)
+  ['/mentors/signup', page(() => import('./pages/auth/Register'))],
+  ['/mentors/login', page(() => import('./pages/auth/Login'))],
   ['/mentors/:id', page(() => import('./pages/MentorProfile'))],
   ['/blogs', page(() => import('./pages/Blogs'))],
   ['/blogs/:slug', page(() => import('./pages/BlogPost'))],

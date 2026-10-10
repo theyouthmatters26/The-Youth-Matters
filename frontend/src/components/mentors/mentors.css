@@ -288,3 +288,4 @@
 .mchat-session.is-overtime .btn { background: transparent; border-color: rgba(255,255,255,0.3); color: var(--on-ink); }
 .mchat-session .form-error { flex: 1 1 100%; }
 .session-live { margin-top: 2px; font-size: var(--step--1); font-weight: 500; }
+.mentor-clear { margin: calc(-1 * var(--s-2)) 0 var(--s-4); }

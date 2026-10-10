@@ -453,8 +453,7 @@ def small_talk(user, text):
     """A reply to hello, thanks and the like, or None. These never go looking for community answers."""
     name = user.display_name.split()[0] if user and user.display_name else "there"
     if GREETING.match(text):
-        return (f"Hi {name}! Lovely to see you here. I am TYMAi, your study abroad buddy. Ask me about visas, SOPs, "
-                "choosing a university, money and housing, or how anything on The Youth Matters works. What is on your mind today?")
+        return "Hi there, I am SumSam, your TYM AI Assistant for your study abroad aspirations."
     if HOW_ARE_YOU.match(text):
         return (f"Doing great, {name}, thank you for asking. No visa queue to stand in today, so I am all yours. "
                 "What would you like help with?")
@@ -497,7 +496,8 @@ def _offline(found, lead=None, user=None, question=""):
 def answer(user, question, history=(), brief=False):
     """(reply text, sources). history: earlier [{"role", "content"}] turns of this conversation."""
     key = current_app.config["ANTHROPIC_API_KEY"]
-    if not key and (ready := small_talk(user, question)):
+    # Hello, thanks and bye have one right reply: answer here so the model never turns them into a sales pitch.
+    if ready := small_talk(user, question):
         return ready, []
     found = related(question, user)
     sources = [{"postId": p.id, "title": p.title} for p, _ in found]

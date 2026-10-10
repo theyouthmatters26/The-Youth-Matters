@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Bookmark, CalendarCheck, ChevronDown, EllipsisVertical, GraduationCap, KeyRound, LayoutDashboard, LogOut, Search, Settings, User, UserPlus, X } from 'lucide-react'
+import { Bell, Bookmark, CalendarCheck, ChevronDown, EllipsisVertical, KeyRound, LayoutDashboard, LogOut, Search, Settings, User, UserPlus, X } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import { api } from '../../lib/api'
-import { useAuth } from '../../lib/auth'
+import { resumePath, useAuth } from '../../lib/auth'
 import { timeAgo } from '../../lib/format'
 import { notificationText } from '../../pages/Notifications'
 import Photo from '../ui/Photo'
@@ -141,8 +141,7 @@ function accountLinks(user) {
     [`${profile}?tab=Saved`, Bookmark, 'Saved questions'],
     [`${profile}?tab=Sessions`, CalendarCheck, 'Your sessions'],
     ['/settings', Settings, 'Profile settings'],
-    user.role === 'student' && ['/mentors/register', GraduationCap, 'Become a mentor'],
-  ].filter(Boolean)
+  ]
 }
 
 // Avatar menu on wide screens, including the way out
@@ -218,7 +217,9 @@ export default function Header() {
             {user ? (
               <AccountMenu user={user} />
             ) : account ? (
-              <Link to="/register" className="account-link account-auth"><UserPlus size={15} strokeWidth={1.7} /> Finish sign-up</Link>
+              <Link to={resumePath(account)} className="account-link account-auth"><UserPlus size={15} strokeWidth={1.7} />
+                {account.verification === 'mentor' ? ' Your application' : ' Finish sign-up'}
+              </Link>
             ) : (
               <>
                 <Link to="/login" className="account-link account-auth"><KeyRound size={15} strokeWidth={1.7} /> Log in</Link>
@@ -279,7 +280,9 @@ export default function Header() {
             )}
             {account && !user && (
               <div className="mobile-actions">
-                <Link to="/register" className="btn btn-light">Finish sign-up</Link>
+                <Link to={resumePath(account)} className="btn btn-light">
+                  {account.verification === 'mentor' ? 'Your application' : 'Finish sign-up'}
+                </Link>
               </div>
             )}
             {!account && (

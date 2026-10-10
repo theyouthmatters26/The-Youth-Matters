@@ -78,7 +78,7 @@ const getJson = (address) => fetch(new URL(address, API)).then((r) => (r.ok ? r.
 async function addresses() {
   const today = new Date().toISOString().slice(0, 10)
   const footer = [...fs.readFileSync(path.resolve(HERE, '../src/pages/static/StaticPage.jsx'), 'utf8').matchAll(/^\s*'(\/[a-z-]+)': \[/gm)].map((m) => m[1])
-  const fixed = ['/', '/about', '/features', '/faq', '/case-studies', '/contact', '/community', '/mentors', '/mentors/register', '/blogs', '/login', '/register', ...footer]
+  const fixed = ['/', '/about', '/features', '/faq', '/case-studies', '/contact', '/community', '/mentors', '/mentors/register', '/mentors/signup', '/mentors/login', '/blogs', '/login', '/register', ...footer]
   const [articles, countries, mentors] = await Promise.all([getJson('/api/blogs'), getJson('/api/subjects/study-abroad/communities'), getJson('/api/mentors')])
   return [
     ...fixed.map((p) => [p, today]),

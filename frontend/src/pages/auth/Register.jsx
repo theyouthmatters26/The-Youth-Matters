@@ -12,9 +12,12 @@ import { useMeta } from '../../lib/meta'
 
 // Sign-up (Module 1): account -> email code -> photo ID (date of birth read by OCR, 18+).
 // The step comes from the account itself, so leaving halfway and logging in later resumes here.
+// Mentors sign up on these same pages at /mentors/signup and stop after the email: our team checks
+// who they are from their application instead of a photo ID, so there is no third step.
 const STEPS = ['Account', 'Email', 'Photo ID']
+const MENTOR_STEPS = ['Account', 'Email']
 
-function AccountStep({ onSent, onSession }) {
+function AccountStep({ onSent, onSession, mentor }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -25,7 +28,7 @@ function AccountStep({ onSent, onSession }) {
     setBusy(true)
     setError('')
     try {
-      onSent(await api('/auth/register', { method: 'POST', body: { displayName: name, email, password } }))
+      onSent(await api('/auth/register', { method: 'POST', body: { displayName: name, email, password, as: mentor ? 'mentor' : undefined } }))
     } catch (err) {
       setError(err.message)
       setBusy(false)
@@ -34,10 +37,12 @@ function AccountStep({ onSent, onSession }) {
 
   return (
     <>
-      <GoogleButton onSession={onSession} onError={setError} />
+      <GoogleButton onSession={onSession} onError={setError} as={mentor ? 'mentor' : undefined} />
       <p className="google-note">
-        Google confirms your email, so there is no code to type. You still show a photo ID to confirm your age.
-        By continuing you confirm you are 18 or older and agree to the{' '}
+        Google confirms your email, so there is no code to type.{' '}
+        {mentor
+          ? <>By continuing you agree to the{' '}</>
+          : <>You still show a photo ID to confirm your age. By continuing you confirm you are 18 or older and agree to the{' '}</>}
         <Link to="/terms" target="_blank" className="link">Terms</Link> and{' '}
         <Link to="/guidelines" target="_blank" className="link">Community Guidelines</Link>.
       </p>
@@ -58,7 +63,8 @@ function AccountStep({ onSent, onSession }) {
         <label className="check">
           <input type="checkbox" required />
           <span>
-            I am 18 or older and agree to the <Link to="/terms" target="_blank" className="link">Terms</Link> and{' '}
+            {mentor ? 'I agree to the ' : 'I am 18 or older and agree to the '}
+            <Link to="/terms" target="_blank" className="link">Terms</Link> and{' '}
             <Link to="/guidelines" target="_blank" className="link">Community Guidelines</Link>.
           </span>
         </label>
@@ -156,32 +162,44 @@ function Finished({ account, from, logout }) {
 }
 
 export default function Register() {
-  useMeta({ title: 'Join free', description: 'Create a free account on The Youth Matters. Members are 18 or over and verified, so the answers come from real students.', path: '/register' })
-  const { account, signIn, setAccount, logout } = useAuth()
   const location = useLocation()
-  const from = location.state?.from || '/'
+  const mentor = location.pathname === '/mentors/signup'
+  useMeta(mentor
+    ? { title: 'Mentor sign-up', description: 'Create your TYM mentor account and send your application. Our team reviews it and your profile goes live once it is approved.', path: '/mentors/signup' }
+    : { title: 'Join free', description: 'Create a free account on The Youth Matters. Members are 18 or over and verified, so the answers come from real students.', path: '/register' })
+  const { account, signIn, setAccount, logout } = useAuth()
+  const from = location.state?.from || (mentor ? '/mentors/register' : '/')
   const [sent, setSent] = useState(location.state?.confirm || null) // { email, devCode } after the code is sent
   const [arrivedVerified] = useState(account?.verification === 'verified')
 
   if (arrivedVerified) return <Navigate to={from} replace />
+  // The mentor account exists now, so the rest of signing up is the application itself
+  if (account?.verification === 'mentor') return <Navigate to="/mentors/register" replace />
   const step = !account ? (sent ? 1 : 0) : { document: 2 }[account.verification]
   if (step === undefined) return <Finished account={account} from={from} logout={logout} />
 
-  const [title, subtitle] = [
+  const [title, subtitle] = (mentor ? [
+    ['Create your mentor account', 'Your account first, then the application form.'],
+    ['Check your inbox', <>We sent a 6-digit code to <strong>{sent?.email}</strong>. It expires in 10 minutes.</>],
+  ] : [
     ['Create your account', 'Free for students. About two minutes from start to finish.'],
     ['Check your inbox', <>We sent a 6-digit code to <strong>{sent?.email}</strong>. It expires in 10 minutes.</>],
     ['Confirm you are 18 or over', 'Take a photo of an ID or upload one. We read the date of birth from it, so there is nothing to type.'],
-  ][step]
+  ])[step]
 
   return (
-    <AuthLayout title={title} subtitle={subtitle} aside={<WhyWeCheck />}>
-      <Steps steps={STEPS} current={step} />
-      {step === 0 && <AccountStep onSent={setSent} onSession={signIn} />}
+    <AuthLayout title={title} subtitle={subtitle} aside={mentor ? <MemberQuote /> : <WhyWeCheck />}>
+      <Steps steps={mentor ? MENTOR_STEPS : STEPS} current={step} />
+      {!mentor && step === 0 && (
+        <p className="auth-switch auth-switch-top">Are you a mentor? <Link to="/mentors/signup" className="link">Sign up as a mentor</Link></p>
+      )}
+      {step === 0 && <AccountStep onSent={setSent} onSession={signIn} mentor={mentor} />}
       {step === 1 && <EmailStep sent={sent} onBack={() => setSent(null)} onSession={signIn} />}
       {step === 2 && <IdCheck onDone={setAccount} />}
 
-      {step === 0 && (
-        <p className="auth-switch">Already a member? <Link to="/login" state={location.state} className="link">Log in</Link></p>
+      {step === 0 && (mentor
+        ? <p className="auth-switch">Already applied? <Link to="/mentors/login" state={location.state} className="link">Mentor log in</Link></p>
+        : <p className="auth-switch">Already a member? <Link to="/login" state={location.state} className="link">Log in</Link></p>
       )}
       {step >= 2 && (
         <p className="auth-switch">

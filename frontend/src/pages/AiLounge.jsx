@@ -28,7 +28,7 @@ function Handoff({ convo, onAsk, onCancel, busy }) {
     return (
       <p className="handoff">
         <UserRound size={15} aria-hidden />
-        <span><strong>We have told the team.</strong> A person will reply here and we will email you. TYMAi keeps answering in the meantime.</span>
+        <span>We have communicated your queries to our support team, they will reach out to you as soon as possible.</span>
         <button type="button" className="btn-text" onClick={onCancel} disabled={busy}>Cancel</button>
       </p>
     )
@@ -175,7 +175,7 @@ export default function AiLounge() {
               </li>
             ))}
           </ul>
-          <p className="lounge-note">Private to you and, if you ask for a person, the TYM team. TYMAi answers on studying abroad and how TYM works, and nothing else. It can make mistakes, so confirm visa rules on official government sites.</p>
+          <p className="lounge-note">Private to you and, if you ask for a person, the TYM team. TYMAi answers on studying abroad and how TYM works. The results may not be 100% correct, so always verify before you act on them and confirm anything important on official government sites.</p>
         </aside>
 
         <section className="chat-main is-lounge" aria-label="Ask TYM AI">

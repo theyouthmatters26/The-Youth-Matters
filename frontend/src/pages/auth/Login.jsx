@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import AuthLayout from '../../components/auth/AuthLayout'
 import { FormError, GoogleButton, PasswordField, SubmitButton } from '../../components/auth/fields'
 import { api } from '../../lib/api'
-import { useAuth } from '../../lib/auth'
+import { resumePath, useAuth } from '../../lib/auth'
 import { useMeta } from '../../lib/meta'
 
 // Members-only pages send visitors here; tell them what logging in will open
@@ -16,15 +16,19 @@ const REASONS = [
 ]
 
 export default function Login() {
-  useMeta({ title: 'Log in', description: 'Log in to The Youth Matters to ask questions, join the chat rooms and book mentors.', path: '/login' })
+  const location = useLocation()
+  // Mentors log in on their own page: no photo ID anywhere in it, and it leads back to their application
+  const mentor = location.pathname === '/mentors/login'
+  useMeta(mentor
+    ? { title: 'Mentor log in', description: 'Log in to your TYM mentor account.', path: '/mentors/login' }
+    : { title: 'Log in', description: 'Log in to The Youth Matters to ask questions, join the chat rooms and book mentors.', path: '/login' })
   const { account, signIn } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
-  const from = location.state?.from || '/'
+  const from = location.state?.from || (mentor ? '/mentors/register' : '/')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
-  if (account) return <Navigate to={account.verification === 'verified' ? from : '/register'} replace state={{ from }} />
+  if (account) return <Navigate to={account.verification === 'verified' ? from : resumePath(account)} replace state={{ from }} />
 
   const submit = async (e) => {
     e.preventDefault()
@@ -35,7 +39,7 @@ export default function Login() {
       signIn(await api('/auth/login', { method: 'POST', body: { email, password } }))
     } catch (err) {
       if (err.data?.error === 'email_unverified') {
-        navigate('/register', { state: { from, confirm: { email: err.data.email, devCode: err.data.devCode } } })
+        navigate(mentor ? '/mentors/signup' : '/register', { state: { from, confirm: { email: err.data.email, devCode: err.data.devCode } } })
         return
       }
       setError(err.message)
@@ -44,11 +48,19 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle={REASONS.find(([p]) => from.startsWith(p))?.[1] || 'Log in to ask questions, join the chatrooms and book mentors.'}>
-      <GoogleButton onSession={signIn} onError={setError} />
+    <AuthLayout title={mentor ? 'Mentor log in' : 'Welcome back'}
+      subtitle={mentor
+        ? 'Log in to your mentor account to follow your application, or to see your sessions once you are approved.'
+        : REASONS.find(([p]) => from.startsWith(p))?.[1] || 'Log in to ask questions, join the chatrooms and book mentors.'}>
+      {!mentor && (
+        <p className="auth-switch auth-switch-top">Are you a mentor? <Link to="/mentors/login" className="link">Log in as a mentor</Link></p>
+      )}
+      <GoogleButton onSession={signIn} onError={setError} as={mentor ? 'mentor' : undefined} />
       <p className="google-note">
-        New here? Google creates your account, then we ask for a photo ID to confirm you are 18 or over. By
-        continuing you agree to the <Link to="/terms" target="_blank" className="link">Terms</Link> and{' '}
+        {mentor
+          ? <>New here? Google creates your mentor account and there is no code to type. By continuing you agree to the </>
+          : <>New here? Google creates your account, then we ask for a photo ID to confirm you are 18 or over. By continuing you agree to the </>}
+        <Link to="/terms" target="_blank" className="link">Terms</Link> and{' '}
         <Link to="/guidelines" target="_blank" className="link">Community Guidelines</Link>.
       </p>
       <div className="divider"><span>or with email</span></div>
@@ -64,7 +76,9 @@ export default function Login() {
         <SubmitButton busy={busy} busyText="Logging in">Log in</SubmitButton>
       </form>
 
-      <p className="auth-switch">New to The Youth Matters? <Link to="/register" state={location.state} className="link">Create an account</Link></p>
+      {mentor
+        ? <p className="auth-switch">Not a mentor yet? <Link to="/mentors/signup" state={location.state} className="link">Apply to mentor</Link></p>
+        : <p className="auth-switch">New to The Youth Matters? <Link to="/register" state={location.state} className="link">Create an account</Link></p>}
     </AuthLayout>
   )
 }

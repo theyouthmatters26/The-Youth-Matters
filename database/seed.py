@@ -254,16 +254,15 @@ FAQS = [
     ("Why do you ask for a photo ID?", "The community is for adults only, so every member must be 18 or older. We "
      "read the date of birth from your passport, driving licence, Aadhaar, PAN or voter ID on our own servers. The "
      "photo is never stored: we keep the date of birth, not the document."),
-    ("Who are TYM Mentors?", "Current students and recent graduates of universities abroad, and study abroad "
-     "consultants. Each one is checked by our team before they can take bookings."),
+    ("Who are TYM Mentors?", "Mentors are students as well as consultants. Each one is checked by our team "
+     "before they can take bookings."),
     ("What is TYMAi?", "Our study abroad assistant, free to use. It joins a chat room when you type @TYMAi, and "
-     "answers privately in Ask TYM AI, where you can also ask for a person from our team. It can be wrong, so check "
-     "official sources for visa rules."),
+     "answers privately in Ask TYM AI, where you can also ask for a person from our team. It is not 100% correct, "
+     "so check all information on official sites before you act on it."),
     ("Can I chat with my mentor?", "Yes. When you book a session, your mentor gets a chat request. Once they accept "
      "it you can message each other in My TYM, before and after the call. Only your mentor can share the video call "
      "link in the chat, so never join a call from anywhere else."),
-    ("Can I share photos and files?", "You can add photos to your questions and to your profile. Chat rooms and "
-     "mentor chats are text only, so nothing can be sent that we cannot moderate."),
+    ("Can I share photos and files?", "You can add photos to your questions and to your profile."),
     ("How do I manage my notifications?", "The bell at the top of every page shows new answers, replies, mentions "
      "and messages from your mentor. Open it to read the latest ones, and Notifications for the full list, where "
      "you can mark them all as read."),

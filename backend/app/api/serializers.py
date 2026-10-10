@@ -9,10 +9,15 @@ def user_brief(u):
 
 def me(u):
     """The signed-in account. verification is where sign-up is: document (photo ID still to do),
-    verified, or review / rejected when a person has to look at it."""
+    verified, or review / rejected when a person has to look at it.
+
+    Mentors never show a photo ID: our team checks them from their application instead, so a mentor
+    account waiting on that decision reads "mentor" and the website keeps it on the apply page."""
     v = u.verification
     if u.status == "active":
         step = "verified"
+    elif u.role == "mentor":
+        step = "mentor"
     elif v and v.status in ("review", "rejected"):
         step = v.status
     else:
