@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { CalendarCheck, Lock, Search, ShieldCheck } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { CalendarCheck, GraduationCap, Lock, Search, ShieldCheck } from 'lucide-react'
 import Gate from '../components/ui/Gate'
 import MentorCard, { MentorCardSkeleton } from '../components/mentors/MentorCard'
 import Packages from '../components/mentors/Packages'
@@ -37,6 +38,9 @@ export default function Mentors() {
         <p>Mentors are students as well as consultants, and every one is checked by our team. Buy counselling
           hours, pick any mentor and a time in your own time zone, and meet on a video call. Your mentor opens a
           private chat with you before the call.</p>
+        <Link to="/mentors/register" className="btn btn-ghost btn-sm mentor-join">
+          <GraduationCap size={15} aria-hidden /> Register as a mentor
+        </Link>
       </header>
 
       <ul className="trust-row">

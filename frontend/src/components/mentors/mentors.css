@@ -288,3 +288,5 @@
 .mchat-session .form-error { flex: 1 1 100%; }
 .session-live { margin-top: 2px; font-size: var(--step--1); font-weight: 500; }
 .mentor-clear { margin: calc(-1 * var(--s-2)) 0 var(--s-4); }
+
+.mentor-join { width: auto; justify-self: start; }  /* .page-head is a grid: its gap spaces this */
