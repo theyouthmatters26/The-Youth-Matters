@@ -3,8 +3,8 @@ from flask_jwt_extended import current_user, verify_jwt_in_request
 from flask_jwt_extended.exceptions import JWTExtendedException
 from jwt import PyJWTError
 
-from . import (admin, admin_content, ai, auth, blogs, bookings, chat, comments, contact, communities, feed, media, mentor_applications,
-               mentor_chat, mentors, moderation,
+from . import (admin, admin_content, ai, auth, blogs, bookings, chat, comments, contact, communities, faqs, feed,
+               media, mentor_applications, mentor_chat, mentors, moderation,
                notifications, packages, posts, search, support, users, verify, votes)
 
 health_bp = Blueprint("health", __name__)
@@ -20,13 +20,14 @@ BLUEPRINTS = [
     auth.bp, users.bp, communities.bp, posts.bp, comments.bp, votes.bp, feed.bp, search.bp,
     notifications.bp, moderation.bp, chat.bp, mentors.bp, bookings.bp, blogs.bp, verify.bp, contact.bp, media.bp,
     ai.bp, mentor_applications.bp, admin.bp, support.bp, admin_content.bp, packages.bp, mentor_chat.bp,
+    faqs.bp,
 ]
 
 # Signing up (email, Google, photo ID) and asking the team for help
 SIGN_UP = ("/api/auth/", "/api/verify/", "/api/contact")
 # What a logged-out visitor can read
 PUBLIC_READS = ("/api/health", "/api/subjects", "/api/categories", "/api/posts", "/api/search", "/api/mentors",
-                "/api/blogs", "/api/media/", "/api/users/", "/api/packages")
+                "/api/blogs", "/api/media/", "/api/users/", "/api/packages", "/api/faqs")
 
 
 def open_to_unverified(method, path):

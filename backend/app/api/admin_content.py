@@ -11,28 +11,35 @@ Community (area "community")
     GET    /admin/chat/rooms                 POST {name, description}; PATCH and DELETE /admin/chat/rooms/<id>
     GET    /admin/chat/rooms/<id>/messages   DELETE /admin/chat/messages/<id>
     GET    /admin/topics                     POST, PATCH and DELETE /admin/topics/<id>
-    GET    /admin/communities                PATCH /admin/communities/<id> {description, isActive}
+    GET    /admin/communities                POST {name, isoCode, description}: a new country and its community
+    PATCH  /admin/communities/<id>           {description, isActive}
+    POST   /admin/communities/<id>/image     the country's photo (multipart "image")
+FAQ (area "faq")
+    GET    /admin/faqs                       every question: published, hidden and the ones members sent in
+    POST   /admin/faqs                       {question, answer}: write one
+    PATCH  /admin/faqs/<id>                  {question, answer, status, sortOrder}: answering publishes it
+    DELETE /admin/faqs/<id>
 Contact form (area "support")
     GET    /admin/contact?status=&page=      POST /admin/contact/<id> {status: new | done}, DELETE /admin/contact/<id>
-Setup and exports
-    GET    /admin/setup                      what is switched on (area "team")
+Exports
     GET    /admin/members.csv                GET /admin/payments.csv
 """
 import csv
 import io
 import re
 
-from flask import Blueprint, Response, abort, current_app, jsonify, request
-from flask_jwt_extended import jwt_required
+from flask import Blueprint, Response, abort, jsonify, request
+from flask_jwt_extended import current_user, jwt_required
 
 from ..extensions import db
-from ..models import (BlogPost, Category, ChatMessage, ChatRoom, Comment, Community, ContactMessage, Follow, Payment,
-                      Post, Subject, User)
+from ..models import (BlogPost, Category, ChatMessage, ChatRoom, Comment, Community, ContactMessage, Country, Faq,
+                      Follow, Payment, Post, Subject, User)
 from ..models.base import utcnow
-from ..services import images, payments, storage
+from ..services import images, storage
 from . import serializers as s
 from .admin import _remove, paged, record, team_member
 from .blogs import article, card
+from .faqs import answered
 
 bp = Blueprint("admin_content", __name__)
 
@@ -363,6 +370,12 @@ def delete_topic(topic_id):
     return jsonify(deleted=True)
 
 
+def _community_json(c, members=0, questions=0):
+    return {"id": c.id, "country": c.country.name, "slug": c.country.slug, "subject": c.subject.name,
+            "image": s.media_url(c.country.image_key) if c.country.image_key else None,
+            "description": c.description, "isActive": c.is_active, "members": members, "questions": questions}
+
+
 @bp.get("/admin/communities")
 @jwt_required()
 def communities():
@@ -372,9 +385,60 @@ def communities():
                                       .where(Follow.community_id.isnot(None)).group_by(Follow.community_id)).all())
     asked = dict(db.session.execute(db.select(Post.community_id, db.func.count(Post.id)).where(~Post.is_deleted)
                                     .group_by(Post.community_id)).all())
-    return jsonify([{"id": c.id, "country": c.country.name, "slug": c.country.slug, "subject": c.subject.name,
-                     "description": c.description, "isActive": c.is_active, "members": members.get(c.id, 0),
-                     "questions": asked.get(c.id, 0)} for c in rows])
+    return jsonify([_community_json(c, members.get(c.id, 0), asked.get(c.id, 0)) for c in rows])
+
+
+@bp.post("/admin/communities")
+@jwt_required()
+def add_community():
+    """A new destination: the country, its community, and the chat room that goes with it. The photo
+    is uploaded afterwards, when there is an id to hang it on."""
+    team_member("community")
+    data = request.get_json(silent=True) or {}
+    name = _text(data.get("name"), 80)
+    iso = str(data.get("isoCode") or "").strip().upper()  # checked whole, never trimmed to fit
+    slug = slugify(_text(data.get("slug"), 40) or name)[:40]
+    if len(name) < 2 or not slug:
+        abort(400, "Give the country a name.")
+    if not (len(iso) == 2 and iso.isalpha()):
+        abort(400, "Enter the country's two-letter code, like FR.")
+    subject = db.session.scalar(db.select(Subject).where(Subject.slug == "study-abroad"))
+    if not subject:
+        abort(409, "The Study Abroad subject is missing. Seed the site first.")
+    if db.session.scalar(db.select(Country.id).where((Country.slug == slug) | (Country.iso_code == iso)
+                                                     | (db.func.lower(Country.name) == name.lower()))):
+        abort(409, "That country is already here.")
+
+    country = Country(slug=slug, name=name, iso_code=iso)
+    last = db.session.scalar(db.select(db.func.max(Community.sort_order))) or 0
+    community = Community(subject=subject, country=country, description=_text(data.get("description"), 500) or None,
+                          is_active=True, sort_order=last + 1)
+    # One room per country, like the rest of them (database/demo_chat.py)
+    db.session.add_all([country, community,
+                        ChatRoom(slug=slug, name=name, subject=subject, community=community,
+                                 description=community.description)])
+    db.session.commit()
+    record("community_added", "user", current_user.id, name=name)
+    db.session.commit()
+    return jsonify(_community_json(community, 0, 0)), 201
+
+
+@bp.post("/admin/communities/<int:community_id>/image")
+@jwt_required()
+def upload_country_photo(community_id):
+    """The picture shown for this country across the site. Replacing one removes the old file."""
+    team_member("community")
+    c = db.session.get(Community, community_id) or abort(404, "We could not find that community.")
+    upload = request.files.get("image") or abort(400, "Choose a picture.")
+    try:
+        key = storage.upload(images.prepare(upload, max_side=1200), "countries", "image/jpeg")
+    except images.ImageError as e:
+        abort(400, str(e))
+    old_key, c.country.image_key = c.country.image_key, key
+    db.session.commit()
+    if old_key:
+        storage.delete(old_key)
+    return jsonify(id=c.id, image=s.media_url(key)), 201
 
 
 @bp.patch("/admin/communities/<int:community_id>")
@@ -389,6 +453,82 @@ def change_community(community_id):
         c.is_active = bool(data["isActive"])
     db.session.commit()
     return jsonify(id=c.id, description=c.description, isActive=c.is_active)
+
+
+# ---------------------------------------------------------------- FAQ
+
+def _faq_json(f):
+    return {"id": f.id, "question": f.question, "answer": f.answer, "status": f.status,
+            "sortOrder": f.sort_order, "createdAt": f.created_at.isoformat(),
+            "askedBy": s.user_brief(f.asked_by) if f.asked_by else None,
+            "answeredAt": f.answered_at.isoformat() if f.answered_at else None}
+
+
+def _faq(faq_id):
+    return db.session.get(Faq, faq_id) or abort(404, "We could not find that question.")
+
+
+@bp.get("/admin/faqs")
+@jwt_required()
+def faqs():
+    """Everything on the FAQ page, and the questions members sent in. Waiting ones come first."""
+    team_member("faq")
+    waiting = db.case((Faq.status == "pending", 0), else_=1)
+    rows = db.session.scalars(db.select(Faq).order_by(waiting, Faq.sort_order, Faq.id))
+    return jsonify([_faq_json(f) for f in rows])
+
+
+@bp.post("/admin/faqs")
+@jwt_required()
+def add_faq():
+    me = team_member("faq")
+    data = request.get_json(silent=True) or {}
+    question, answer = _text(data.get("question"), 200), _text(data.get("answer"), 4000)
+    if len(question) < 5 or len(answer) < 5:
+        abort(400, "Write the question and the answer.")
+    last = db.session.scalar(db.select(db.func.max(Faq.sort_order))) or 0
+    f = Faq(question=question, answer=answer, status="published", sort_order=last + 1)
+    answered(f, me)
+    db.session.add(f)
+    db.session.commit()
+    return jsonify(_faq_json(f)), 201
+
+
+@bp.patch("/admin/faqs/<int:faq_id>")
+@jwt_required()
+def change_faq(faq_id):
+    """Answering a member's question publishes it: that is what they were told would happen."""
+    me = team_member("faq")
+    f = _faq(faq_id)
+    data = request.get_json(silent=True) or {}
+    if "question" in data:
+        f.question = _text(data["question"], 200) or abort(400, "The question cannot be empty.")
+    if "answer" in data:
+        text = _text(data["answer"], 4000)
+        if text and text != (f.answer or ""):
+            answered(f, me)
+        f.answer = text or None
+        if f.status == "pending" and text:
+            f.status = "published"
+    if data.get("status") in ("pending", "published", "hidden"):
+        if data["status"] == "published" and not f.answer:
+            abort(400, "Write an answer before you publish it.")
+        f.status = data["status"]
+    if isinstance(data.get("sortOrder"), int):
+        f.sort_order = max(0, min(data["sortOrder"], 9999))
+    db.session.commit()
+    return jsonify(_faq_json(f))
+
+
+@bp.delete("/admin/faqs/<int:faq_id>")
+@jwt_required()
+def delete_faq(faq_id):
+    team_member("faq")
+    f = _faq(faq_id)  # the moderation log is for members' content, so nothing is written there
+    db.session.delete(f)
+    db.session.commit()
+    return jsonify(deleted=True)
+
 
 
 # ---------------------------------------------------------------- contact form inbox
@@ -428,37 +568,7 @@ def delete_contact(message_id):
     return jsonify(deleted=True)
 
 
-# ---------------------------------------------------------------- setup and exports
-
-@bp.get("/admin/setup")
-@jwt_required()
-def setup():
-    """Which outside services are connected. Values are never shown, only whether each one is set."""
-    team_member("team")
-    cfg = current_app.config
-    return jsonify([
-        {"name": "Site address", "on": bool(cfg["SITE_URL"]), "setting": "VITE_SITE_URL",
-         "when_on": f"Links in emails point to {cfg['SITE_URL']}.",
-         "when_off": f"Links in emails point to {cfg['CORS_ORIGINS'][0]}. Set your public address so they are right."},
-        {"name": "Email", "on": bool(cfg["RESEND_API_KEY"]), "setting": "RESEND_API_KEY",
-         "when_on": f"Codes, booking emails and support alerts are sent from {cfg['MAIL_FROM']}.",
-         "when_off": "No email is sent. Sign-up codes show on screen locally, and nobody is emailed about replies or bookings."},
-        {"name": "Payments", "on": payments.configured(), "setting": "RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET",
-         "when_on": "Students can pay for mentor sessions, and refunds go through Razorpay.",
-         "when_off": "Mentor sessions cannot be paid for or refunded."},
-        {"name": "Payment confirmations", "on": bool(cfg["RAZORPAY_WEBHOOK_SECRET"]), "setting": "RAZORPAY_WEBHOOK_SECRET",
-         "when_on": "Razorpay confirms payments even if the student closes the page early.",
-         "when_off": "A payment is only confirmed if the student's browser reports back."},
-        {"name": "Google sign-in", "on": bool(cfg["GOOGLE_CLIENT_ID"]), "setting": "GOOGLE_CLIENT_ID and VITE_GOOGLE_CLIENT_ID",
-         "when_on": "Members can continue with Google.", "when_off": "Members sign up with email only."},
-        {"name": "TYM AI", "on": bool(cfg["ANTHROPIC_API_KEY"]), "setting": "ANTHROPIC_API_KEY",
-         "when_on": f"TYMAi writes its own answers with {cfg['AI_MODEL']}.",
-         "when_off": "TYMAi replies with what students in the community already said."},
-        {"name": "File storage", "on": bool(cfg["SPACES_KEY"]), "setting": "SPACES_KEY and SPACES_SECRET",
-         "when_on": f"Photos and documents are kept in the {cfg['SPACES_BUCKET']} bucket.",
-         "when_off": "Photos and documents are kept in a folder on this server."},
-    ])
-
+# ---------------------------------------------------------------- exports
 
 def _cell(value):
     """A spreadsheet runs a cell that starts with = + - or @ as a formula. Names are typed by members,

@@ -35,3 +35,22 @@ class ContactMessage(Model):
     status = db.Column(enum("new", "done", name="contact_status"), nullable=False, default="new", server_default="new")
     handled_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
     handled_at = db.Column(db.DateTime(timezone=True))
+
+
+class Faq(Model):
+    """A question and its answer on the FAQ page (api/faqs.py).
+
+    The team writes most of them in the admin panel. Members can send one in with "Post your FAQ":
+    that arrives without an answer and only shows on the site once the team has written one."""
+    __tablename__ = "faqs"
+
+    question = db.Column(db.String(200), nullable=False)
+    answer = db.Column(db.Text)  # NULL while a member's question is waiting for the team
+    status = db.Column(enum("pending", "published", "hidden", name="faq_status"), nullable=False,
+                       default="pending", server_default="pending")
+    sort_order = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    asked_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    answered_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    answered_at = db.Column(db.DateTime(timezone=True))
+
+    asked_by = db.relationship("User", foreign_keys=[asked_by_id])

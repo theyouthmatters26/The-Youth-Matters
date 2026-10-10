@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { ArrowUpRight, Pin, Plus } from 'lucide-react'
-import { FormError, SubmitButton } from '../../components/auth/fields'
-import { adminApi, useAdminApi } from '../../lib/admin'
+import { useRef, useState } from 'react'
+import { ArrowUpRight, ImagePlus, Pin, Plus } from 'lucide-react'
+import { FormError, Spinner, SubmitButton } from '../../components/auth/fields'
+import { adminApi, adminClient, useAdminApi } from '../../lib/admin'
+import { cityPhoto } from '../../components/ui/Photo'
 import { plural } from '../../lib/format'
 import { Confirm, Empty, Loading, PageHead, Pager, Person, Pill, SearchBox, Sheet, Tabs, ago, useDebounced } from './ui'
 
@@ -304,6 +305,92 @@ function Topics() {
   )
 }
 
+// The country's picture, as it appears across the site. Replacing one drops the old file.
+function CountryPhoto({ c, onDone }) {
+  const input = useRef(null)
+  const [busy, setBusy] = useState(false)
+  const upload = async (e) => {
+    const file = e.target.files[0]
+    e.target.value = ''
+    if (!file) return
+    const form = new FormData()
+    form.append('image', file)
+    setBusy(true)
+    try {
+      await adminApi(`/admin/communities/${c.id}/image`, { method: 'POST', body: form })
+      onDone()
+    } catch (err) {
+      onDone(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <>
+      <button className="btn-text" onClick={() => input.current.click()} disabled={busy}>
+        {busy ? <Spinner /> : <ImagePlus size={14} />} {c.image ? 'Change photo' : 'Add photo'}
+      </button>
+      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={upload} />
+    </>
+  )
+}
+
+// A new destination: the country, its community and its chat room, all from here
+function NewCountry({ onAdded }) {
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({ name: '', isoCode: '', description: '' })
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+
+  const add = async (e) => {
+    e.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      const made = await adminApi('/admin/communities', { method: 'POST', body: { ...form, isoCode: form.isoCode.toUpperCase() } })
+      setForm({ name: '', isoCode: '', description: '' })
+      setOpen(false)
+      onAdded(made)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!open) return <button className="btn btn-primary btn-sm adm-add-country" onClick={() => setOpen(true)}><Plus size={15} /> Add a country</button>
+  return (
+    <form className="adm-new-country stack" onSubmit={add}>
+      <div className="grid-2">
+        <div className="field">
+          <label htmlFor="co-name">Country</label>
+          <input id="co-name" className="input" value={form.name} onChange={set('name')} maxLength={80} autoFocus placeholder="France" />
+        </div>
+        <div className="field">
+          <label htmlFor="co-iso">Two-letter code</label>
+          <input id="co-iso" className="input mono" value={form.isoCode} onChange={set('isoCode')} maxLength={2} placeholder="FR" />
+          <span className="hint">The ISO code, like FR for France or NL for the Netherlands.</span>
+        </div>
+      </div>
+      <div className="field">
+        <label htmlFor="co-about">About this country</label>
+        <input id="co-about" className="input" value={form.description} onChange={set('description')} maxLength={500}
+          placeholder="Campus France, student visas and life in French universities." />
+        <span className="hint">One line, shown on the community page and in the chat room.</span>
+      </div>
+      <FormError>{error}</FormError>
+      <div className="adm-action-row">
+        <SubmitButton busy={busy} busyText="Adding" style={{ width: 'auto' }} disabled={form.name.trim().length < 2 || form.isoCode.trim().length !== 2}>
+          Add the country
+        </SubmitButton>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>Cancel</button>
+      </div>
+      <p className="adm-hint">This creates the country, its community and its chat room. Add its photo afterwards.</p>
+    </form>
+  )
+}
+
 function Countries() {
   const list = useAdminApi('/admin/communities')
   const [editing, setEditing] = useState(null)
@@ -322,6 +409,7 @@ function Countries() {
   if (!list.data) return <Loading what="countries" />
   return (
     <>
+      <NewCountry onAdded={() => list.reload()} />
       <FormError>{error}</FormError>
       <ul className="adm-list">
         {list.data.map((c) => (
@@ -334,9 +422,10 @@ function Countries() {
               </form>
             ) : (
               <>
-                <Person user={{ displayName: c.country, avatar: `/images/city-${c.slug}.jpg` }} sub={c.description || 'No description'} />
+                <Person user={{ displayName: c.country, avatar: cityPhoto({ slug: c.slug, image: c.image }) }} sub={c.description || 'No description'} />
                 <span className="adm-row-actions">
                   <span className="adm-cell">{plural(c.members, 'member')} · {plural(c.questions, 'question')}</span>
+                  <CountryPhoto c={c} onDone={(err) => { setError(err || ''); list.reload() }} />
                   <button className="btn-text" onClick={() => setEditing({ id: c.id, description: c.description || '' })}>Edit text</button>
                   <span className="adm-switch-label">{c.isActive ? 'Open' : 'Hidden'}</span>
                   <Switch on={c.isActive} label={`${c.country} is open`} onChange={(v) => change(c, { isActive: v })} />
@@ -346,7 +435,8 @@ function Countries() {
           </li>
         ))}
       </ul>
-      <p className="adm-hint">Hiding a country takes its community off the site. Its questions and members are kept.</p>
+      <p className="adm-hint">Hiding a country takes its community off the site. Its questions and members are kept.
+        A country without a photo of its own uses the one the website ships with, when there is one.</p>
     </>
   )
 }

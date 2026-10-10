@@ -3,6 +3,7 @@ import { CalendarCheck, Lock, Search, ShieldCheck } from 'lucide-react'
 import Gate from '../components/ui/Gate'
 import MentorCard, { MentorCardSkeleton } from '../components/mentors/MentorCard'
 import Packages from '../components/mentors/Packages'
+import { search, typed } from '../components/mentors/search'
 import { countries } from '../data/sample'
 import { useApi } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -18,10 +19,10 @@ export default function Mentors() {
   const [country, setCountry] = useState('')
   const [query, setQuery] = useState('')
 
-  const q = query.trim().toLowerCase()
-  const list = (data || []).filter((m) =>
-    (!country || m.community.country.slug === country) &&
-    (!q || `${m.user.displayName} ${m.university} ${m.course} ${m.topics.join(' ')}`.toLowerCase().includes(q)))
+  // Every word has to match somewhere, so each word a student adds narrows the list.
+  // ponytail: the whole directory is filtered in the browser; move it to /mentors?q= past a few hundred.
+  const words = typed(query)
+  const list = search((data || []).filter((m) => !country || m.community.country.slug === country), words)
   const shown = user ? list : list.slice(0, PREVIEW)
   const hidden = user ? [] : list.slice(PREVIEW)
 
@@ -29,8 +30,10 @@ export default function Mentors() {
     <div className="container page">
       <header className="page-head">
         <p className="eyebrow">TYM Mentors · One-to-one sessions</p>
-        <h1>Book a student who has done it</h1>
-        <p>Every mentor is checked by our team. Buy counselling hours, pick any mentor and a time in your own time zone, and meet on a video call.</p>
+        <h1 className="mentor-title">Book a <span>Mentor / student</span> who has done it</h1>
+        <p>Every mentor is checked by our team: students and recent graduates who went where you are going, and
+          study abroad consultants. Buy counselling hours, pick any mentor and a time in your own time zone, and
+          meet on a video call. Your mentor opens a private chat with you before the call.</p>
       </header>
 
       <ul className="trust-row">
@@ -59,9 +62,16 @@ export default function Mentors() {
         <label className="search-field">
           <Search size={16} aria-hidden />
           <span className="visually-hidden">Search mentors</span>
-          <input type="search" placeholder="University, course or topic" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <input type="search" placeholder="Country, university, course, language or topic" value={query}
+            onChange={(e) => setQuery(e.target.value)} aria-describedby="mentor-search-hint" />
         </label>
       </div>
+      <p id="mentor-search-hint" className="mentor-search-hint muted">
+        {words.length > 0
+          ? `${list.length} ${list.length === 1 ? 'mentor matches' : 'mentors match'} ${words.join(' + ')}.`
+          : 'Search a country, a university or course, a mentor\u2019s name, a language, or what you need help '
+            + 'with: visas, SOPs, scholarships, housing, part-time work. Every word you add narrows it down.'}
+      </p>
 
       {error && (
         <div className="stack" style={{ justifyItems: 'start' }}>

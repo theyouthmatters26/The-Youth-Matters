@@ -353,8 +353,7 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
 .adm-list .adm-inline-form { margin-bottom: 0; grid-column: 1 / -1; }
 .adm-room-log li { align-items: start; }
 .adm-room-log li > span:first-child { overflow-wrap: anywhere; }
-.adm-setup { margin-top: var(--s-8); }
-.adm-setup code, .adm-hint code { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--ink); }
+.adm-hint code { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--ink); }
 .adm-contact-from { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; font-size: var(--step--1); color: var(--muted); }
 .adm-contact-from strong { color: var(--ink); font-size: var(--step-0); margin-right: 6px; }
 
@@ -440,3 +439,14 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
 @media (prefers-reduced-motion: reduce) {
   .adm-sheet, .adm-sheet-wrap, .adm-scrim { animation: none; }
 }
+
+/* FAQ: the page members read, in order, with the questions they sent in waiting at the top */
+.adm-faqs > li { padding: var(--s-4); }
+.adm-faq-head { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--s-3); align-items: center; }
+.adm-faq-q { text-align: left; font-weight: 500; color: var(--ink); }
+.adm-faq-q:hover { text-decoration: underline; text-underline-offset: 3px; }
+.adm-faq-order { display: flex; gap: 2px; }
+.adm-faq-order button:disabled { opacity: 0.3; cursor: default; }
+.adm-faq-by { margin-top: var(--s-2); font-size: var(--step--1); color: var(--muted); }
+.adm-faq-body { display: grid; gap: var(--s-3); margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--line-soft); }
+.adm-faq-new { flex: 1 1 100%; margin-bottom: 0; padding: var(--s-4); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); background: var(--paper); }

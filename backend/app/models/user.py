@@ -4,7 +4,8 @@ from ..extensions import db
 from .base import Model, enum, utcnow
 
 ROLES = ("student", "mentor", "admin", "bot")
-STATUSES = ("pending", "active", "suspended", "banned")
+# closed = the member deleted their own account (api/users.py); nothing personal is left on it
+STATUSES = ("pending", "active", "suspended", "banned", "closed")
 STUDY_LEVELS = ("undergraduate", "postgraduate", "phd", "foundation", "other")
 VERIFICATION_STATUSES = ("pending", "review", "verified", "rejected")
 DOCUMENT_TYPES = ("passport", "driving_licence", "national_id")

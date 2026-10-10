@@ -5,14 +5,16 @@
     PATCH  /users/me                      edit profile
     POST   /users/me/avatar | DELETE      profile photo (square)
     GET    /users/me/communities          communities you have joined
+    DELETE /users/me                      close the account for good: {confirm: "DELETE", password?}
 """
+import bcrypt
 from flask import Blueprint, abort, jsonify, request
 from flask_jwt_extended import current_user, jwt_required
 
-from ..extensions import db, limiter
+from ..extensions import db, limiter, member_key
 from ..models import Comment, Community, Country, Follow, MentorProfile, Post, User
 from ..models.user import STUDY_LEVELS
-from ..services import content, images, storage
+from ..services import accounts, content, images, staff, storage
 from . import serializers as s
 
 bp = Blueprint("users", __name__)
@@ -137,3 +139,30 @@ def my_communities():
     rows = db.session.scalars(db.select(Community).join(Follow, Follow.community_id == Community.id)
                               .where(Follow.user_id == current_user.id).order_by(Community.sort_order))
     return jsonify([s.community(c) for c in rows])
+
+
+@bp.delete("/users/me")
+@jwt_required()
+@limiter.limit("5 per hour", key_func=member_key)
+def delete_me():
+    """Delete your own account. The website asks you to type DELETE first, and that word has to
+    come back here: a stray request cannot close somebody's account.
+
+    Nothing of yours is left to read either way. When sessions or payments are attached those
+    records have to be kept for our books, so the account is emptied and closed instead of deleted
+    (services/accounts.py). Either way you cannot sign in again, and nothing personal remains."""
+    u = current_user
+    data = request.get_json(silent=True) or {}
+    if str(data.get("confirm") or "").strip().upper() != "DELETE":
+        abort(400, "Type DELETE to confirm.")
+    password = str(data.get("password") or "")
+    if u.password_hash and not bcrypt.checkpw(password.encode()[:72], u.password_hash.encode()):
+        abort(403, "That password is not right.")
+    if staff.access_of(u):
+        abort(403, "Team accounts are closed from the admin panel. Ask the owner to take you off the team first.")
+
+    kept = accounts.has_records(u)
+    files = accounts.close(u) if kept else accounts.erase(u, blog_author_id=None)
+    db.session.commit()
+    accounts.remove_files(files)
+    return jsonify(deleted=True, kept=kept)

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
-import { ArrowUpRight, Bot, CalendarCheck, CheckCircle2, Circle, MessagesSquare, PenLine, Users, Video } from 'lucide-react'
+import { ArrowUpRight, Bot, CalendarCheck, CheckCircle2, Circle, MessagesSquare, PenLine, Users, Video, Wallet } from 'lucide-react'
 import Composer from '../components/feed/Composer'
 import PostList from '../components/feed/PostList'
 import { formatDay, formatTime } from '../components/mentors/booking'
@@ -9,10 +9,10 @@ import SortTabs from '../components/ui/SortTabs'
 import { countries } from '../data/sample'
 import { useApi } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { timeAgo } from '../lib/format'
+import { formatMoney, timeAgo } from '../lib/format'
 import { useMeta } from '../lib/meta'
 import { notificationText } from './Notifications'
-import Photo from '../components/ui/Photo'
+import Photo, { cityPhoto } from '../components/ui/Photo'
 import '../components/feed/feed.css'
 
 const greeting = () => {
@@ -36,6 +36,51 @@ const ACTIONS = [
   ['/ai', Bot, 'Ask TYM AI', 'SOPs, visas, shortlists'],
   ['/mentors', Users, 'Book a mentor', 'One-to-one video call'],
 ]
+
+// Students who paid for a session and are waiting for this mentor to open the chat.
+function ChatRequests({ username }) {
+  const { data } = useApi('/mentor-chats')
+  const waiting = (data || []).filter((c) => c.asMentor && c.status === 'pending')
+  if (!waiting.length) return null
+  return (
+    <div className="card card-pad">
+      <h3 className="section-title"><MessagesSquare size={16} aria-hidden /> Chat requests</h3>
+      <div className="mini-list">
+        {waiting.slice(0, 3).map((c) => (
+          <Link key={`${c.mentorId}-${c.studentId}`} to={`/u/${username}?tab=Messages&with=${c.mentorId}-${c.studentId}`} className="mini-row">
+            <Avatar user={c.with} size={32} />
+            <div><strong>{c.with.displayName}</strong><span>Booked a session · waiting on you</span></div>
+          </Link>
+        ))}
+      </div>
+      <Link to={`/u/${username}?tab=Messages`} className="text-link rail-more">Open your messages <ArrowUpRight size={14} /></Link>
+    </div>
+  )
+}
+
+// A mentor's wallet: the time they have given and what that is worth to them. Students buy hours
+// from TYM, so a mentor is paid for time given, at their share of the hourly rate.
+function MentorWallet({ username }) {
+  const { data, error } = useApi('/mentors/me/wallet')
+  if (error || !data) return null
+  const hours = (mins) => (mins % 60 === 0 ? `${mins / 60}` : (mins / 60).toFixed(1))
+  return (
+    <div className="card card-pad dash-wallet">
+      <h3 className="section-title"><Wallet size={16} aria-hidden /> Your wallet</h3>
+      <p className="dash-wallet-total">{formatMoney(data.earnedMinor, data.currency)}</p>
+      <p className="muted dash-small">Earned from {data.sessions} {data.sessions === 1 ? 'session' : 'sessions'},
+        {' '}{hours(data.minutes)} counselling {data.minutes === 60 ? 'hour' : 'hours'} given.</p>
+      <dl className="dash-wallet-grid">
+        <div><dt>This month</dt><dd>{formatMoney(data.thisMonthMinor, data.currency)}</dd></div>
+        <div><dt>Still to come</dt><dd>{data.upcoming} {data.upcoming === 1 ? 'session' : 'sessions'}</dd></div>
+        <div><dt>Your share</dt><dd>{data.sharePercent}% of {formatMoney(data.hourlyRateMinor, data.currency)} an hour</dd></div>
+      </dl>
+      <p className="faint dash-small">We pay out by bank transfer at the end of each month. Questions about a
+        payment? Write to support@theyouthmatters.com.</p>
+      <Link to={`/u/${username}?tab=Sessions`} className="text-link rail-more">Your sessions <ArrowUpRight size={14} /></Link>
+    </div>
+  )
+}
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -122,6 +167,9 @@ export default function Dashboard() {
             </div>
           )}
 
+          {user.role === 'mentor' && <ChatRequests username={user.username} />}
+          {user.role === 'mentor' && <MentorWallet username={user.username} />}
+
           <div className="card card-pad">
             <h3 className="section-title"><CalendarCheck size={16} aria-hidden /> Next session</h3>
             {next ? (
@@ -148,7 +196,7 @@ export default function Dashboard() {
               <div className="mini-list">
                 {communities.data.map((c) => (
                   <Link key={c.id} to={`/c/${c.country.slug}`} className="mini-row">
-                    <Photo src={`/images/city-${c.country.slug}.jpg`} className="mini-city" sizes="48px" />
+                    <Photo src={cityPhoto(c.country)} className="mini-city" sizes="48px" />
                     <div><strong>{c.country.name}</strong><span>{c.subject.name}</span></div>
                   </Link>
                 ))}

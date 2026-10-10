@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Camera, Check, ImagePlus, LogOut, ShieldCheck, Trash2 } from 'lucide-react'
+import { AlertTriangle, Camera, Check, ImagePlus, LogOut, ShieldCheck, Trash2 } from 'lucide-react'
 import Avatar from '../components/ui/Avatar'
 import { FormError, Spinner, SubmitButton } from '../components/auth/fields'
 import { countries } from '../data/sample'
@@ -48,6 +48,76 @@ export function PictureField({ kind, current, onChange }) {
       <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={upload} />
       <FormError>{error}</FormError>
     </div>
+  )
+}
+
+// Closing your own account. We ask for the word DELETE and, when the account has a password, for
+// that too: neither a stray click nor a borrowed phone can close somebody's account.
+function DeleteAccount({ account, onDone }) {
+  const [open, setOpen] = useState(false)
+  const [word, setWord] = useState('')
+  const [password, setPassword] = useState('')
+  const [agreed, setAgreed] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const needsPassword = account.hasPassword !== false  // Google-only accounts have none
+
+  const remove = async (e) => {
+    e.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      await api('/users/me', { method: 'DELETE', body: { confirm: word.trim(), password } })
+      onDone()
+    } catch (err) {
+      setError(err.message)
+      setBusy(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <div className="settings-danger">
+        <div>
+          <strong>Delete my account</strong>
+          <p className="muted">Your profile, questions, answers and messages go for good. You cannot sign in again.</p>
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={() => setOpen(true)}><Trash2 size={14} /> Delete my account</button>
+      </div>
+    )
+  }
+  return (
+    <form className="settings-danger is-open stack" onSubmit={remove}>
+      <p className="settings-danger-warn"><AlertTriangle size={16} aria-hidden /> This cannot be undone.</p>
+      <p className="muted">We delete your account and everything on it: your profile, questions, answers, saved
+        items and your messages with mentors. Where a session or a payment is attached we have to keep that
+        record for our books, so the account is emptied and closed instead. Either way nothing of yours is
+        left on the site and you cannot sign in again.</p>
+      <label className="check">
+        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+        <span>I understand my account and my content will be deleted.</span>
+      </label>
+      <div className="field">
+        <label htmlFor="del-word">Type DELETE to confirm</label>
+        <input id="del-word" className="input" value={word} onChange={(e) => setWord(e.target.value)}
+          autoComplete="off" placeholder="DELETE" />
+      </div>
+      {needsPassword && (
+        <div className="field">
+          <label htmlFor="del-pass">Your password</label>
+          <input id="del-pass" className="input" type="password" value={password}
+            onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+        </div>
+      )}
+      <FormError>{error}</FormError>
+      <div className="settings-danger-actions">
+        <button className="btn btn-ghost btn-sm" type="button" onClick={() => setOpen(false)}>Keep my account</button>
+        <SubmitButton busy={busy} busyText="Deleting" style={{ width: 'auto' }}
+          disabled={!agreed || word.trim().toUpperCase() !== 'DELETE' || (needsPassword && !password)}>
+          Delete my account
+        </SubmitButton>
+      </div>
+    </form>
   )
 }
 
@@ -160,6 +230,7 @@ export default function Settings() {
           <Link to="/forgot-password" className="btn btn-ghost btn-sm">Change password</Link>
           <button className="btn btn-ghost btn-sm" onClick={() => { logout(); navigate('/') }}><LogOut size={14} /> Log out</button>
         </div>
+        <DeleteAccount account={account} onDone={() => { logout(); navigate('/', { replace: true }) }} />
       </section>
     </div>
   )

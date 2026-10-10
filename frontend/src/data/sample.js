@@ -17,6 +17,7 @@ export const countries = [
   { slug: 'australia', name: 'Australia', isoCode: 'AU', airport: 'SYD', members: 4820, description: 'Subclass 500 visas, scholarships and part-time work.', official: { label: 'Student visa (subclass 500) on Home Affairs', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500' } },
   { slug: 'ireland', name: 'Ireland', isoCode: 'IE', airport: 'DUB', members: 2290, description: 'Stamp 2 visas, Dublin housing and graduate routes.', official: { label: 'Coming to study in Ireland on irishimmigration.ie', url: 'https://www.irishimmigration.ie/coming-to-study-in-ireland/' } },
   { slug: 'germany', name: 'Germany', isoCode: 'DE', airport: 'FRA', members: 3640, description: 'Tuition-free programmes, blocked accounts and APS.', official: { label: 'Study in Germany, the official DAAD guide', url: 'https://www.study-in-germany.de/en/' } },
+  { slug: 'france', name: 'France', isoCode: 'FR', airport: 'CDG', members: 1870, description: 'Campus France, student visas and life in French universities.', official: { label: 'Campus France, the official guide', url: 'https://www.campusfrance.org/en' } },
 ]
 
 export const categories = [
@@ -214,17 +215,19 @@ export const faqs = [
   ['How do I sign up?', 'Choose Sign up on this website and create an account with your email address or Google. We send a code to confirm your email, then ask for a photo ID once to confirm your age.'],
   ['Is TYM free to use?', 'Yes. Asking questions, answering, the community hubs, the Study Abroad chatroom and Ask TYM AI are free. Only one-to-one sessions with TYM Mentors are paid: you buy counselling hours and spend them with any mentor.'],
   ['How do counselling hours work?', 'Every mentor costs the same. You buy a package of counselling hours once, and each session you book takes its length from your hours: a 30 minute session uses half an hour. Hours work with any TYM mentor and do not expire.'],
-  ['Why do you ask for a photo ID?', 'The community is for adults only, so every member must be 18 or older. We read the date of birth from your passport, driving licence or national ID on our own servers. The photo is never stored: we keep the date of birth, not the document.'],
-  ['Who are TYM Mentors?', 'Current students and recent graduates of universities abroad. Each one is verified by our team before they can take bookings.'],
-  ['What is TYMAi?', 'Our study abroad assistant. It joins a chat room when you type @TYMAi, and answers privately in Ask TYM AI, where you can also ask for a person from our team. It can be wrong, so check official sources for visa rules.'],
-  ['Can I share photos and files?', 'You can add photos to your questions and to your profile. The chat rooms are text only.'],
-  ['How do I manage my notifications?', 'The bell at the top of the page shows new answers and updates. Open it to read them and mark them as read.'],
+  ['Why do you ask for a photo ID?', 'The community is for adults only, so every member must be 18 or older. We read the date of birth from your passport, driving licence, Aadhaar, PAN or voter ID on our own servers. The photo is never stored: we keep the date of birth, not the document.'],
+  ['Who are TYM Mentors?', 'Current students and recent graduates of universities abroad, and study abroad consultants. Each one is checked by our team before they can take bookings.'],
+  ['What is TYMAi?', 'Our study abroad assistant, free to use. It joins a chat room when you type @TYMAi, and answers privately in Ask TYM AI, where you can also ask for a person from our team. It can be wrong, so check official sources for visa rules.'],
+  ['Can I chat with my mentor?', 'Yes. When you book a session, your mentor gets a chat request. Once they accept it you can message each other in My TYM, before and after the call. Only your mentor can share the video call link in the chat, so never join a call from anywhere else.'],
+  ['Can I share photos and files?', 'You can add photos to your questions and to your profile. Chat rooms and mentor chats are text only, so nothing can be sent that we cannot moderate.'],
+  ['How do I manage my notifications?', 'The bell at the top of every page shows new answers, replies, mentions and messages from your mentor. Open it to read the latest ones, and Notifications for the full list, where you can mark them all as read.'],
   ['How do I report a user?', 'Use Report on any question or answer. Our team reviews every report. Offensive words are hidden automatically, and repeat behaviour leads to a warning, then a 24 hour mute, then suspension.'],
   ['Can I cancel a mentor session?', 'You can cancel up to 24 hours before the session. The time goes straight back on your counselling hours, to book another time.'],
   ['Is my data secure on TYM?', 'We take your privacy and security seriously. Your connection to TYM is encrypted, passwords are never stored in readable form, and your photo ID is not kept. See our Privacy Policy and Terms for the details.'],
   ['Can I use TYM on more than one device?', 'Yes. Sign in with the same account on each device and your questions, chats and sessions are there.'],
   ['What if I forget my password?', 'Choose Forgot password on the sign-in page and follow the instructions sent to your registered email address.'],
-  ['How do I delete my account?', 'Write to support@theyouthmatters.com from your registered email address and we will delete your account and your data.'],
+  ['How do I delete my account?', 'Open Profile settings and choose Delete my account. We ask you to type DELETE to confirm, then your account and everything on it are removed. Where sessions or payments are attached we have to keep those records for our books, so the account is emptied and closed instead: either way nothing of yours is left on the site and you cannot sign in again.'],
+  ['Can I suggest a question for this page?', 'Yes. Use Post your FAQ at the bottom of this page. Our team answers it, and useful ones are added here for everyone.'],
   ['Who can I contact for support, or to give feedback?', 'Ask for a person in Ask TYM AI, use the Contact us page, or write to support@theyouthmatters.com. We welcome suggestions.'],
 ]
 

@@ -24,6 +24,9 @@ class Country(Model):
     slug = db.Column(db.String(40), unique=True, nullable=False)
     name = db.Column(db.String(80), nullable=False)
     iso_code = db.Column(db.String(2), unique=True, nullable=False)
+    # The photo for this country, uploaded in the admin panel. Without one the site falls back to
+    # its own /images/city-<slug>.jpg, which only exists for the countries it shipped with.
+    image_key = db.Column(db.String(255))
 
 
 class Community(Model):

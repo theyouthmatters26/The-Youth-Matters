@@ -15,7 +15,8 @@ from app.models.base import utcnow
 
 TABLES = [db.metadata.tables[t] for t in ("countries", "subjects", "communities", "users", "identity_verifications",
                                          "mentor_profiles", "availability_slots", "counseling_packages", "bookings",
-                                         "payments", "mentor_reviews", "mentor_messages")]
+                                         "payments", "mentor_reviews", "mentor_messages", "mentor_threads",
+                                         "notifications")]
 
 
 @pytest.fixture
@@ -88,7 +89,10 @@ def test_booking_spends_hours_and_cancelling_gives_them_back(site):
     r = client.post("/api/bookings", json=book, headers=login["asha"])
     assert r.status_code == 201 and r.get_json()["counselingMinutes"] == 0
     booking = r.get_json()["booking"]
-    assert booking["status"] == "confirmed" and booking["minutes"] == 60 and booking["meetingUrl"]
+    # The session is time in their chat, so no call is made for them: a link only exists once the
+    # mentor shares one (see the meeting test below).
+    assert booking["status"] == "confirmed" and booking["minutes"] == 60
+    assert booking["session"] == "upcoming" and booking["meetingUrl"] is None
 
     r = client.post("/api/bookings", json=book, headers=login["ben"])  # the same time, a moment later
     assert r.status_code == 409 and minutes(ids["ben"]) == 60          # refused, and Ben keeps his hour
@@ -101,26 +105,95 @@ def test_booking_spends_hours_and_cancelling_gives_them_back(site):
     assert r.status_code == 201 and minutes(ids["ben"]) == 0
 
 
-def test_a_student_and_the_mentor_they_booked_can_message_each_other(site):
+def test_the_mentor_opens_the_chat_a_paid_booking_asks_for(site):
     client, ids, login = site
-    thread = f"/api/mentor-chats/{ids['profile']}/{ids['asha']}/messages"
+    chat = f"/api/mentor-chats/{ids['profile']}/{ids['asha']}"
+    thread = f"{chat}/messages"
 
     r = client.post(thread, json={"body": "Hello"}, headers=login["asha"])
-    assert r.status_code == 403  # not booked yet
+    assert r.status_code == 403  # no session paid for, so there is nothing to talk in
 
     credit(buy(ids["asha"], ids["package"]), "pay_asha")
     db.session.commit()
-    assert client.post("/api/bookings", json={"slotId": ids["slot"]}, headers=login["asha"]).status_code == 201
+    assert client.post("/api/bookings", json={"slotId": ids["slot"], "topic": "My SOP"},
+                       headers=login["asha"]).status_code == 201
+
+    # Paying asks the mentor; until they accept, neither side can write
+    waiting = client.get("/api/mentor-chats", headers=login["mentor"]).get_json()
+    assert len(waiting) == 1 and waiting[0]["status"] == "pending" and waiting[0]["requestNote"] == "My SOP"
+    assert not waiting[0]["canWrite"]
+    assert client.post(thread, json={"body": "Hello"}, headers=login["asha"]).status_code == 409
+    assert client.post(thread, json={"body": "Hello"}, headers=login["mentor"]).status_code == 409
+    assert client.post(f"{chat}/accept", headers=login["asha"]).status_code == 403  # only the mentor decides
+
+    assert client.post(f"{chat}/accept", headers=login["mentor"]).get_json()["status"] == "accepted"
+    assert client.post(f"{chat}/accept", headers=login["mentor"]).status_code == 409  # only once
 
     assert client.post(thread, json={"body": "Hello, can you look at my <b>SOP</b>?"}, headers=login["asha"]).status_code == 201
     inbox = client.get("/api/mentor-chats", headers=login["mentor"]).get_json()
-    assert len(inbox) == 1 and inbox[0]["asMentor"] and inbox[0]["unread"] == 1 and inbox[0]["with"]["username"] == "asha"
+    assert inbox[0]["asMentor"] and inbox[0]["unread"] == 1 and inbox[0]["with"]["username"] == "asha"
 
     seen = client.get(thread, headers=login["mentor"]).get_json()
-    assert [m["body"] for m in seen] == ["Hello, can you look at my SOP?"]  # tags are stripped like any other text
+    # The accepted note is written into the chat, then the student's message, with tags stripped
+    assert [m["kind"] for m in seen] == ["system", "text"]
+    assert seen[-1]["body"] == "Hello, can you look at my SOP?"
     assert client.get("/api/mentor-chats", headers=login["mentor"]).get_json()[0]["unread"] == 0  # reading marks it read
     assert client.post(thread, json={"body": "Yes, send it over."}, headers=login["mentor"]).status_code == 201
-    assert client.get("/api/mentor-chats", headers=login["asha"]).get_json()[0]["unread"] == 1
+    # The accepted note and the reply are both new to the student
+    assert client.get("/api/mentor-chats", headers=login["asha"]).get_json()[0]["unread"] == 2
 
     assert client.get(thread, headers=login["ben"]).status_code == 404  # nobody else can open it
     assert client.get("/api/mentor-chats", headers=login["ben"]).get_json() == []
+
+
+def test_only_the_mentor_can_put_a_call_link_in_the_chat(site):
+    client, ids, login = site
+    chat = f"/api/mentor-chats/{ids['profile']}/{ids['asha']}"
+    credit(buy(ids["asha"], ids["package"]), "pay_asha")
+    db.session.commit()
+    client.post("/api/bookings", json={"slotId": ids["slot"]}, headers=login["asha"])
+    client.post(f"{chat}/accept", headers=login["mentor"])
+
+    link = "https://meet.google.com/abc-defg-hij"
+    r = client.post(f"{chat}/messages", json={"body": f"join me on {link}"}, headers=login["asha"])
+    assert r.status_code == 400 and "Only your mentor" in r.get_json()["message"]
+    assert client.post(f"{chat}/meeting", json={"url": link}, headers=login["asha"]).status_code == 403
+
+    assert client.post(f"{chat}/meeting", json={"url": "https://evil.example.com/call"},
+                       headers=login["mentor"]).status_code == 400
+    r = client.post(f"{chat}/meeting", json={"url": link}, headers=login["mentor"])
+    assert r.status_code == 201 and r.get_json()["kind"] == "meeting"
+    assert client.get(chat, headers=login["asha"]).get_json()["meetingUrl"] == link
+
+
+def test_a_declined_request_closes_the_chat(site):
+    client, ids, login = site
+    chat = f"/api/mentor-chats/{ids['profile']}/{ids['asha']}"
+    credit(buy(ids["asha"], ids["package"]), "pay_asha")
+    db.session.commit()
+    client.post("/api/bookings", json={"slotId": ids["slot"]}, headers=login["asha"])
+
+    assert client.post(f"{chat}/decline", headers=login["mentor"]).get_json()["status"] == "declined"
+    r = client.post(f"{chat}/messages", json={"body": "Hello?"}, headers=login["asha"])
+    assert r.status_code == 409 and "closed" in r.get_json()["message"]
+
+
+def test_tymai_can_suggest_the_mentors_our_team_has_approved(site):
+    """A mentor the team approves is in TYMAi's facts straight away, with enough to suggest them by."""
+    from app.services import tymai
+
+    mentor = db.session.get(MentorProfile, 1)
+    mentor.topics = ["student visas", "SOPs"]
+    mentor.languages = ["English", "Hindi"]
+    mentor.graduation_year = 2025
+    db.session.commit()
+
+    listed = tymai._mentor_directory()
+    assert listed.startswith("- Mentor (theyouthmatters.com/mentors/1): United Kingdom")
+    assert "MSc at Leeds" in listed and "class of 2025" in listed
+    assert "helps with student visas, SOPs" in listed and "speaks English, Hindi" in listed
+    assert "60 minute sessions" in listed and "Helps with visas" in listed
+
+    mentor.is_verified = False  # taken off the directory by the team: TYMAi stops suggesting them
+    db.session.commit()
+    assert tymai._mentor_directory() == ""

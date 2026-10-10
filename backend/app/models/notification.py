@@ -1,7 +1,7 @@
 from ..extensions import db
 from .base import Model, enum
 
-KINDS = ("answer", "reply", "upvote", "mention", "followed_post", "booking", "moderation", "system")
+KINDS = ("answer", "reply", "upvote", "mention", "followed_post", "booking", "message", "moderation", "system")
 
 
 class Notification(Model):

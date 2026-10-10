@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarPlus, MessageSquare, Star, Video } from 'lucide-react'
+import { CalendarPlus, Check, CircleCheck, Clock, MessageSquare, Star, Video } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import { FormError, Spinner } from '../auth/fields'
 import { api, useApi } from '../../lib/api'
@@ -11,6 +11,28 @@ import Packages from './Packages'
 import './mentors.css'
 
 const DAY = 24 * 3600_000
+
+// Where the private chat for this session stands. A mentor accepts the request from here, the way
+// they can from Messages; a student sees whether theirs has been opened yet.
+function ChatButton({ chat, who, account, b, giving }) {
+  const first = who.displayName.split(' ')[0]
+  const to = chatLink(account.username, b.mentor.id, giving ? b.student.id : account.id)
+  if (giving && chat?.status === 'pending') {
+    return <Link to={to} className="btn btn-primary btn-sm"><Check size={15} /> Accept chat request</Link>
+  }
+  if (!giving && chat?.status === 'pending') {
+    return <span className="faint session-meta"><Clock size={14} /> Waiting for {first} to open your chat</span>
+  }
+  if (chat?.status === 'declined') {
+    return <span className="faint session-meta">No chat before this one: you meet on the call.</span>
+  }
+  return (
+    <Link to={to} className="btn btn-ghost btn-sm">
+      <MessageSquare size={15} /> {chat ? `Chat with ${first}` : `Message ${first}`}
+      {chat?.unread > 0 && <span className="session-unread">{chat.unread}</span>}
+    </Link>
+  )
+}
 
 function ReviewForm({ booking, onDone }) {
   const [rating, setRating] = useState(0)
@@ -47,7 +69,7 @@ function ReviewForm({ booking, onDone }) {
   )
 }
 
-function Session({ b, onChange }) {
+function Session({ b, chat, onChange }) {
   const { account } = useAuth()
   const [confirming, setConfirming] = useState(false)
   const [reviewing, setReviewing] = useState(false)
@@ -63,6 +85,20 @@ function Session({ b, onChange }) {
   const to = giving ? `/u/${b.student.username}` : `/mentors/${b.mentor.id}`
   const canCancel = !giving && upcoming && start - now > DAY
 
+  // The mentor closes the session once the conversation is finished
+  const endSession = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      await api(`/bookings/${b.id}/end`, { method: 'POST' })
+      onChange()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const cancel = async () => {
     setBusy(true)
     setError('')
@@ -75,30 +111,44 @@ function Session({ b, onChange }) {
     }
   }
 
+  // Somebody who deleted their account keeps their booking on the books, with nothing of them left
+  const gone = who.username?.startsWith('deleted')
   return (
     <li className="session">
-      <Link to={to}><Avatar user={who} size={48} /></Link>
+      {gone ? <Avatar user={who} size={48} /> : <Link to={to}><Avatar user={who} size={48} /></Link>}
       <div className="session-main">
-        <p className="session-who"><Link to={to}>{giving ? `With ${who.displayName}` : who.displayName}</Link>
+        <p className="session-who">
+          {gone ? <span>{giving ? 'With a member who has left' : who.displayName}</span>
+            : <Link to={to}>{giving ? `With ${who.displayName}` : who.displayName}</Link>}
           <span className={`session-status is-${upcoming ? 'upcoming' : past ? 'past' : 'cancelled'}`}>
             {upcoming ? 'Upcoming' : past ? 'Completed' : 'Cancelled'}
           </span>
         </p>
-        <p className="session-when">{formatDay(b.startsAt)} · {formatTime(b.startsAt)} – {formatTime(b.endsAt)}</p>
+        <p className="session-when">{formatDay(b.startsAt)} · {formatTime(b.startsAt)} – {formatTime(b.endsAt)}
+          <span className="faint"> · in your chat</span></p>
+        {b.session === 'live' && <p className="session-live">Your session is on now. Talk in the chat below.</p>}
+        {b.session === 'overtime' && (
+          <p className="session-live">The booked time is up.{giving ? ' End the session when you are done.'
+            : ' Your mentor will close it when you are both done.'}</p>
+        )}
         {b.topic && <p className="session-topic">{giving && 'They want to cover: '}“{b.topic}”</p>}
         {b.note && <p className="faint">{b.note}</p>}
         {!giving && <p className="faint session-meta">{hoursText(b.minutes)} of counselling</p>}
 
         <FormError>{error}</FormError>
         <div className="session-actions">
-          {upcoming && <a href={b.meetingUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm"><Video size={15} /> Join call</a>}
+          {/* A session is time in the chat. A video call only exists if the mentor shared a link. */}
+          {upcoming && b.meetingUrl && (
+            <a href={b.meetingUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm"><Video size={15} /> Join call</a>
+          )}
+          {giving && ['live', 'overtime'].includes(b.session) && (
+            <button className="btn btn-ghost btn-sm" onClick={endSession} disabled={busy}>
+              {busy ? <Spinner /> : <CircleCheck size={15} />} End session
+            </button>
+          )}
           {/* The calendar entry is named after the other person, which downloadIcs reads from mentor.user */}
           {upcoming && <button className="btn btn-ghost btn-sm" onClick={() => downloadIcs(giving ? { ...b, mentor: { user: who } } : b)}><CalendarPlus size={15} /> Add to calendar</button>}
-          {b.status !== 'cancelled' && (
-            <Link to={chatLink(account.username, b.mentor.id, giving ? b.student.id : account.id)} className="btn btn-ghost btn-sm">
-              <MessageSquare size={15} /> Message {who.displayName.split(' ')[0]}
-            </Link>
-          )}
+          {b.status !== 'cancelled' && !gone && <ChatButton chat={chat} who={who} account={account} b={b} giving={giving} />}
           {canCancel && !confirming && <button className="btn-text" onClick={() => setConfirming(true)}>Cancel session</button>}
           {canCancel && confirming && (
             <span className="session-confirm">
@@ -140,13 +190,16 @@ function Hours() {
 export default function MySessions() {
   const { account } = useAuth()
   const { data, error, loading, reload } = useApi('/bookings')
+  const chats = useApi('/mentor-chats').data || []
+  const chatFor = (b, giving) => chats.find((c) => c.mentorId === b.mentor.id
+    && c.studentId === (giving ? b.student?.id : account.id))
   if (loading) return <p className="muted session-empty"><Spinner /> Loading your sessions</p>
   if (error) return <FormError>{error.message}</FormError>
   if (!data.length) {
     return account?.role === 'mentor' ? (
       <div className="empty card">
         <h2 className="display">No sessions yet</h2>
-        <p className="muted">When a student books you, the session appears here with their name, the time, what they want to cover and the call link.</p>
+        <p className="muted">When a student books you, the session appears here with their name, the time and what they want to cover. Accept their chat request and you talk in Messages at that time.</p>
       </div>
     ) : (
       <div className="stack">
@@ -164,7 +217,7 @@ export default function MySessions() {
   const rank = (b) => (b.status === 'completed' ? 1 : b.status !== 'confirmed' ? 2 : new Date(b.endsAt) > now ? 0 : 1)
   const sorted = [...data].sort((a, b) => rank(a) - rank(b) ||
     (rank(a) === 0 ? new Date(a.startsAt) - new Date(b.startsAt) : new Date(b.startsAt) - new Date(a.startsAt)))
-  const list = (rows) => <ul className="sessions">{rows.map((b) => <Session key={b.id} b={b} onChange={reload} />)}</ul>
+  const list = (rows) => <ul className="sessions">{rows.map((b) => <Session key={b.id} b={b} chat={chatFor(b, Boolean(b.asMentor))} onChange={reload} />)}</ul>
   // A mentor's own sessions with students come first, apart from any they booked as a student
   const giving = sorted.filter((b) => b.asMentor)
   const booked = sorted.filter((b) => !b.asMentor)

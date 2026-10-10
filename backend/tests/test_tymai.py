@@ -99,3 +99,30 @@ def test_a_refusal_or_a_failing_service_still_gives_the_student_an_answer(claude
 
     claude.status, claude.reply = 400, {"type": "error", "error": {"type": "invalid_request_error", "message": "bad"}}
     assert tymai.answer(ASHA, "how do visas work")[0] == tymai.OFFLINE_NONE  # nothing in the community: the plain fallback
+
+
+def test_the_policy_pages_are_read_from_the_website_and_fed_to_claude(site):
+    docs = tymai._documents()
+    assert "Terms and Conditions (theyouthmatters.com/terms)" in docs
+    assert "Payment, Refund and Cancellation Terms" in docs and "Privacy Policy" in docs
+    assert len(docs) <= tymai.DOCUMENTS_LIMIT
+
+
+def test_site_facts_keep_going_when_the_database_cannot_be_read(site):
+    facts = tymai.site_facts()  # no tables in this app: only the written facts and the policy pages
+    assert "The Youth Matters (TYM) is a study abroad community" in facts
+    assert "Community Guidelines" in facts  # the policy pages do not need the database
+
+
+def test_tymai_answers_only_what_tym_is_for():
+    assert "you can only help with studying abroad and The Youth Matters" in tymai.RULES
+    assert "do not answer \"just this once\"" in tymai.RULES.lower()
+
+
+def test_counselling_time_is_said_the_way_a_person_would():
+    assert [tymai._hours(m) for m in (0, 30, 60, 90, 120)] == [
+        "none", "30 minutes", "1 hour", "1 hour 30 minutes", "2 hours"]
+
+
+def test_the_account_facts_are_skipped_for_someone_without_an_account(site):
+    assert tymai._account(ASHA) == ""  # no id: nothing to look up, and no query is run

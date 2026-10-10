@@ -5,7 +5,7 @@ import PostCard, { PostSkeleton } from '../components/feed/PostCard'
 import RoomCard from '../components/feed/RoomCard'
 import Avatar from '../components/ui/Avatar'
 import Gate from '../components/ui/Gate'
-import Photo from '../components/ui/Photo'
+import Photo, { cityPhoto } from '../components/ui/Photo'
 import { caseStudies, countries, subjects } from '../data/sample'
 import { useArticles } from '../lib/blog'
 import { useApi } from '../lib/api'
@@ -79,8 +79,12 @@ function Subjects() {
 }
 
 function Destinations() {
-  // How many students have joined each country, from the database
-  const joined = Object.fromEntries((useApi('/subjects/study-abroad/communities').data || []).map((c) => [c.country.slug, c.members]))
+  // The countries the site actually has, with how many students have joined each. Until they load,
+  // the ones the website ships with, so the page drawn ahead of time is not empty.
+  const live = useApi('/subjects/study-abroad/communities').data
+  const places = live?.length
+    ? live.map((c) => ({ ...c.country, members: c.members }))
+    : countries.map((c) => ({ ...c, members: 0 }))
   return (
     <section className="section" aria-labelledby="dest-title">
       <div className="container">
@@ -89,12 +93,12 @@ function Destinations() {
           <p>Every country has its own community with discussions, a live chat room and mentors who studied there.</p>
         </header>
         <div className="dest-grid" data-reveal data-reveal-delay="1">
-          {countries.map((c) => (
+          {places.map((c) => (
             <Link key={c.slug} to={`/c/${c.slug}`} className="dest-card">
-              <Photo src={`/images/city-${c.slug}.jpg`} sizes="(max-width: 640px) 92vw, (max-width: 1000px) 46vw, 400px" />
+              <Photo src={cityPhoto(c)} sizes="(max-width: 640px) 92vw, (max-width: 1000px) 46vw, 400px" />
               <div className="dest-info">
                 <span className="dest-name">{c.name}</span>
-                <span className="dest-meta">{joined[c.slug] > 0 ? `${formatCount(joined[c.slug])} ${joined[c.slug] === 1 ? 'student' : 'students'}` : 'Open now'}</span>
+                <span className="dest-meta">{c.members > 0 ? `${formatCount(c.members)} ${c.members === 1 ? 'student' : 'students'}` : 'Open now'}</span>
               </div>
               <ArrowUpRight size={18} className="dest-arrow" aria-hidden />
             </Link>

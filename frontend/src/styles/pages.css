@@ -358,6 +358,9 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
 
 /* FAQ */
 .faq { display: grid; border-top: 1px solid var(--line); }
+/* "Post your FAQ": the question goes to the team, and the answer joins the list above */
+.faq-ask { margin-top: var(--s-6); }
+.faq-ask .section-title { display: flex; align-items: center; gap: var(--s-2); margin: 0; }
 .faq details { border-bottom: 1px solid var(--line); }
 .faq summary {
   cursor: pointer; font-weight: 500; font-size: var(--step-1); list-style: none;
@@ -441,6 +444,17 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
 .settings-account dt { color: var(--muted); }
 .settings-account dd { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 500; }
 .settings-account-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+/* Closing your own account: set apart from the rest, never a button you hit by accident */
+.settings-danger { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-2); padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--radius); }
+.settings-danger strong { display: block; font-size: var(--step--1); }
+.settings-danger p { font-size: var(--step--1); max-width: 52ch; }
+.settings-danger .btn { width: auto; color: var(--danger); border-color: var(--line); }
+.settings-danger .btn:hover { border-color: var(--danger); }
+.settings-danger.is-open { display: grid; border-color: var(--danger); }
+.settings-danger-warn { display: flex; align-items: center; gap: 8px; color: var(--danger); font-weight: 500; font-size: var(--step--1); }
+.settings-danger-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+.settings-danger-actions .btn { width: auto; }
+.settings-danger-actions .btn[type='submit'] { background: var(--danger); border-color: var(--danger); color: var(--on-ink); }
 
 /* Dashboard (My TYM) */
 .dash-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--s-5); margin-bottom: var(--s-6); }
@@ -550,3 +564,10 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
   .dash-head h1 { font-size: var(--step-3); }
   .dash-actions a { padding: var(--s-4); }
 }
+
+/* A mentor's wallet on My TYM: what they have earned, and what is still to come */
+.dash-wallet-total { font-family: var(--font-display); font-size: var(--step-3); line-height: 1.1; margin: calc(-1 * var(--s-2)) 0 var(--s-1); }
+.dash-wallet-grid { display: grid; gap: var(--s-2); margin: var(--s-3) 0; padding: var(--s-3) 0; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
+.dash-wallet-grid div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); font-size: var(--step--1); }
+.dash-wallet-grid dt { color: var(--muted); }
+.dash-wallet-grid dd { margin: 0; font-weight: 500; text-align: right; }

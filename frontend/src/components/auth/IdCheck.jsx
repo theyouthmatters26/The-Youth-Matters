@@ -4,10 +4,12 @@ import { api } from '../../lib/api'
 import { fileToJpeg, useCamera } from './camera'
 import { FormError, Spinner } from './fields'
 
+// A local ID is as good as a passport here: what the server checks is that the photo is of a real
+// document of that kind (its number has to add up), then reads the date of birth from it.
 const DOCUMENTS = [
-  { value: 'passport', label: 'Passport', page: 'the photo page of your passport' },
-  { value: 'driving_licence', label: 'Driving licence', page: 'the front of your driving licence' },
-  { value: 'national_id', label: 'Aadhaar or PAN', page: 'the front of your Aadhaar or PAN card, with the number showing' },
+  { value: 'national_id', label: 'Govt / Local ID', name: 'ID card', page: 'the front of your Aadhaar, PAN or voter ID card, with the number showing' },
+  { value: 'driving_licence', label: 'Driving licence', name: 'driving licence', page: 'the front of your driving licence' },
+  { value: 'passport', label: 'Passport', name: 'passport', page: 'the photo page of your passport' },
 ]
 const SOURCES = { mrz: 'the machine-readable lines', label: 'the date of birth field', date: 'the dates on the document' }
 
@@ -17,7 +19,7 @@ const formatDate = (iso) =>
 // Last step of sign-up: a photo of an ID. The server reads the date of birth (OCR); 18 or over
 // verifies the account straight away. The photo is never stored.
 export default function IdCheck({ onDone }) {
-  const [docType, setDocType] = useState('passport')
+  const [docType, setDocType] = useState('national_id')
   const [photo, setPhoto] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -81,7 +83,7 @@ export default function IdCheck({ onDone }) {
 
       <div className={`id-stage${busy ? ' is-reading' : ''}${result ? ' is-read' : ''}`}>
         {photo ? (
-          <img src={photo.url} alt={`Your ${doc.label.toLowerCase()}`} />
+          <img src={photo.url} alt={`Your ${doc.name}`} />
         ) : camera.stream ? (
           <>
             <video ref={camera.video} autoPlay playsInline muted />
@@ -110,7 +112,7 @@ export default function IdCheck({ onDone }) {
         <div className="verify-result" role="status">
           <span className="verify-result-label">Date of birth</span>
           <strong>{formatDate(result.dateOfBirth)}</strong>
-          <span className="verify-result-note">Read from {SOURCES[result.source]} on your {(DOCUMENTS.find((d) => d.value === result.documentType) || doc).label.toLowerCase()}.</span>
+          <span className="verify-result-note">Read from {SOURCES[result.source]} on your {(DOCUMENTS.find((d) => d.value === result.documentType) || doc).name}.</span>
           <div className="verify-actions">
             <button className="btn btn-primary" onClick={() => onDone(result.user)}>
               Continue <span className="btn-arrow" aria-hidden><ArrowRight size={15} /></span>
@@ -138,6 +140,8 @@ export default function IdCheck({ onDone }) {
       )}
 
       <p className="verify-privacy"><Lock size={14} aria-hidden /> We read the date and discard the photo. Your ID is never stored.</p>
+      <p className="verify-rule">It has to be your own original document. A photo of a photocopy or a screen,
+        or anything made up, will not pass.</p>
     </div>
   )
 }

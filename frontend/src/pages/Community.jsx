@@ -6,12 +6,13 @@ import Composer from '../components/feed/Composer'
 import PostList from '../components/feed/PostList'
 import SideRail from '../components/home/SideRail'
 import SortTabs from '../components/ui/SortTabs'
+import { Spinner } from '../components/auth/fields'
 import { categories, countryBySlug } from '../data/sample'
 import { api, useApi } from '../lib/api'
 import { formatCount } from '../lib/format'
 import { useAuth, useMemberGuard } from '../lib/auth'
 import NotFound from './NotFound'
-import Photo from '../components/ui/Photo'
+import Photo, { cityPhoto } from '../components/ui/Photo'
 import { useMeta } from '../lib/meta'
 
 
@@ -20,9 +21,11 @@ export default function Community() {
   const { slug } = useParams()
   const { user } = useAuth()
   const guard = useMemberGuard()
-  const country = countryBySlug[slug]
-  const mentors = useApi(country ? `/mentors?country=${slug}` : null)
-  const community = useApi(country ? `/subjects/study-abroad/communities/${slug}` : null)
+  // The site's own notes on the countries it launched with (the official visa page, the airport).
+  // A country the team added later has none of that, so everything else comes from the API.
+  const known = countryBySlug[slug]
+  const mentors = useApi(`/mentors?country=${slug}`)
+  const community = useApi(`/subjects/study-abroad/communities/${slug}`)
   const rooms = useApi('/chat/rooms')
   const topics = useApi('/categories').data || categories // the admin's topics; ours until they load
   const [following, setFollowing] = useState(false)
@@ -31,12 +34,16 @@ export default function Community() {
   const [category, setCategory] = useState(null)
   const [fresh, setFresh] = useState([])
 
-  useMeta({ title: country && `Study in ${country.name}`, description: country && `Questions, answers and a live chat room for students heading to ${country.name}. ${community.data?.description || country.description}`, path: `/c/${slug}` })
+  const country = community.data
+    ? { ...known, ...community.data.country, description: community.data.description || known?.description }
+    : known
+  useMeta({ title: country && `Study in ${country.name}`, description: country && `Questions, answers and a live chat room for students heading to ${country.name}. ${community.data?.description || country.description || ''}`, path: `/c/${slug}` })
   useEffect(() => { setFollowing(Boolean(community.data?.following)) }, [community.data])
   useEffect(() => { setFresh([]); setCategory(null); setJoinError('') }, [slug])
 
-  // 404 from the API: this country has been hidden in the admin panel
-  if (!country || community.error?.status === 404) return <NotFound />
+  // 404 from the API: no such country, or it has been hidden in the admin panel
+  if (community.error?.status === 404) return <NotFound />
+  if (!country) return <div className="container page post-loading"><Spinner /> Loading</div>
 
   const query = [`country=${slug}`, sort === 'unanswered' ? 'sort=new&unanswered=1' : `sort=${sort}`, category && `category=${category}`]
     .filter(Boolean).join('&')
@@ -62,7 +69,7 @@ export default function Community() {
       <Destinations />
 
       <header className="country-hero">
-        <Photo src={`/images/city-${slug}.jpg`} sizes="100vw" priority />
+        <Photo src={cityPhoto(country)} sizes="100vw" priority />
         <div className="country-hero-body">
           <div className="country-intro">
             <p className="country-eyebrow">Study Abroad community</p>

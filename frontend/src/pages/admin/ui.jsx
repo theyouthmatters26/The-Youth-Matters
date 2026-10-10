@@ -39,7 +39,7 @@ export function Pill({ tone = 'line', children }) {
   return <span className={`adm-pill is-${tone}`}>{children}</span>
 }
 
-const STATUS = { active: ['Verified', 'line'], pending: ['Not verified', 'muted'], suspended: ['Suspended', 'warn'], banned: ['Banned', 'warn'] }
+const STATUS = { active: ['Verified', 'line'], pending: ['Not verified', 'muted'], suspended: ['Suspended', 'warn'], banned: ['Banned', 'warn'], closed: ['Deleted by the member', 'muted'] }
 export function StatusPill({ status }) {
   const [label, tone] = STATUS[status] || [status, 'muted']
   return <Pill tone={tone}>{label}</Pill>

@@ -37,9 +37,16 @@ on the same structure: **subject → country → questions and chat rooms → me
   you can come back to them.
 - **Mentors.** Browse verified student mentors, see their open times in your own time zone, pay through
   Razorpay and meet on a video call. You can cancel for a refund and leave a review afterwards.
+- **A private chat with your mentor.** Paying for a session asks that mentor for a chat. Once they
+  accept it, the two of you message each other before and after the call. Only the mentor can put a
+  video call link in it, so nobody can be talked into joining a call somewhere else.
+- **Your account is yours.** Profile settings has Delete my account: type DELETE and everything of
+  yours goes. Where a session or payment has to be kept for the books, the account is emptied and
+  closed instead.
 - **Your profile.** Photo, cover, bio, university, course and intake, plus everything you asked,
   answered and saved.
-- **Notifications.** A bell for answers, replies, mentions and upvotes.
+- **Notifications.** A bell for answers, replies, mentions, upvotes and messages from your mentor.
+  It opens the latest ones in a panel; the full list is on /notifications.
 - **Guides.** Long-form blog articles with checklists, tables and FAQs.
 
 **For mentors**
@@ -47,14 +54,21 @@ on the same structure: **subject → country → questions and chat rooms → me
 - **Apply in one page.** Photo, studies, profile, session length and price, weekly hours on a timetable,
   a CV and proof of enrolment or degree.
 - **Go live on approval.** Once the team approves, the profile is listed and bookable straight away.
+- **Chat requests and a wallet on your dashboard.** Accept a student's chat request, share the call
+  link, and see what the time you have given has earned (`MENTOR_SHARE_PERCENT` of the hourly rate).
 
 **For the team**
 
 - **An admin panel at `/admin`.** One place to run the site: members, reports, questions and chat
-  rooms, the blog, mentor applications, payments and the team itself.
+  rooms, the blog, the FAQ page, mentor applications, payments and the team itself.
+- **The FAQ page, edited in the panel.** Write questions and answers, put them in order, and answer
+  the ones members send in with "Post your FAQ": answering publishes it and tells whoever asked.
 - **A person in the AI chat.** A student can ask for a person in Ask TYM AI. The team is emailed, replies
   from the panel, and TYM AI steps back until the conversation is handed back.
-- **Scoped access.** The owner adds teammates and chooses what each can open, for example support only.
+- **Roles.** The owner adds teammates and gives each a role: **super admin** (everything, including
+  the team), **admin** (runs the site, but cannot change who is on the team), **mentor admin**
+  (mentor applications, the directory, sessions and payouts) or **support** (answers students and
+  nothing else). Any other mix can still be ticked part by part.
 
 **For safety**
 
@@ -210,7 +224,9 @@ While the Google app is in testing, only the test users you add there can sign i
 ## How the main parts work
 
 **Signing up and the age check.** Create an account, confirm a 6-digit email code (or use Google), then
-take or upload a photo of a passport, driving licence or national ID. The API reads the date of birth,
+take or upload a photo of a local ID (Aadhaar, PAN or voter ID), a driving licence or a passport.
+The text has to be that of a real document of that kind, with a number that adds up, so a picture
+with a date on it is not enough. The API reads the date of birth,
 turns away anyone under 18 and verifies everyone else straight away. The photo is read in memory and
 never saved. Until this step is done the account can look around but not take part.
 
@@ -222,10 +238,19 @@ mark the answer that helped, and it moves to the top.
 **Chat rooms.** Messages are saved in the database and the page checks for new ones every few seconds.
 A message that mentions `@TYMAi` gets a reply from the assistant in the same room.
 
-**TYM AI.** Every answer starts from the community: the API finds the closest answered questions for the
-right country. With an Anthropic key, Claude writes the reply using those answers and the student's
-profile, and links to the questions it drew on. Without a key, TYM AI shows those community answers
-directly, so it is still useful on a fresh install.
+**TYM AI.** TYMAi is fed the site itself before every answer: the written facts about how TYM works,
+plus what is live in the database right now (the country communities, the prices of counselling
+hours, the chat rooms, every mentor taking bookings with what they studied and help with, the FAQ
+page as the team keeps it and the published blog guides), plus the policy pages read from
+`frontend/src/data/policies.js`, plus where the student asking stands (their profile, counselling
+hours left and next session). Nothing has to be re-written here when the team changes a price or
+answers an FAQ. It answers on studying abroad and on The Youth Matters, and turns down anything
+else. Ask for help with your own case and it names the mentor who fits and links to them; approving
+a mentor in the panel is all it takes for TYMAi to start suggesting them. Every answer starts from
+the community: the API finds the closest answered questions for the right country. With an Anthropic
+key, Claude writes the reply using those answers and the student's profile, and links to the
+questions it drew on. Without a key, TYM AI shows those community answers directly, so it is still
+useful on a fresh install.
 
 **Becoming a mentor.** A signed-in, verified member fills in the application. The CV and proof of study
 are stored privately and only the team can open them. When the team approves, the application becomes a
@@ -310,7 +335,7 @@ renewed with `POST /auth/refresh`. Sensitive routes are rate limited.
 | Health | `GET /health` |
 | Accounts | `POST /auth/register`, `/auth/resend-code`, `/auth/verify-email`, `/auth/login`, `/auth/google`, `/auth/refresh`, `/auth/forgot-password`, `/auth/reset-password`, and `GET /auth/me` |
 | Age check | `POST /verify/document` |
-| Profiles | `GET /users/<username>`, `GET /users/<username>/comments`, `PATCH /users/me`, `POST` or `DELETE /users/me/avatar`, `POST` or `DELETE /users/me/cover`, `GET /users/me/communities` |
+| Profiles | `GET /users/<username>`, `GET /users/<username>/comments`, `PATCH /users/me`, `POST` or `DELETE /users/me/avatar`, `POST` or `DELETE /users/me/cover`, `GET /users/me/communities`, `DELETE /users/me` |
 | Communities | `GET /subjects`, `GET /subjects/<subject>/communities`, `GET /subjects/<subject>/communities/<country>`, `POST` or `DELETE /communities/<id>/follow`, `GET /categories` |
 | Questions | `GET` or `POST /posts`, `GET`, `PATCH` or `DELETE /posts/<id>`, `POST` or `DELETE /posts/<id>/save`, `POST /posts/<id>/helpful`, `GET /feed` |
 | Answers | `GET` or `POST /posts/<id>/comments`, `PATCH` or `DELETE /comments/<id>` |
@@ -320,7 +345,9 @@ renewed with `POST /auth/refresh`. Sensitive routes are rate limited.
 | Search | `GET /search?q=` |
 | Chat rooms | `GET /chat/rooms`, `GET` or `POST /chat/rooms/<room>/messages`, `DELETE /chat/messages/<id>` |
 | TYM AI | `GET /ai/conversations`, `GET` or `DELETE /ai/conversations/<id>`, `GET /ai/conversations/<id>/messages`, `POST /ai/messages`, `POST /ai/conversations/<id>/human` |
-| Mentors | `GET /mentors`, `GET /mentors/<id>`, `GET /mentors/<id>/availability` |
+| Mentors | `GET /mentors`, `GET /mentors/<id>`, `GET /mentors/<id>/availability`, `GET /mentors/me/wallet` |
+| Mentor chat | `GET /mentor-chats`, `GET /mentor-chats/<mentor>/<student>`, `GET` or `POST /mentor-chats/<mentor>/<student>/messages`, `POST .../accept`, `POST .../decline`, `POST .../meeting` |
+| FAQ | `GET /faqs`, `POST /faqs`, `GET /faqs/mine` |
 | Mentor applications | `GET` or `POST /mentor-application`. For the team: `GET /admin/mentor-applications`, `GET /admin/mentor-applications/<id>/files/<cv or proof>`, `POST /admin/mentor-applications/<id>/decision` |
 | Bookings | `GET` or `POST /bookings`, `POST /bookings/<id>/verify`, `POST /bookings/<id>/cancel`, `POST /bookings/<id>/review` |
 | Payments | `POST /payments/razorpay/webhook` |
@@ -337,6 +364,7 @@ admin may open.
 | Support | `GET /admin/support/conversations`, `GET /admin/support/conversations/<id>`, `GET` or `POST .../<id>/messages`, `POST .../<id>/status`, `GET /admin/contact`, `POST` or `DELETE /admin/contact/<id>` |
 | Members | `GET` or `POST /admin/members`, `GET`, `PATCH` or `DELETE /admin/members/<id>`, `POST /admin/members/<id>/status`, `/verify`, `/strike`, `GET /admin/members.csv` |
 | Moderation | `GET /admin/reports`, `POST /admin/reports/<id>/resolve`, `DELETE /admin/content/<kind>/<id>` |
+| FAQ | `GET` or `POST /admin/faqs`, `PATCH` or `DELETE /admin/faqs/<id>` |
 | Community | `GET /admin/questions`, `GET` or `POST /admin/questions/<id>`, `DELETE /admin/answers/<id>`, `GET` or `POST /admin/chat/rooms`, `PATCH` or `DELETE /admin/chat/rooms/<id>`, `GET /admin/chat/rooms/<id>/messages`, `DELETE /admin/chat/messages/<id>`, `GET` or `POST /admin/topics`, `PATCH` or `DELETE /admin/topics/<id>`, `GET /admin/communities`, `PATCH /admin/communities/<id>` |
 | Blog | `GET` or `POST /admin/blog`, `GET`, `PATCH` or `DELETE /admin/blog/<id>`, `POST /admin/blog/image` |
 | Mentors | `GET /admin/mentor-applications`, `POST /admin/mentor-applications/<id>/decision`, `GET /admin/mentors`, `GET`, `PATCH` or `DELETE /admin/mentors/<id>`, `POST /admin/mentors/<id>/listed`, `DELETE /admin/reviews/<id>` |

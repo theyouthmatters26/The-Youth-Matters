@@ -67,9 +67,29 @@ class AiMessage(Model):
     author = db.relationship("User")
 
 
+class MentorThread(Model):
+    """One student and one mentor talking privately (api/mentor_chat.py).
+
+    It opens when the student pays for a session with that mentor, and waits: nothing can be
+    written until the mentor accepts the request from their dashboard. Declining closes it."""
+    __tablename__ = "mentor_threads"
+    __table_args__ = (db.UniqueConstraint("mentor_id", "student_id"),)
+
+    mentor_id = db.Column(db.Integer, db.ForeignKey("mentor_profiles.id", ondelete="CASCADE"), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    status = db.Column(enum("pending", "accepted", "declined", name="mentor_thread_status"),
+                       nullable=False, default="pending", server_default="pending")
+    request_note = db.Column(db.String(1000))  # what the student asked to cover, from the booking
+    decided_at = db.Column(db.DateTime(timezone=True))
+    # The video call link the mentor shared last. Only a mentor can set one: students never send links.
+    meeting_url = db.Column(db.String(255))
+
+    mentor = db.relationship("MentorProfile")
+    student = db.relationship("User")
+
+
 class MentorMessage(Model):
-    """A private message between a student and a mentor they have booked (api/mentor_chat.py).
-    The two of them are the conversation: (mentor_id, student_id)."""
+    """A private message inside a MentorThread. The pair (mentor_id, student_id) is the thread."""
     __tablename__ = "mentor_messages"
     __table_args__ = (db.Index("ix_mentor_messages_thread", "mentor_id", "student_id", "id"),)
 
@@ -77,4 +97,7 @@ class MentorMessage(Model):
     student_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     body = db.Column(db.String(2000), nullable=False)
+    # text = typed; meeting = a call link the mentor shared; system = written by the site itself
+    kind = db.Column(enum("text", "meeting", "system", name="mentor_message_kind"),
+                     nullable=False, default="text", server_default="text")
     read_at = db.Column(db.DateTime(timezone=True))  # when the other person saw it

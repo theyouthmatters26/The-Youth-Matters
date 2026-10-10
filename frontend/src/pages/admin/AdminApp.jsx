@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, Flag, Globe, GraduationCap, KeyRound, LayoutDashboard, LogOut, Mail, Menu, MessagesSquare, Newspaper, Users, Wallet, X } from 'lucide-react'
+import { ArrowUpRight, CircleHelp, Flag, Globe, GraduationCap, KeyRound, LayoutDashboard, LogOut, Mail, Menu, MessagesSquare, Newspaper, Users, Wallet, X } from 'lucide-react'
 import { FormError, PasswordField, PasswordMeter, Spinner, SubmitButton } from '../../components/auth/fields'
 import Avatar from '../../components/ui/Avatar'
 import { AdminProvider, adminApi, useAdmin, useAdminApi } from '../../lib/admin'
@@ -8,6 +8,7 @@ import AdminLogin from './AdminLogin'
 import Blog from './Blog'
 import Community from './Community'
 import Contact from './Contact'
+import Faqs from './Faqs'
 import Members from './Members'
 import Mentors from './Mentors'
 import Moderation from './Moderation'
@@ -29,6 +30,7 @@ const NAV = [
   { area: 'moderation', to: '/admin/moderation', label: 'Moderation', icon: Flag, page: Moderation },
   { area: 'community', to: '/admin/community', label: 'Community', icon: Globe, page: Community },
   { area: 'blog', to: '/admin/blog', label: 'Blog', icon: Newspaper, page: Blog },
+  { area: 'faq', to: '/admin/faq', label: 'FAQ', icon: CircleHelp, page: Faqs },
   { area: 'mentors', to: '/admin/mentors', label: 'Mentors', icon: GraduationCap, page: Mentors },
   { area: 'bookings', to: '/admin/payments', label: 'Payments', icon: Wallet, page: Payments },
   { area: 'team', to: '/admin/team', label: 'Team', icon: KeyRound, page: Team },
@@ -73,7 +75,7 @@ function Account({ onClose }) {
     <Sheet title="Your account" onClose={onClose}>
       <div className="adm-account">
         <Person user={{ displayName: admin.name, avatar: admin.avatar }} sub={admin.email} size={52} />
-        <div className="adm-account-pills"><Pill tone={admin.isOwner ? 'solid' : 'line'}>{admin.isOwner ? 'Owner' : 'Team member'}</Pill></div>
+        <div className="adm-account-pills"><Pill tone={admin.isOwner ? 'solid' : 'line'}>{admin.isOwner ? 'Owner · Super admin' : admin.roleLabel}</Pill></div>
       </div>
 
       <form className="stack" onSubmit={saveName}>
@@ -95,7 +97,7 @@ function Account({ onClose }) {
 
       <section>
         <h3 className="adm-h2">What you can open</h3>
-        {admin.isOwner ? <p className="adm-hint">Everything. The owner always has the whole panel.</p> : (
+        {admin.isOwner ? <p className="adm-hint">Everything. The owner is always a super admin and has the whole panel.</p> : (
           <div className="adm-chips">{NAV.filter((n) => admin.access.includes(n.area)).map((n) => <Pill key={n.to} tone="muted">{n.label}</Pill>)}</div>
         )}
       </section>
@@ -155,7 +157,7 @@ function Shell() {
           <a href="/" target="_blank" rel="noreferrer" className="adm-rail-link">View the site <ArrowUpRight size={14} aria-hidden /></a>
           <button className="adm-me" onClick={() => setAccount(true)}>
             <Avatar user={{ displayName: admin.name, avatar: admin.avatar }} size={34} />
-            <span><strong>{admin.name}</strong><span>{admin.isOwner ? 'Owner' : 'Team member'}</span></span>
+            <span><strong>{admin.name}</strong><span>{admin.isOwner ? 'Owner · Super admin' : admin.roleLabel}</span></span>
           </button>
         </div>
       </aside>

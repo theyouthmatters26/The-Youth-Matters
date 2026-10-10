@@ -64,6 +64,10 @@ class Config:
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
     AI_MODEL = os.getenv("AI_MODEL") or "claude-opus-5-5"
 
+    # What a mentor keeps of what a counselling hour sells for. The rest covers the platform,
+    # payment fees and support. Their wallet (api/mentors.py) works it out from this.
+    MENTOR_SHARE_PERCENT = int(os.getenv("MENTOR_SHARE_PERCENT") or 70)
+
     MAX_CONTENT_LENGTH = 12 * 1024 * 1024  # photo ID uploads
     MIN_AGE = 18
     AI_FALLBACK_AFTER_HOURS = 6
@@ -74,3 +78,8 @@ class TestConfig(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite://"
     SQLALCHEMY_ENGINE_OPTIONS = {}
     RATELIMIT_STORAGE_URI = "memory://"
+    # Nothing outside this machine: a test run must not send email, call Claude or touch Razorpay,
+    # whatever keys happen to be in .env. A test that wants one sets it itself.
+    RESEND_API_KEY = None
+    ANTHROPIC_API_KEY = None
+    RAZORPAY_KEY_ID = RAZORPAY_KEY_SECRET = RAZORPAY_WEBHOOK_SECRET = None

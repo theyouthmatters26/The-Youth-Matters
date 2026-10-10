@@ -4,6 +4,8 @@ import { Bell, Bookmark, CalendarCheck, ChevronDown, EllipsisVertical, Graduatio
 import Avatar from '../ui/Avatar'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
+import { timeAgo } from '../../lib/format'
+import { notificationText } from '../../pages/Notifications'
 import Photo from '../ui/Photo'
 import './layout.css'
 
@@ -48,10 +50,15 @@ function SearchDialog({ onClose }) {
   )
 }
 
-// Unread count, refreshed every minute, on page changes and when notifications are read
+// The bell: the unread count, and the latest notifications in a panel under it. The count is
+// refreshed every minute, on page changes and whenever something is marked read anywhere.
 function NotificationBell() {
   const [count, setCount] = useState(0)
-  const { pathname } = useLocation()
+  const [open, setOpen] = useState(false)
+  const [items, setItems] = useState(null)
+  const { pathname, search } = useLocation()
+  const ref = useRef(null)
+
   useEffect(() => {
     const load = () => api('/notifications/unread').then((r) => setCount(r.unread)).catch(() => {})
     load()
@@ -59,11 +66,69 @@ function NotificationBell() {
     window.addEventListener('tym:notifications', load)
     return () => { clearInterval(timer); window.removeEventListener('tym:notifications', load) }
   }, [pathname])
+
+  useEffect(() => setOpen(false), [pathname, search])
+  useEffect(() => {
+    if (!open) return undefined
+    setItems(null)
+    api('/notifications').then((r) => { setItems(r.items.slice(0, 8)); setCount(r.unread) }).catch(() => setItems([]))
+    const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false) }
+    const esc = (e) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', esc) }
+  }, [open])
+
+  const markAll = async () => {
+    const res = await api('/notifications/read', { method: 'POST' }).catch(() => null)
+    if (!res) return
+    setItems((prev) => prev?.map((n) => ({ ...n, isRead: true })))
+    setCount(res.unread)
+    window.dispatchEvent(new Event('tym:notifications'))
+  }
+  const openOne = (n) => {
+    setOpen(false)
+    if (n.isRead) return
+    setCount((c) => Math.max(0, c - 1))
+    api('/notifications/read', { method: 'POST', body: { ids: [n.id] } })
+      .then(() => window.dispatchEvent(new Event('tym:notifications'))).catch(() => {})
+  }
+
   return (
-    <Link to="/notifications" className="account-link bell" aria-label={count ? `Notifications, ${count} unread` : 'Notifications'}>
-      <Bell size={17} strokeWidth={1.7} />
-      {count > 0 && <span className="bell-count">{count > 9 ? '9+' : count}</span>}
-    </Link>
+    <div className="bell-wrap" ref={ref}>
+      <button className="account-link bell" aria-haspopup="dialog" aria-expanded={open}
+        aria-label={count ? `Notifications, ${count} unread` : 'Notifications'} onClick={() => setOpen(!open)}>
+        <Bell size={17} strokeWidth={1.7} />
+        {count > 0 && <span className="bell-count">{count > 9 ? '9+' : count}</span>}
+      </button>
+      {open && (
+        <div className="bell-pop" role="dialog" aria-label="Notifications">
+          <header className="bell-pop-head">
+            <strong>Notifications</strong>
+            <button className="btn-text" onClick={markAll} disabled={!count}>Mark all as read</button>
+          </header>
+          {items === null && <p className="bell-pop-empty muted">Loading</p>}
+          {items?.length === 0 && <p className="bell-pop-empty muted">Nothing yet. Answers, replies and messages from your mentor show up here.</p>}
+          {items?.length > 0 && (
+            <ul className="bell-pop-list">
+              {items.map((n) => (
+                <li key={n.id} className={n.isRead ? '' : 'is-unread'}>
+                  <Link to={n.post ? `/p/${n.post.id}${n.commentId ? `#c${n.commentId}` : ''}` : n.kind === 'message' ? '/my' : '/notifications'}
+                    onClick={() => openOne(n)}>
+                    {n.actor ? <Avatar user={n.actor} size={30} /> : <span className="bell-pop-icon"><Bell size={15} /></span>}
+                    <span>
+                      <span className="bell-pop-text">{n.actor && <strong>{n.actor.displayName} </strong>}{notificationText(n)}</span>
+                      <span className="faint">{timeAgo(n.createdAt)}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link to="/notifications" className="bell-pop-all">See all notifications</Link>
+        </div>
+      )}
+    </div>
   )
 }
 

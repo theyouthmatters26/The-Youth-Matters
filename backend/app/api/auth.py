@@ -74,18 +74,25 @@ def _code_hash(code):
     return hashlib.sha256(code.encode()).hexdigest()
 
 
-def _send_code(user, subject):
+def _send_code(user, subject, quiet=False):
     code = f"{secrets.randbelow(10**6):06d}"
     user.email_code_hash = _code_hash(code)
     user.email_code_expires_at = utcnow() + CODE_TTL
     db.session.commit()
-    mailer.send(user.email, subject,
-                f"<p>Your code is <strong style='font-size:22px;letter-spacing:4px'>{code}</strong></p>"
-                "<p>It expires in 10 minutes. If you did not ask for it, you can ignore this email.</p>")
     # Local development has no email provider, so the code goes back to the page instead
     if current_app.debug and not current_app.config["RESEND_API_KEY"]:
         current_app.logger.warning("Email code for %s: %s", user.email, code)
         return {"devCode": code}
+    try:
+        mailer.send(user.email, subject,
+                    f"<p>Your code is <strong style='font-size:22px;letter-spacing:4px'>{code}</strong></p>"
+                    "<p>It expires in 10 minutes. If you did not ask for it, you can ignore this email.</p>")
+    except Exception as e:  # noqa: BLE001  the provider is down, or its domain is not verified yet
+        current_app.logger.error("Could not email a code to %s: %s", user.email, e)
+        if quiet:  # forgot password answers the same either way, so it must not fail differently
+            return {}
+        abort(503, "We could not send your code just now. Try again in a minute, or write to "
+                   "support@theyouthmatters.com if it keeps happening.")
     return {}
 
 
@@ -99,6 +106,8 @@ def _use_code(user, code):
 
 
 def _check_allowed(user):
+    if user.status == "closed":
+        abort(403, "This account was deleted. You are welcome to sign up again.")
     if user.status in ("suspended", "banned"):
         abort(403, "This account is suspended. Write to support@theyouthmatters.com if you think this is a mistake.")
 
@@ -223,7 +232,7 @@ def me():
 def forgot_password():
     (email,) = _body("email")
     user = _by_email(email)
-    extra = _send_code(user, "Reset your TYM password") if user else {}
+    extra = _send_code(user, "Reset your TYM password", quiet=True) if user else {}
     return jsonify(email=email.lower(), **extra)  # same answer either way: no hint whether the account exists
 
 

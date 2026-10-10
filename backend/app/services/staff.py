@@ -17,6 +17,7 @@ AREAS = {
     "moderation": ("Moderation", "Review reports and remove posts, answers and chat messages"),
     "community": ("Community", "Pin and remove questions, run chat rooms, edit topics and countries"),
     "blog": ("Blog", "Write, publish and remove articles"),
+    "faq": ("FAQ", "Write the FAQ page and answer the questions members send in"),
     "mentors": ("Mentors", "Approve mentor applications and manage the directory"),
     "bookings": ("Bookings and payments", "See sessions, payments and mentor earnings, cancel and refund"),
     "team": ("Team", "Add admins, choose what they can open, and see what is switched on"),
@@ -58,3 +59,38 @@ def clean_access(requested):
         return [EVERYTHING]
     chosen = [a for a in AREAS if a in (requested or [])]
     return [EVERYTHING] if len(chosen) == len(AREAS) else chosen
+
+
+# The roles the panel is handed out in. Each one is a set of the areas above, so every check in the
+# code stays `can(user, area)`: a role is only a convenient way to choose several at once. Someone
+# whose areas do not match a role exactly is "custom", which is still perfectly valid.
+ROLES = {
+    "super_admin": ("Super admin", "Every part of the panel, including adding teammates and changing what they can open.",
+                    [EVERYTHING]),
+    "admin": ("Admin", "Runs the site day to day: members, moderation, the community, the blog, the FAQ page, "
+                       "support, mentors, bookings and payments. Cannot change who is on the team.",
+              [a for a in AREAS if a != "team"]),
+    "mentor_admin": ("Mentor admin", "Mentor applications, the mentor directory, their sessions and what they are owed. "
+                                     "Nothing about members, moderation or the rest of the site.",
+                     ["overview", "mentors", "bookings"]),
+    "support": ("Support", "Replies to students in Ask TYM AI and answers contact form enquiries. Nothing else.",
+                ["support"]),
+}
+
+
+def areas_for(role):
+    """The areas a named role opens, or None when the name is not one of ours."""
+    return list(ROLES[role][2]) if role in ROLES else None
+
+
+def role_of(user):
+    """The name for what this person can open: a role when it matches one exactly, else "custom"."""
+    if is_owner(user):
+        return "super_admin"
+    access = access_of(user)
+    if not access:
+        return None
+    for key, (_, _, areas) in ROLES.items():
+        if set(access) == set(AREAS if EVERYTHING in areas else areas):
+            return key
+    return "custom"

@@ -4,35 +4,33 @@ import { FormError, SubmitButton } from '../../components/auth/fields'
 import { adminApi, useAdmin, useAdminApi } from '../../lib/admin'
 import { Confirm, Empty, Loading, PageHead, PasswordBox, Person, Pill, Sheet, ago, newPassword } from './ui'
 
-// Three ways to choose what someone can open. "Custom" shows the list of parts to tick.
-const PRESETS = [
-  ['support', 'Support only', 'They can reply to students in Ask TYM AI and answer contact form enquiries. Nothing else.'],
-  ['all', 'Everything', 'Every part of the panel, including this Team page.'],
-  ['custom', 'Choose the parts', 'Tick exactly what they can open.'],
-]
+const CUSTOM = { key: 'custom', label: 'Choose the parts yourself', about: 'Tick exactly what they can open.' }
 
-function AccessPicker({ areas, value, onChange }) {
-  const all = areas.map((a) => a.key)
-  const preset = value.length === all.length ? 'all' : value.length === 1 && value[0] === 'support' ? 'support' : 'custom'
-  const [custom, setCustom] = useState(preset === 'custom')
-  const shown = custom ? 'custom' : preset
-  const pick = (key) => {
-    setCustom(key === 'custom')
-    if (key === 'all') onChange(all)
-    if (key === 'support') onChange(['support'])
+// Which role this set of areas is, or 'custom'. The server decides the same way; this keeps the
+// radio button in step while the owner is still ticking boxes.
+const roleOf = (roles, value) => roles.find((r) => r.areas.length === value.length
+  && r.areas.every((a) => value.includes(a)))?.key || CUSTOM.key
+
+// Super admin, Admin, Mentor admin, Support, or exactly the parts you tick.
+function AccessPicker({ roles, areas, value, onChange }) {
+  const [custom, setCustom] = useState(() => roleOf(roles, value) === CUSTOM.key)
+  const shown = custom ? CUSTOM.key : roleOf(roles, value)
+  const pick = (role) => {
+    setCustom(role.key === CUSTOM.key)
+    if (role.areas) onChange(role.areas)
   }
   const toggle = (key) => onChange(value.includes(key) ? value.filter((k) => k !== key) : [...value, key])
 
   return (
     <fieldset className="adm-access">
-      <legend>What they can open</legend>
-      {PRESETS.map(([key, label, about]) => (
-        <label key={key} className={`adm-choice${shown === key ? ' is-on' : ''}`}>
-          <input type="radio" name="preset" checked={shown === key} onChange={() => pick(key)} />
-          <span><strong>{label}</strong><span>{about}</span></span>
+      <legend>Their role</legend>
+      {[...roles, CUSTOM].map((role) => (
+        <label key={role.key} className={`adm-choice${shown === role.key ? ' is-on' : ''}`}>
+          <input type="radio" name="role" checked={shown === role.key} onChange={() => pick(role)} />
+          <span><strong>{role.label}</strong><span>{role.about}</span></span>
         </label>
       ))}
-      {shown === 'custom' && (
+      {shown === CUSTOM.key && (
         <div className="adm-access-list">
           {areas.map((a) => (
             <label key={a.key} className="check">
@@ -47,12 +45,12 @@ function AccessPicker({ areas, value, onChange }) {
 }
 
 // Add someone, or change what an existing teammate can open
-function Teammate({ person, areas, onClose, onSaved }) {
+function Teammate({ person, roles, areas, onClose, onSaved }) {
   const adding = !person
   const [name, setName] = useState(person?.name || '')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState(adding ? newPassword() : '')
-  const [access, setAccess] = useState(person?.access || ['support'])
+  const [access, setAccess] = useState(person?.access || roles.find((r) => r.key === 'support')?.areas || ['support'])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -86,37 +84,11 @@ function Teammate({ person, areas, onClose, onSaved }) {
         )}
         <PasswordBox id="tm-pass" label={adding ? 'Starting password' : 'New password'} required={adding} value={password} onChange={setPassword}
           hint={adding ? 'Give this to them yourself. We do not email passwords. They can change it after signing in.' : 'Leave empty to keep their current password.'} />
-        <AccessPicker areas={areas} value={access} onChange={setAccess} />
+        <AccessPicker roles={roles} areas={areas} value={access} onChange={setAccess} />
         <FormError>{error}</FormError>
         <SubmitButton busy={busy} busyText="Saving" disabled={!access.length}>{adding ? 'Add to the team' : 'Save changes'}</SubmitButton>
       </form>
     </Sheet>
-  )
-}
-
-// Which outside services are connected, so "why did no email arrive?" has an answer on the page
-function Setup() {
-  const { data } = useAdminApi('/admin/setup')
-  if (!data) return null
-  return (
-    <section className="adm-setup" aria-labelledby="setup-title">
-      <h2 id="setup-title" className="adm-h2">What is switched on</h2>
-      <ul className="adm-list">
-        {data.map((s) => (
-          <li key={s.name} className="adm-row adm-setting">
-            <div className="adm-question-text">
-              <strong>{s.name}</strong>
-              <span>{s.on ? s.when_on : s.when_off}</span>
-            </div>
-            <span className="adm-row-actions">
-              {!s.on && <span className="adm-cell mono">{s.setting}</span>}
-              <Pill tone={s.on ? 'solid' : 'muted'}>{s.on ? 'On' : 'Off'}</Pill>
-            </span>
-          </li>
-        ))}
-      </ul>
-      <p className="adm-hint">These are set in the <code>.env</code> file on the server. Add the value named beside anything that is off, then restart.</p>
-    </section>
   )
 }
 
@@ -139,12 +111,13 @@ export default function Team() {
 
   if (list.error) return <Empty title="We could not load the team" text={list.error.message} />
   if (!list.data) return <Loading what="the team" />
-  const { people, areas } = list.data
+  const { people, areas, roles } = list.data
+  const roleName = Object.fromEntries(roles.map((r) => [r.key, r.label]))
   const label = Object.fromEntries(areas.map((a) => [a.key, a.label]))
 
   return (
     <>
-      <PageHead eyebrow="Team" title="Who can use this panel" text="Add the people who help run TYM and choose what each of them can open. Someone who only answers students needs Support chat and nothing else.">
+      <PageHead eyebrow="Team" title="Who can use this panel" text="Add the people who help run TYM and give each of them a role. A super admin can do everything, an admin runs the site but cannot change the team, a mentor admin looks after mentors and their sessions, and support only answers students.">
         <button className="btn btn-primary" onClick={() => { setAdded(null); setEditing(null) }}><Plus size={16} /> Add a teammate</button>
       </PageHead>
 
@@ -161,10 +134,10 @@ export default function Team() {
           <li key={p.id} className="adm-row adm-teammate">
             <Person user={{ displayName: p.name, avatar: p.avatar }} sub={p.email} />
             <span className="adm-chips">
-              {p.isOwner ? <Pill tone="solid">Owner</Pill>
-                : p.fullAccess ? <Pill>Everything</Pill>
-                  : p.access.length ? p.access.map((k) => <Pill key={k} tone="muted">{label[k]}</Pill>)
-                    : <Pill tone="warn">No access to the panel</Pill>}
+              {p.isOwner ? <Pill tone="solid">Owner · Super admin</Pill>
+                : !p.access.length ? <Pill tone="warn">No access to the panel</Pill>
+                  : p.role !== 'custom' ? <Pill tone={p.fullAccess ? 'solid' : 'line'}>{roleName[p.role]}</Pill>
+                    : p.access.map((k) => <Pill key={k} tone="muted">{label[k]}</Pill>)}
             </span>
             <span className="adm-cell adm-cell-time">Seen {ago(p.lastSeenAt)}</span>
             <span className="adm-row-actions">
@@ -178,12 +151,10 @@ export default function Team() {
           </li>
         ))}
       </ul>
-      <p className="adm-hint">The owner is the account named in <code>ADMIN_EMAIL</code> on the server. It always has everything and cannot be removed here.</p>
-
-      <Setup />
+      <p className="adm-hint">The owner is the account named in <code>ADMIN_EMAIL</code> on the server. It is always a super admin and cannot be removed here.</p>
 
       {editing !== undefined && (
-        <Teammate person={editing} areas={areas} onClose={() => setEditing(undefined)}
+        <Teammate person={editing} roles={roles} areas={areas} onClose={() => setEditing(undefined)}
           onSaved={(created) => { setEditing(undefined); setAdded(created); list.reload() }} />
       )}
     </>

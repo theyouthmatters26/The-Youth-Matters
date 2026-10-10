@@ -147,11 +147,14 @@
 .subject-list .is-live a:hover { padding-left: var(--s-4); }
 
 /* Destinations: asymmetric photo bento. UK (launch market) is the large tile.
-   Rows on desktop:  UK UK US US / UK UK CA AU / IE IE DE DE  (exactly six cells, no gaps) */
-.dest-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: clamp(190px, 17vw, 250px); gap: var(--s-4); }
-.dest-card { position: relative; display: block; overflow: hidden; border-radius: var(--radius-lg); background: var(--night); isolation: isolate; }
-.dest-card:nth-child(1) { grid-column: span 2; grid-row: span 2; }
-.dest-card:nth-child(2), .dest-card:nth-child(5), .dest-card:nth-child(6) { grid-column: span 2; }
+   Twelve columns, so the shape works in halves, quarters and thirds at once:
+     UK UK US US / UK UK CA AU   the four the site leads with, as they have always been
+     then every country after those, three to a row, however many the team adds. */
+.dest-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: clamp(190px, 17vw, 250px); gap: var(--s-4); }
+.dest-card { position: relative; display: block; overflow: hidden; border-radius: var(--radius-lg); background: var(--night); isolation: isolate; grid-column: span 4; }
+.dest-card:nth-child(1) { grid-column: span 6; grid-row: span 2; }
+.dest-card:nth-child(2) { grid-column: span 6; }
+.dest-card:nth-child(3), .dest-card:nth-child(4) { grid-column: span 3; }
 .dest-card:nth-child(1) .dest-name { font-size: var(--step-3); }
 .dest-card:nth-child(1) .dest-info { left: var(--s-6); bottom: var(--s-6); }
 .dest-note { margin-top: var(--s-2); font-size: var(--step--1); color: rgba(255, 255, 255, 0.78); }
@@ -273,10 +276,12 @@
 @media (max-width: 1080px) {
   .hero-grid { grid-template-columns: minmax(0, 1fr); }
   .hero-copy { max-width: 680px; }
-  /* Tablet bento: UK full width, then pairs, Germany full width (still no gaps) */
-  .dest-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: clamp(190px, 30vw, 260px); }
-  .dest-card:nth-child(1) { grid-row: span 1; }
-  .dest-card:nth-child(2), .dest-card:nth-child(5) { grid-column: span 1; }
+  /* Tablet: UK across the top, then two to a row */
+  .dest-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: clamp(190px, 30vw, 260px); }
+  .dest-card, .dest-card:nth-child(3), .dest-card:nth-child(4) { grid-column: span 3; }
+  .dest-card:nth-child(1) { grid-column: span 6; grid-row: span 1; }
+  .dest-card:nth-child(2) { grid-column: span 3; }
+  .dest-card:nth-child(1) .dest-name { font-size: var(--step-2); }
   .live-grid { grid-template-columns: minmax(0, 1fr); }
   .subject-row { grid-template-columns: minmax(0, 1fr) auto; }
   .subject-desc { display: none; }
@@ -293,7 +298,9 @@
     margin: 0 calc(var(--gutter) * -1); padding: 0 var(--gutter); scrollbar-width: none;
   }
   .dest-grid::-webkit-scrollbar { display: none; }
-  .dest-card { flex: 0 0 78%; height: 320px; scroll-snap-align: start; }
+  .dest-card, .dest-card:nth-child(1), .dest-card:nth-child(2), .dest-card:nth-child(3), .dest-card:nth-child(4) {
+    flex: 0 0 78%; height: 320px; scroll-snap-align: start; grid-column: auto;
+  }
   .dest-card:nth-child(1) .dest-name { font-size: var(--step-2); }
   .dest-card:nth-child(1) .dest-info { left: var(--s-5); bottom: var(--s-5); }
   .hero { min-height: 0; gap: var(--s-6); }

@@ -61,7 +61,11 @@ class Booking(Model):
     topic = db.Column(db.Text)  # what the student wants to cover, shared with the mentor
     student_timezone = db.Column(db.String(64))  # for showing times in emails
     hold_expires_at = db.Column(db.DateTime(timezone=True))  # slot is held while the student pays
+    # The session itself happens in their chat (api/mentor_chat.py). A video call link only exists
+    # when the mentor shares one, and lives on the conversation, not here.
     meeting_url = db.Column(db.String(255))
+    time_up_at = db.Column(db.DateTime(timezone=True))  # when the mentor was told the time was up
+    ended_at = db.Column(db.DateTime(timezone=True))    # when the mentor closed the session
     note = db.Column(db.String(255))
     # Counselling time taken from the student's balance for this session; goes back if it is cancelled in time
     minutes_deducted = db.Column(db.SmallInteger)

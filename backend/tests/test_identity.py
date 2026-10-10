@@ -77,3 +77,11 @@ def test_passport_reads_only_when_both_check_digits_add_up():
     assert identity.find_dob(specimen, TODAY) == (date(1974, 8, 12), "mrz")
     forged = [specimen[0], specimen[1].replace("1204159", "1204158")]  # the expiry check digit is wrong
     assert identity.document_kind(forged, TODAY) is None
+
+
+def test_voter_id_is_a_local_id_we_accept():
+    card = ["ELECTION COMMISSION OF INDIA", "IDENTITY CARD", "ABC1234567",
+            "Date of Birth: 14/03/2001"]
+    assert identity.document_kind(card, today=TODAY) == "national_id"
+    # The same number on anything else is not an ID
+    assert identity.document_kind(["Gym card ABC1234567", "14/03/2001"], today=TODAY) is None

@@ -1,4 +1,5 @@
 """Model -> JSON dicts. Kept in one place so every endpoint returns the same shapes."""
+from ..models.base import utcnow
 
 
 def user_brief(u):
@@ -18,7 +19,9 @@ def me(u):
         step = "document"
     return {**user_brief(u), "email": u.email, "emailVerified": u.email_verified, "status": u.status,
             "verification": step, "dateOfBirth": u.date_of_birth.isoformat() if u.date_of_birth else None,
-            "counselingMinutes": u.counseling_minutes or 0}
+            "counselingMinutes": u.counseling_minutes or 0,
+            # Google-only accounts have none, so the website knows not to ask for one
+            "hasPassword": bool(u.password_hash)}
 
 
 def subject(s):
@@ -30,7 +33,9 @@ def community(c):
     return {
         "id": c.id,
         "subject": {"slug": c.subject.slug, "name": c.subject.name},
-        "country": {"slug": c.country.slug, "name": c.country.name, "isoCode": c.country.iso_code},
+        "country": {"slug": c.country.slug, "name": c.country.name, "isoCode": c.country.iso_code,
+                    # the photo the team uploaded, if there is one; the website falls back to its own
+                    "image": media_url(c.country.image_key) if c.country.image_key else None},
         "description": c.description,
     }
 
@@ -159,11 +164,27 @@ def slot(sl):
     return {"id": sl.id, "startsAt": sl.starts_at.isoformat(), "endsAt": sl.ends_at.isoformat()}
 
 
-def booking(b):
+def session_state(b, now):
+    """Where a booked chat session stands: before it, in it, past its time, or finished."""
+    if b.status in ("cancelled", "expired"):
+        return b.status
+    if getattr(b, "ended_at", None) or b.status == "completed":
+        return "ended"
+    starts, ends = b.slot.starts_at, b.slot.ends_at
+    if starts.tzinfo is None:  # SQLite hands times back without a zone; PostgreSQL keeps it
+        now = now.replace(tzinfo=None)
+    if now < starts:
+        return "upcoming"
+    return "live" if now < ends else "overtime"
+
+
+def booking(b, now=None):
     m = b.mentor
     return {
         "id": b.id,
         "status": b.status,
+        "session": session_state(b, now or utcnow()),
+        "endedAt": getattr(b, "ended_at", None) and b.ended_at.isoformat(),
         "startsAt": b.slot.starts_at.isoformat(),
         "endsAt": b.slot.ends_at.isoformat(),
         "topic": b.topic,

@@ -7,7 +7,8 @@ KYC service, and the photo is only ever held in memory.
 
 A date on any picture is not an ID, so before a date is believed the text must show what a real
 document carries (document_kind): a machine readable zone whose check digits add up, an Aadhaar
-number that passes its checksum, a PAN in the Income Tax Department's format, or a driving licence.
+number that passes its checksum, a PAN in the Income Tax Department's format, a voter ID in the
+Election Commission's format, or a driving licence. Local cards count, not only passports.
 This stops a random photo with a date on it. It cannot tell a real card from a careful forgery of
 one: that takes a government lookup (DigiLocker or a KYC provider), which is the upgrade path.
 """
@@ -158,6 +159,7 @@ def _verhoeff(number):
 
 AADHAAR = re.compile(r"(?<!\d)(?<!\d )([2-9]\d{3}) ?(\d{4}) ?(\d{4})(?! ?\d)")
 PAN = re.compile(r"\b[A-Z]{3}P[A-Z]\d{4}[A-Z]\b")  # the fourth letter is P on a person's card
+EPIC = re.compile(r"\b[A-Z]{3}\d{7}\b")  # voter ID (Election Commission of India) card number
 PASSPORT_NO = re.compile(r"\b[A-Z]\d{7}\b")
 LICENCE_NO = re.compile(r"\b[A-Z]{2}[- ]?\d{2}[- ]?(?:19|20)\d{2} ?\d{7}\b")  # state, office, year, serial
 
@@ -179,6 +181,8 @@ def document_kind(lines, today=None):
             labelled or said("GOVERNMENTOFINDIA", "AADHAAR", "UNIQUEIDENTIFICATION", "UIDAI")):
         return "national_id"
     if PAN.search(text) and said("INCOMETAX", "PERMANENTACCOUNT", "GOVTOFINDIA"):
+        return "national_id"
+    if EPIC.search(text) and said("ELECTIONCOMMISSION", "ELECTORS", "ELECTORAL", "VOTER", "IDENTITYCARD"):
         return "national_id"
     if said("LICENCE", "LICENSE") and (said("DRIVING", "DRIVER", "TRANSPORT") or LICENCE_NO.search(text)):
         return "driving_licence"
@@ -203,8 +207,10 @@ def read_dob(img):
     lines = read_text(img)
     kind = document_kind(lines)
     if not kind:
-        raise IdentityError("We could not recognise this as a passport, driving licence, Aadhaar or PAN card. "
-                            "Use the original document, with the whole of it in the frame, in focus and without glare.")
+        raise IdentityError("We could not recognise this as a government ID. Use a passport, driving licence, "
+                            "Aadhaar, PAN or voter ID card. It has to be the original document, with the whole "
+                            "of it in the frame, in focus and without glare: a photo of a photocopy, a screen "
+                            "or anything made up will not pass.")
     dob, source = find_dob(lines)
     if not dob:
         raise IdentityError("We could not read a date of birth on that photo. Make sure the whole "

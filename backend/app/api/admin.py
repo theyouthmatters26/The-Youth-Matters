@@ -35,11 +35,11 @@ from flask_jwt_extended import create_access_token, create_refresh_token, curren
 from markupsafe import escape
 
 from ..extensions import db, limiter
-from ..models import (AiConversation, AvailabilitySlot, BlogPost, Booking, ChatMessage, ChatRoom, Comment, CounselingPackage,
-                      ContactMessage, IdentityVerification, MentorApplication, MentorProfile, MentorReview,
-                      ModerationLog, Payment, Post, Report, Strike, User, Vote)
+from ..models import (AiConversation, AvailabilitySlot, Booking, ChatMessage, ChatRoom, Comment, CounselingPackage,
+                      ContactMessage, Faq, IdentityVerification, MentorApplication, MentorProfile, MentorReview,
+                      ModerationLog, Payment, Post, Report, Strike, User)
 from ..models.base import utcnow
-from ..services import handoff, mailer, staff, storage
+from ..services import accounts, handoff, mailer, staff
 from ..services.moderation import MUTE_DURATION, strike_action
 from ..services.notify import notify
 from . import serializers as s
@@ -69,7 +69,8 @@ def team_member(area=None):
 
 def admin_json(u):
     return {"id": u.id, "name": u.display_name, "email": u.email, "avatar": u.avatar_url,
-            "access": staff.access_of(u), "isOwner": staff.is_owner(u)}
+            "access": staff.access_of(u), "isOwner": staff.is_owner(u), "role": staff.role_of(u),
+            "roleLabel": staff.ROLES[staff.role_of(u)][0] if staff.role_of(u) in staff.ROLES else "Team member"}
 
 
 def record(action, target_type, target_id, **detail):
@@ -215,6 +216,8 @@ def badges():
         out["moderation"] = count(Report.status == "open")
     if staff.can(me, "mentors"):
         out["mentors"] = count(MentorApplication.status == "pending")
+    if staff.can(me, "faq"):
+        out["faq"] = count(Faq.status == "pending")
     return jsonify(out)
 
 
@@ -263,13 +266,21 @@ def overview():
 
 def _team_json(u):
     return {**admin_json(u), "username": u.username, "fullAccess": len(staff.access_of(u)) == len(staff.AREAS),
+            "role": staff.role_of(u),
             "lastSeenAt": u.last_seen_at.isoformat() if u.last_seen_at else None, "createdAt": u.created_at.isoformat()}
 
 
 def _access_from(data):
+    """What this person may open: a role by name (super admin, admin, mentor admin, support), or the
+    exact areas when the owner ticked them one by one."""
+    if role := data.get("role"):
+        areas = staff.areas_for(role)
+        if areas is None:
+            abort(400, "Choose a role from the list.")
+        return staff.clean_access(areas)
     access = staff.clean_access(data.get("access"))
     if not access:
-        abort(400, "Choose at least one part of the panel this person can open.")
+        abort(400, "Choose a role, or at least one part of the panel this person can open.")
     return access
 
 
@@ -280,7 +291,9 @@ def team():
     admins = db.session.scalars(db.select(User).where(User.role == "admin").order_by(User.display_name)).all()
     admins.sort(key=lambda u: not staff.is_owner(u))  # the owner first
     return jsonify(people=[_team_json(u) for u in admins],
-                   areas=[{"key": k, "label": label, "about": about} for k, (label, about) in staff.AREAS.items()])
+                   areas=[{"key": k, "label": label, "about": about} for k, (label, about) in staff.AREAS.items()],
+                   roles=[{"key": k, "label": label, "about": about, "areas": staff.clean_access(areas)}
+                          for k, (label, about, areas) in staff.ROLES.items()])
 
 
 @bp.post("/admin/team")
@@ -311,7 +324,7 @@ def add_admin():
     # knows the email set a new password on this account.
     u.email_verified = True
     db.session.flush()
-    record("team_added", "user", u.id, name=u.display_name, access=access)
+    record("team_added", "user", u.id, name=u.display_name, role=staff.role_of(u), access=access)
     db.session.commit()
     link = f"{current_app.config['SITE_URL'] or request.host_url.rstrip('/')}/admin/login"
     mailer.send_quietly(u.email, "You have been added to The Youth Matters admin panel",
@@ -329,7 +342,7 @@ def update_admin(user_id):
         abort(404, "That person is not on the team.")
     _can_act_on(u)
     data = request.get_json(silent=True) or {}
-    if "access" in data:
+    if "access" in data or "role" in data:
         u.admin_access = _access_from(data)
     if data.get("name"):
         name = str(data["name"]).strip()
@@ -338,7 +351,7 @@ def update_admin(user_id):
         u.display_name = name
     if data.get("password"):
         u.password_hash = _password_hash(str(data["password"]))
-    record("team_updated", "user", u.id, name=u.display_name, access=u.admin_access)
+    record("team_updated", "user", u.id, name=u.display_name, role=staff.role_of(u), access=u.admin_access)
     db.session.commit()
     return jsonify(_team_json(u))
 
@@ -463,35 +476,13 @@ def delete_member(user_id):
     _can_act_on(u)
     if u.role == "admin":
         abort(400, "Take them off the team first, on the Team page.")
-    profile = db.session.scalar(db.select(MentorProfile.id).where(MentorProfile.user_id == u.id))
-    if count(Booking.student_id == u.id) or count(Payment.user_id == u.id) or (profile and count(Booking.mentor_id == profile)):
+    if accounts.has_records(u):
         abort(409, "This account has sessions or payments, and those records have to be kept. "
                    "Ban the account instead: that closes it for good.")
-
-    # Their votes come off the tallies, and questions they answered are recounted once the answers are gone
-    for model, kind in ((Post, "post"), (Comment, "comment")):
-        for value, tally in ((1, model.upvotes), (-1, model.downvotes)):
-            voted = db.select(Vote.target_id).where(Vote.user_id == u.id, Vote.target_type == kind, Vote.value == value)
-            db.session.execute(db.update(model).where(model.id.in_(voted))
-                               .values({tally: tally - 1, model.score: model.score - value}))
-    answered = db.session.scalars(db.select(Comment.post_id).where(Comment.author_id == u.id).distinct()).all()
-    files = db.session.execute(db.select(MentorApplication.cv_key, MentorApplication.proof_key)
-                               .where(MentorApplication.user_id == u.id)).all()
-    # Only someone who was once on the team has these: their decisions stay, without a name on them
-    for model, column in ((MentorApplication, MentorApplication.reviewed_by_id), (Report, Report.resolved_by_id),
-                          (IdentityVerification, IdentityVerification.reviewed_by_id)):
-        db.session.execute(db.update(model).where(column == u.id).values({column: None}))
-    db.session.execute(db.update(BlogPost).where(BlogPost.author_id == u.id).values(author_id=me.id))
-    db.session.execute(db.delete(MentorReview).where(MentorReview.author_id == u.id))
-
     record("member_deleted", "user", u.id, name=u.display_name)
-    db.session.execute(db.delete(User).where(User.id == u.id))  # the database removes what hangs off the account
-    live = db.select(db.func.count(Comment.id)).where(Comment.post_id == Post.id, ~Comment.is_deleted).scalar_subquery()
-    db.session.execute(db.update(Post).where(Post.id.in_(answered)).values(comment_count=live))
+    files = accounts.erase(u, blog_author_id=me.id)
     db.session.commit()
-    for keys in files:
-        for key in keys:
-            storage.delete(key)
+    accounts.remove_files(files)
     return jsonify(deleted=True)
 
 
@@ -530,6 +521,8 @@ def set_status(user_id):
     _can_act_on(u)
     data = request.get_json(silent=True) or {}
     status, reason = data.get("status"), str(data.get("reason") or "").strip()[:255]
+    if u.status == "closed":
+        abort(400, "This member deleted their account. Nothing of theirs is left to reinstate.")
     if status == "active":
         u.status = "active" if u.date_of_birth or u.role == "admin" else "pending"
         u.muted_until = None

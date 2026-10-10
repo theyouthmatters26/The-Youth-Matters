@@ -64,10 +64,12 @@ function Booked({ booking }) {
         <button className="btn btn-primary btn-sm" onClick={() => downloadIcs(booking)}><CalendarPlus size={15} /> Add to calendar</button>
         <button className="btn btn-ghost btn-sm" onClick={copy}><Copy size={15} /> {copied ? 'Link copied' : 'Copy join link'}</button>
         <Link to={chatLink(account.username, booking.mentor.id, account.id)} className="btn btn-ghost btn-sm">
-          <MessageSquare size={15} /> Message {booking.mentor.user.displayName.split(' ')[0]}
+          <MessageSquare size={15} /> Your chat with {booking.mentor.user.displayName.split(' ')[0]}
         </Link>
       </div>
-      <p className="book-fine">{hoursText(booking.minutes)} came off your counselling hours. We emailed you the details, and your sessions are always in <Link to="/my?tab=Sessions" className="link">My TYM</Link>.</p>
+      <p className="book-fine">{hoursText(booking.minutes)} came off your counselling hours. We have asked
+        {' '}{booking.mentor.user.displayName.split(' ')[0]} to open a chat with you: you will get an email
+        when they do. We emailed you the details, and your sessions are always in <Link to="/my?tab=Sessions" className="link">My TYM</Link>.</p>
     </div>
   )
 }

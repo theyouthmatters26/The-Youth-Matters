@@ -6,6 +6,7 @@ from werkzeug.exceptions import BadRequest
 from app.api.ai import WANTS_PERSON
 from app.api.chat import ASKS_TYMAI
 from app.api.mentor_applications import weekly_hours
+from app.api.mentor_chat import MEETING_HOST, MEETING_LINK
 
 
 def test_weekly_hours_keeps_valid_days_and_times():
@@ -34,3 +35,21 @@ def test_asking_for_a_person_in_words_is_understood():
                  "What is the best way to reach the embassy?", "I want to study human biology",
                  "I want to do a human rights course in the UK"):
         assert not WANTS_PERSON.search(text), text
+
+
+def test_a_call_link_is_spotted_however_it_is_written():
+    for text in ("join https://meet.google.com/abc-defg-hij", "meet.google.com/abc-defg-hij now",
+                 "https://us02web.zoom.us/j/123456", "teams.microsoft.com/l/meetup-join/19%3a",
+                 "https://meet.jit.si/TYM-abc", "whereby.com/tym", "discord.gg/abcdef"):
+        assert MEETING_LINK.search(text), text
+    for text in ("Shall we meet on Google at 6?", "My university is meet.ac.uk material",
+                 "Send the SOP to me@zoom-tutors.com"):
+        assert not MEETING_LINK.search(text), text
+
+
+def test_only_a_real_call_link_can_be_shared_as_the_meeting():
+    assert MEETING_HOST.match("https://meet.google.com/abc-defg-hij")
+    assert MEETING_HOST.match("https://us02web.zoom.us/j/123456")
+    for url in ("http://meet.google.com/abc", "https://evil.example.com/meet.google.com",
+                "meet.google.com/abc", "https://meet.google.com"):
+        assert not MEETING_HOST.match(url), url

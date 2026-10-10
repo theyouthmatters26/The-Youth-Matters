@@ -175,7 +175,7 @@ export default function AiLounge() {
               </li>
             ))}
           </ul>
-          <p className="lounge-note">Private to you and, if you ask for a person, the TYM team. TYMAi can make mistakes, so confirm visa rules on official government sites.</p>
+          <p className="lounge-note">Private to you and, if you ask for a person, the TYM team. TYMAi answers on studying abroad and how TYM works, and nothing else. It can make mistakes, so confirm visa rules on official government sites.</p>
         </aside>
 
         <section className="chat-main is-lounge" aria-label="Ask TYM AI">

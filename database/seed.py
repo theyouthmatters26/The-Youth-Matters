@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
 from app.models import (BlogPost, Category, ChatMessage, ChatRoom, Comment, Community, Country,  # noqa: E402
-                        Follow, MentorProfile, MentorReview, Post, Subject, User)
+                        Faq, Follow, MentorProfile, MentorReview, Post, Subject, User)
 from demo_blog import seed_blog  # noqa: E402
 from demo_chat import seed_chat  # noqa: E402
 from demo_posts import seed_posts  # noqa: E402
@@ -44,6 +44,7 @@ COUNTRIES = [
     ("australia", "Australia", "AU", "Subclass 500 visas, scholarships and part-time work."),
     ("ireland", "Ireland", "IE", "Stamp 2 visas, Dublin housing and graduate routes."),
     ("germany", "Germany", "DE", "Tuition-free programmes, blocked accounts and APS."),
+    ("france", "France", "FR", "Campus France, student visas and life in French universities."),
 ]
 CATEGORIES = [
     ("visas", "Visas"), ("scholarships", "Scholarships"), ("accommodation", "Accommodation"),
@@ -239,10 +240,82 @@ def seed_people():
     db.session.commit()
 
 
+FAQS = [
+    ("What is TYM?", "The Youth Matters (TYM) is a community where young people talk to each other about studying "
+     "abroad: free chat rooms, questions and answers, Ask TYM AI and one-to-one sessions with mentors."),
+    ("How do I sign up?", "Choose Sign up on this website and create an account with your email address or Google. "
+     "We send a code to confirm your email, then ask for a photo ID once to confirm your age."),
+    ("Is TYM free to use?", "Yes. Asking questions, answering, the community hubs, the Study Abroad chatroom and "
+     "Ask TYM AI are free. Only one-to-one sessions with TYM Mentors are paid: you buy counselling hours and spend "
+     "them with any mentor."),
+    ("How do counselling hours work?", "Every mentor costs the same. You buy a package of counselling hours once, "
+     "and each session you book takes its length from your hours: a 30 minute session uses half an hour. Hours work "
+     "with any TYM mentor and do not expire."),
+    ("Why do you ask for a photo ID?", "The community is for adults only, so every member must be 18 or older. We "
+     "read the date of birth from your passport, driving licence, Aadhaar, PAN or voter ID on our own servers. The "
+     "photo is never stored: we keep the date of birth, not the document."),
+    ("Who are TYM Mentors?", "Current students and recent graduates of universities abroad, and study abroad "
+     "consultants. Each one is checked by our team before they can take bookings."),
+    ("What is TYMAi?", "Our study abroad assistant, free to use. It joins a chat room when you type @TYMAi, and "
+     "answers privately in Ask TYM AI, where you can also ask for a person from our team. It can be wrong, so check "
+     "official sources for visa rules."),
+    ("Can I chat with my mentor?", "Yes. When you book a session, your mentor gets a chat request. Once they accept "
+     "it you can message each other in My TYM, before and after the call. Only your mentor can share the video call "
+     "link in the chat, so never join a call from anywhere else."),
+    ("Can I share photos and files?", "You can add photos to your questions and to your profile. Chat rooms and "
+     "mentor chats are text only, so nothing can be sent that we cannot moderate."),
+    ("How do I manage my notifications?", "The bell at the top of every page shows new answers, replies, mentions "
+     "and messages from your mentor. Open it to read the latest ones, and Notifications for the full list, where "
+     "you can mark them all as read."),
+    ("How do I report a user?", "Use Report on any question or answer. Our team reviews every report. Offensive "
+     "words are hidden automatically, and repeat behaviour leads to a warning, then a 24 hour mute, then suspension."),
+    ("Can I cancel a mentor session?", "You can cancel up to 24 hours before the session. The time goes straight "
+     "back on your counselling hours, to book another time."),
+    ("Is my data secure on TYM?", "We take your privacy and security seriously. Your connection to TYM is "
+     "encrypted, passwords are never stored in readable form, and your photo ID is not kept. See our Privacy Policy "
+     "and Terms for the details."),
+    ("Can I use TYM on more than one device?", "Yes. Sign in with the same account on each device and your "
+     "questions, chats and sessions are there."),
+    ("What if I forget my password?", "Choose Forgot password on the sign-in page and follow the instructions sent "
+     "to your registered email address."),
+    ("How do I delete my account?", "Open Profile settings and choose Delete my account. We ask you to type DELETE "
+     "to confirm, then your account and everything on it are removed. Where sessions or payments are attached we "
+     "have to keep those records for our books, so the account is emptied and closed instead: either way nothing "
+     "of yours is left on the site and you cannot sign in again."),
+    ("Can I suggest a question for this page?", "Yes. Use Post your FAQ at the bottom of this page. Our team "
+     "answers it, and useful ones are added here for everyone."),
+    ("Who can I contact for support, or to give feedback?", "Ask for a person in Ask TYM AI, use the Contact us "
+     "page, or write to support@theyouthmatters.com. We welcome suggestions."),
+]
+
+
+def faqs():
+    """The FAQ page's starting content. The team edits it in the admin panel afterwards."""
+    if db.session.scalar(db.select(Faq).limit(1)):
+        return
+    db.session.add_all([Faq(question=q, answer=a, status="published", sort_order=i)
+                        for i, (q, a) in enumerate(FAQS)])
+    db.session.commit()
+
+
+def destinations():
+    """Every country in COUNTRIES has a community. Re-running adds the ones that are new (France
+    was added after the site went live) and leaves the rest as the team has edited them."""
+    study_abroad = db.session.scalar(db.select(Subject).where(Subject.slug == "study-abroad"))
+    have = {c.slug for c in db.session.scalars(db.select(Country))}
+    for i, (slug, name, iso, description) in enumerate(COUNTRIES):
+        if slug in have:
+            continue
+        country = Country(slug=slug, name=name, iso_code=iso)
+        db.session.add_all([country, Community(subject=study_abroad, country=country,
+                                               description=description, sort_order=i)])
+    db.session.commit()
+
+
 def reference():
     """What the site cannot work without. Added once; a later run changes nothing here."""
     if db.session.scalar(db.select(Subject).limit(1)):
-        return
+        return destinations()  # the site is already set up: only new countries are missing
     subjects = {slug: Subject(slug=slug, name=n, description=d, is_active=a, sort_order=i)
                 for i, (slug, n, d, a) in enumerate(SUBJECTS)}
     countries = {slug: Country(slug=slug, name=n, iso_code=c) for slug, n, c, _ in COUNTRIES}
@@ -260,6 +333,7 @@ def reference():
 
 def run(demo=False):
     reference()
+    faqs()
     if demo:
         seed_people()
         seed_posts(db, MODELS)

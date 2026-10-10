@@ -12,6 +12,7 @@ ROOMS = [
     ("australia", "Australia", "Subclass 500, Genuine Student answers and part-time work.", "australia"),
     ("ireland", "Ireland", "Stamp 2, Dublin housing and the graduate route.", "ireland"),
     ("germany", "Germany", "APS, blocked accounts, uni-assist and WG rooms.", "germany"),
+    ("france", "France", "Campus France, student visas, CAF and finding a room.", "france"),
 ]
 
 # room: [(author, body, minutes ago)]
@@ -84,7 +85,7 @@ def seed_chat(db, models, messages=True):
             db.session.flush()
         if not messages or db.session.scalar(db.select(ChatMessage.id).where(ChatMessage.room_id == room.id).limit(1)):
             continue
-        for author, body, minutes in MESSAGES[slug]:
+        for author, body, minutes in MESSAGES.get(slug, ()):  # a new room starts empty
             db.session.add(ChatMessage(room_id=room.id, author_id=users[author].id, body=body,
                                        created_at=now - timedelta(minutes=minutes)))
     db.session.commit()
