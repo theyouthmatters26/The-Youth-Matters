@@ -1,12 +1,21 @@
 import photos from '../../data/photos.json'
 
+// Shown for a country whose photograph has not been made yet (frontend/scripts/photos.py)
+const STAND_IN = '/images/chatroom.jpg'
+
 // The site's own photographs are kept at several widths as AVIF (made by frontend/scripts/photos.py),
 // so a phone downloads a phone-sized picture. The original JPEG stays as the fallback for old browsers.
 // Anything else (a member's upload, a new blog cover) is shown as it is.
 
 // A country's picture: the one the team uploaded in the admin panel, or the photograph that shipped
-// with the website for the countries it started with.
-export const cityPhoto = (country) => country?.image || `/images/city-${country?.slug}.jpg`
+// with the website for the countries it started with. A country added since the last photo run has
+// neither, and the page it sits on is built ahead of time, so the onError stand-in below would not
+// be listening yet: name the stand-in here instead of a file we know is not there.
+export const cityPhoto = (country) => {
+  if (country?.image) return country.image
+  const shipped = `/images/city-${country?.slug}.jpg`
+  return photos[shipped] ? shipped : STAND_IN
+}
 
 export const copies = (src, widths, tall = '') =>
   widths.map((w) => `${src.replace(/\.(jpg|png)$/, '')}-${tall}${w}.avif ${w}w`).join(', ')
@@ -15,7 +24,6 @@ export const copies = (src, widths, tall = '') =>
 // priority: the main picture at the top of a page. It is fetched first; everything else waits until it is near the screen.
 // A site picture that has not been made yet (a country added after the last photo run) falls back
 // to a neutral one, so a new community never shows a broken image.
-const STAND_IN = '/images/chatroom.jpg'
 const standIn = (e) => {
   if (e.target.src.endsWith(STAND_IN)) return
   e.target.srcset = ''

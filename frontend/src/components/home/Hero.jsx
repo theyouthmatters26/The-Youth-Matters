@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import photos from '../../data/photos.json'
+import { useAuth } from '../../lib/auth'
 import { building } from '../../lib/prerender'
 import { copies } from '../ui/Photo'
 import HeroThread from './HeroThread'
@@ -42,6 +43,7 @@ function AskBar() {
 }
 
 export default function Hero() {
+  const { account } = useAuth()
   const [index, setIndex] = useState(0)
   const [card, setCard] = useState(0)
   const [mounted, setMounted] = useState(1)
@@ -94,10 +96,13 @@ export default function Hero() {
           <p className="hero-eyebrow">Study abroad community</p>
           <h1>We guide you to the future.</h1>
           <p className="hero-sub">A free space where young people aged 18 to 32 come together on studying abroad: seek advice, share experiences, or talk about what is on your mind.</p>
-          <div className="hero-actions">
-            <Link to="/register" className="btn btn-light">
-              Join the community <span className="btn-arrow" aria-hidden><ArrowUpRight size={15} /></span>
-            </Link>
+<div className="hero-actions">
+            {/* A member is already in: /register would only bounce them back here */}
+            {!account && (
+              <Link to="/register" className="btn btn-light">
+                Join the community <span className="btn-arrow" aria-hidden><ArrowUpRight size={15} /></span>
+              </Link>
+            )}
             <Link to="/community" className="hero-link">Explore community <ArrowRight size={16} aria-hidden /></Link>
           </div>
         </div>

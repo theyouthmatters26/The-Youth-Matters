@@ -8,11 +8,11 @@ from .mentor import (AvailabilitySlot, Booking, CounselingPackage, MentorApplica
 from .moderation import ModerationLog, Report, Strike
 from .notification import Notification
 from .post import Post, PostImage, SavedPost
-from .user import Block, IdentityVerification, User
+from .user import AccountClosure, Block, IdentityVerification, User
 from .vote import Vote
 
 __all__ = [
-    "AiConversation", "AiMessage", "AvailabilitySlot", "Block", "BlogPost", "Booking", "Category", "CounselingPackage",
+    "AccountClosure", "AiConversation", "AiMessage", "AvailabilitySlot", "Block", "BlogPost", "Booking", "Category", "CounselingPackage",
     "ChatMessage", "ChatRoom", "Comment", "Community", "ContactMessage", "Country", "Faq", "Follow",
     "IdentityVerification",
     "MentorApplication", "MentorMessage", "MentorProfile", "MentorReview", "MentorThread", "ModerationLog",

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Photo from '../../components/ui/Photo'
+import { useAuth } from '../../lib/auth'
 import { useMeta } from '../../lib/meta'
 
 const VALUES = [
@@ -9,6 +10,7 @@ const VALUES = [
 ]
 
 export default function About() {
+  const { account } = useAuth()
   useMeta({ title: 'About TYM', description: 'The Youth Matters connects young people through honest conversation about studying abroad. Founded in 2026 by a team of alumni who wanted to guide the youth through that decision.', path: '/about' })
   return (
     <div className="container page">
@@ -27,7 +29,9 @@ export default function About() {
             <p>The Youth Matters grew out of our founder's own experience of how hard those decisions were during her study abroad journey. She holds a master's in Artificial Intelligence from a reputed university in the UK, and brings an international outlook from a childhood spent in the multicultural atmosphere of Dubai.</p>
             <p>Thank you for being part of our journey. The TYM team</p>
           </div>
-          <Link to="/register" className="btn btn-primary">Join the community</Link>
+          {account
+            ? <Link to="/community" className="btn btn-primary">Open the community</Link>
+            : <Link to="/register" className="btn btn-primary">Join the community</Link>}
         </div>
       </section>
 

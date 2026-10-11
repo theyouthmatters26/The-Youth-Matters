@@ -11,6 +11,7 @@ each limited to the areas chosen for them (services/staff.py). The support inbox
     GET    /admin/team                        POST adds someone, PATCH and DELETE /admin/team/<id>
     GET    /admin/members?q=&filter=&page=    POST adds an account {name, email, password, dateOfBirth?}
     GET    /admin/members/<id>                PATCH {name, email, password}, DELETE removes the account for good
+    GET    /admin/closures?q=&page=           accounts people closed themselves, and why
     POST   /admin/members/<id>/status         {status: active | suspended | banned, reason}
     POST   /admin/members/<id>/verify         {dateOfBirth}: verify by hand after checking their ID
     POST   /admin/members/<id>/strike         {reason}
@@ -35,7 +36,8 @@ from flask_jwt_extended import create_access_token, create_refresh_token, curren
 from markupsafe import escape
 
 from ..extensions import db, limiter
-from ..models import (AiConversation, AvailabilitySlot, Booking, ChatMessage, ChatRoom, Comment, CounselingPackage,
+from ..models import (AccountClosure, AiConversation, AvailabilitySlot, Booking, ChatMessage, ChatRoom, Comment,
+                      CounselingPackage,
                       ContactMessage, Faq, IdentityVerification, MentorApplication, MentorProfile, MentorReview,
                       ModerationLog, Payment, Post, Report, Strike, User)
 from ..models.base import utcnow
@@ -410,6 +412,27 @@ def _verify(u, date_of_birth, me):
     v.note = f"Checked by hand by {me.display_name}"
     u.date_of_birth, u.status = dob, "active"
     db.session.add(v)
+
+
+@bp.get("/admin/closures")
+@jwt_required()
+def closures():
+    """Accounts people closed themselves, newest first, with the reason they gave (api/users.py)."""
+    team_member("members")
+    q = db.select(AccountClosure)
+    term = request.args.get("q", "").strip()
+    if term:
+        like = f"%{term}%"
+        q = q.where(AccountClosure.display_name.ilike(like) | AccountClosure.username.ilike(like)
+                    | AccountClosure.email.ilike(like) | AccountClosure.reason.ilike(like))
+    return jsonify(paged(q.order_by(AccountClosure.id.desc()), _closure_row))
+
+
+def _closure_row(c):
+    return {"id": c.id, "displayName": c.display_name, "username": c.username, "email": c.email,
+            "reason": c.reason, "kept": c.kept,
+            "joinedAt": c.joined_at.isoformat() if c.joined_at else None,
+            "closedAt": c.created_at.isoformat()}
 
 
 @bp.post("/admin/members")

@@ -6,7 +6,7 @@ import { adminApi, downloadAdminFile, useAdmin, useAdminApi } from '../../lib/ad
 import { plural } from '../../lib/format'
 import { Confirm, Empty, Facts, Loading, PageHead, Pager, PasswordBox, Person, Pill, SearchBox, Sheet, StatusPill, Tabs, ago, day, newPassword, useDebounced } from './ui'
 
-const FILTERS = [['all', 'Everyone'], ['verified', 'Verified'], ['pending', 'Not verified'], ['suspended', 'Suspended'], ['mentors', 'Mentors'], ['team', 'Team']]
+const FILTERS = [['all', 'Everyone'], ['verified', 'Verified'], ['pending', 'Not verified'], ['suspended', 'Suspended'], ['mentors', 'Mentors'], ['team', 'Team'], ['deleted', 'Deleted']]
 const ROLE = { student: 'Student', mentor: 'Mentor', admin: 'Team' }
 const DOCUMENT = { passport: 'passport', driving_licence: 'driving licence', national_id: 'national ID' }
 const STRIKE = { warn_and_delete: 'They were sent a warning.', mute_24h: 'They are muted for 24 hours.', suspend_pending_review: 'That was strike three: the account is suspended.' }
@@ -275,6 +275,38 @@ function Member({ id, onClose, onChanged }) {
   )
 }
 
+// Accounts people closed themselves. There is nobody left to open, so each row says it all: who
+// they were, when they left and the reason they gave on the way out (api/users.py).
+function Deleted({ q, page, onPage }) {
+  const list = useAdminApi(`/admin/closures?q=${encodeURIComponent(q)}&page=${page}`)
+  const rows = list.data?.items || []
+
+  if (list.error) return <Empty title="We could not load deleted accounts" text={list.error.message} />
+  if (!list.data) return <Loading what="deleted accounts" />
+  if (rows.length === 0) {
+    return <Empty title="Nobody has left" text={q ? `No deleted account matches "${q}".` : 'Accounts people delete themselves appear here, with the reason they gave.'} />
+  }
+  return (
+    <>
+      <ul className="adm-list">
+        {rows.map((c) => (
+          <li key={c.id} className="adm-closed">
+            <div className="adm-closed-head">
+              <Person user={{ displayName: c.displayName }} sub={`@${c.username} · ${c.email}`} />
+              <Pill tone="muted">{c.kept ? 'Emptied and closed' : 'Deleted'}</Pill>
+              <time dateTime={c.closedAt}>Left {ago(c.closedAt)}{c.joinedAt ? `, joined ${ago(c.joinedAt)}` : ''}</time>
+            </div>
+            {c.reason
+              ? <blockquote className="adm-closed-why">{c.reason}</blockquote>
+              : <p className="adm-note">No reason given.</p>}
+          </li>
+        ))}
+      </ul>
+      <Pager page={page} hasMore={list.data?.hasMore} onPage={onPage} />
+    </>
+  )
+}
+
 export default function Members() {
   const [filter, setFilter] = useState('all')
   const [term, setTerm] = useState('')
@@ -283,7 +315,8 @@ export default function Members() {
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState('')
   const q = useDebounced(term)
-  const list = useAdminApi(`/admin/members?filter=${filter}&q=${encodeURIComponent(q)}&page=${page}`)
+  const gone = filter === 'deleted'
+  const list = useAdminApi(gone ? null : `/admin/members?filter=${filter}&q=${encodeURIComponent(q)}&page=${page}`)
   const rows = list.data?.items || []
   const choose = (set) => (value) => { set(value); setPage(1) }
   const download = () => { setError(''); downloadAdminFile('/admin/members.csv', 'tym-members.csv').catch((err) => setError(err.message)) }
@@ -300,7 +333,7 @@ export default function Members() {
       </div>
       <FormError>{error}</FormError>
 
-      {list.error ? <Empty title="We could not load members" text={list.error.message} />
+      {gone ? <Deleted q={q} page={page} onPage={setPage} /> : list.error ? <Empty title="We could not load members" text={list.error.message} />
         : !list.data ? <Loading what="members" />
           : rows.length === 0 ? <Empty title="Nobody matches" text={q ? `No member matches "${q}".` : 'There is nobody in this group yet.'} />
             : (
@@ -318,7 +351,7 @@ export default function Members() {
                 ))}
               </ul>
             )}
-      <Pager page={page} hasMore={list.data?.hasMore} onPage={setPage} />
+      {!gone && <Pager page={page} hasMore={list.data?.hasMore} onPage={setPage} />}
       {open && <Member id={open} onClose={() => setOpen(null)} onChanged={list.reload} />}
       {adding && <AddMember onClose={() => setAdding(false)} onAdded={list.reload} />}
     </>

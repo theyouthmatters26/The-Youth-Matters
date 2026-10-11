@@ -78,6 +78,23 @@ class IdentityVerification(Model):
     user = db.relationship("User", back_populates="verification", foreign_keys=[user_id])
 
 
+class AccountClosure(Model):
+    """Why somebody left, kept for the team after their account has gone (api/users.py).
+
+    The account itself is still erased, or emptied when payments point at it. This row is the
+    record of the closure, not of the person: nothing links back to it and nobody signs in with it.
+    The team reads it in the admin panel to see why people leave."""
+    __tablename__ = "account_closures"
+
+    display_name = db.Column(db.String(80), nullable=False)
+    username = db.Column(db.String(32), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    reason = db.Column(db.String(1000))
+    # True when sessions or payments meant the account was emptied and closed, not deleted
+    kept = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
+    joined_at = db.Column(db.DateTime(timezone=True))
+
+
 class Block(Model):
     __tablename__ = "blocks"
     __table_args__ = (

@@ -93,7 +93,8 @@ function DeleteAccount({ account, onDone }) {
       <p className="muted">We delete your account and everything on it: your profile, questions, answers, saved
         items and your messages with mentors. Where a session or a payment is attached we have to keep that
         record for our books, so the account is emptied and closed instead. Either way nothing of yours is
-        left on the site and you cannot sign in again.</p>
+        left on the site and you cannot sign in again. Our team keeps a note of the closure, with your name,
+        your email address and anything you write below.</p>
       <label className="check">
         <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
         <span>I understand my account and my content will be deleted.</span>

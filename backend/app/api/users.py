@@ -13,7 +13,7 @@ from flask_jwt_extended import current_user, jwt_required
 from markupsafe import escape
 
 from ..extensions import db, limiter, member_key
-from ..models import Comment, Community, Country, Follow, MentorProfile, Post, User
+from ..models import AccountClosure, Comment, Community, Country, Follow, MentorProfile, Post, User
 from ..models.user import STUDY_LEVELS
 from ..services import accounts, content, images, mailer, staff, storage
 from . import serializers as s
@@ -164,11 +164,14 @@ def delete_me():
         abort(403, "Team accounts are closed from the admin panel. Ask the owner to take you off the team first.")
 
     kept = accounts.has_records(u)
+    # Who left and why, for the team's Deleted list. Written before the account goes, because
+    # erasing it takes the name and the address with it.
+    closure = AccountClosure(display_name=u.display_name, username=u.username, email=u.email,
+                             reason=reason or None, kept=kept, joined_at=u.created_at)
     files = accounts.close(u) if kept else accounts.erase(u, blog_author_id=None)
+    db.session.add(closure)
     db.session.commit()
     accounts.remove_files(files)
-    # Why they left, emailed to the team without a name or an address: the account is gone, and the
-    # page promises nothing of theirs is left on the site, so this is not kept in the inbox either.
     if reason:
         mailer.send_quietly(current_app.config["CONTACT_EMAIL"], "Someone deleted their account",
                             f"<p>Reason given:</p><p>{escape(reason)}</p>")
