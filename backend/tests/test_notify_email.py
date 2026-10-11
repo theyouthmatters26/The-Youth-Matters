@@ -3,7 +3,6 @@
 The rules matter more than the sending: email the wrong people and they mark it as spam, which
 costs the whole domain its deliverability.
 """
-from datetime import timedelta
 from types import SimpleNamespace as N
 
 import pytest
@@ -29,20 +28,22 @@ def site(monkeypatch):
                             lambda to, subject, html, **kw: sent.append((to, subject, html)))
 
         def person(name, **kw):
+            kw.setdefault("status", "active")
             u = User(email=f"{name}@example.org", username=name, display_name=name.title(),
-                     status="active", email_verified=True, **kw)
+                     email_verified=True, **kw)
             db.session.add(u)
             return u
 
-        asha = person("asha", last_seen_at=utcnow() - timedelta(hours=2))
-        ben = person("ben", last_seen_at=utcnow() - timedelta(hours=2))
-        here = person("here", last_seen_at=utcnow())                      # reading right now
-        quiet = person("quiet", notify_email=False, last_seen_at=utcnow() - timedelta(hours=2))
+        asha = person("asha")
+        ben = person("ben")
+        here = person("here")
+        quiet = person("quiet", notify_email=False)
+        shut = person("shut", status="suspended")
         db.session.commit()
         # A post row is needed for the link, but posts carry a PostgreSQL column: stand one in
         post = N(id=7, title="How do I show proof of funds?")
         with app.test_request_context():
-            yield app, sent, post, {"asha": asha, "ben": ben, "here": here, "quiet": quiet}
+            yield app, sent, post, {"asha": asha, "ben": ben, "here": here, "quiet": quiet, "shut": shut}
 
 
 def run(sent, post, to, actor, kind, body="Here is what I did."):
@@ -85,12 +86,22 @@ def test_votes_and_the_rest_stay_on_the_bell(site):
 
 def test_nobody_is_emailed_who_should_not_be(site):
     _app, sent, post, who = site
-    run(sent, post, who["here"], who["ben"], "answer")    # still on the site
-    run(sent, post, who["quiet"], who["ben"], "answer")   # turned it off
+    run(sent, post, who["quiet"], who["ben"], "answer")   # turned it off in settings
+    run(sent, post, who["shut"], who["ben"], "answer")    # suspended account
     notify_service.notify(who["ben"].id, who["ben"], "answer", post)  # their own doing
     db.session.commit()
     notify_service.send_pending()
     assert sent == []
+
+
+def test_being_on_the_site_does_not_swallow_the_email(site):
+    """There is no "probably still reading" guess any more: it keyed off last_seen_at, which is
+    written once at sign-up and never updated, so it silently dropped mail to new accounts."""
+    _app, sent, post, who = site
+    who["here"].last_seen_at = utcnow()
+    db.session.commit()
+    run(sent, post, who["here"], who["ben"], "answer")
+    assert len(sent) == 1 and sent[0][0] == "here@example.org"
 
 
 def test_nothing_is_emailed_when_the_answer_did_not_save(site):

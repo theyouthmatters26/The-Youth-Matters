@@ -4,22 +4,18 @@ The bell row is written straight away. The email waits: notify() only queues it,
 sends once the request has committed, so nothing is emailed about an answer that never saved.
 
 Only an answer to your own question, a direct reply and an @mention are emailed. Votes and the rest
-stay on the bell: a mail per upvote is how a community teaches people to filter it out.
+stay on the bell: a mail per upvote is how a community teaches people to filter it out. The switch
+in Profile settings is the way out; there is no clever guessing about who is "probably still here".
 """
-from datetime import timedelta
-
 from flask import g
 from markupsafe import escape
 
 from ..extensions import db
 from ..models import Notification, User
-from ..models.base import utcnow
 from . import mailer
 
 # The three worth leaving the site for
 EMAILED = ("answer", "reply", "mention")
-# Somebody who was here a minute ago is still reading the page; the bell has already told them
-QUIET = timedelta(minutes=15)
 LINE = {"answer": "answered your question", "reply": "replied to you", "mention": "mentioned you"}
 
 
@@ -72,16 +68,11 @@ def send_pending():
         return
     from .handoff import site_url  # here, not at the top: handoff imports this module
 
-    cutoff = utcnow() - QUIET
     people = {u.id: u for u in db.session.scalars(
         db.select(User).where(User.id.in_({n["user_id"] for n in notices})))}
     for notice in notices:
         person = people.get(notice["user_id"])
         if not person or not person.notify_email or person.status != "active":
-            continue
-        # Still on the site: the bell has it, and a second ping in their inbox is noise
-        last_seen = person.last_seen_at
-        if last_seen and last_seen.replace(tzinfo=cutoff.tzinfo) > cutoff:
             continue
         home = site_url()
         mailer.send_quietly(person.email, f"{notice['actor']} {LINE[notice['kind']]}",
