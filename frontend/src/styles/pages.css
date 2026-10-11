@@ -613,4 +613,3 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
 }
 
 .settings-check { align-items: start; }
-.settings-check .hint { display: block; margin-top: 2px; font-size: var(--step--2); color: var(--faint); }

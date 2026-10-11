@@ -222,10 +222,7 @@ export default function Settings() {
         </div>
         <label className="check settings-check">
           <input type="checkbox" checked={form.notifyEmail} onChange={tick('notifyEmail')} />
-          <span>
-            Email me when someone answers my question, replies to me or mentions me.
-            <span className="hint">Only those three. We never email about votes, and nothing is sent while you are still on the site.</span>
-          </span>
+          <span>Email me when someone answers my question, replies to me or mentions me.</span>
         </label>
         <FormError>{error}</FormError>
         <div className="settings-save">
