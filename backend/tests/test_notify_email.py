@@ -1,0 +1,101 @@
+"""Who gets an email about a reply, and who does not (services/notify.py).
+
+The rules matter more than the sending: email the wrong people and they mark it as spam, which
+costs the whole domain its deliverability.
+"""
+from datetime import timedelta
+from types import SimpleNamespace as N
+
+import pytest
+
+from app import create_app
+from app.config import TestConfig
+from app.extensions import db
+from app.models import Notification, Post, User
+from app.models.base import utcnow
+from app.services import notify as notify_service
+
+TABLES = [db.metadata.tables[t] for t in ("countries", "users", "identity_verifications", "notifications")]
+
+
+@pytest.fixture
+def site(monkeypatch):
+    app = create_app(TestConfig)
+    app.config["SITE_URL"] = "https://theyouthmatters.com"
+    with app.app_context():
+        db.metadata.create_all(db.engine, tables=TABLES)
+        sent = []
+        monkeypatch.setattr(notify_service.mailer, "send_quietly",
+                            lambda to, subject, html, **kw: sent.append((to, subject, html)))
+
+        def person(name, **kw):
+            u = User(email=f"{name}@example.org", username=name, display_name=name.title(),
+                     status="active", email_verified=True, **kw)
+            db.session.add(u)
+            return u
+
+        asha = person("asha", last_seen_at=utcnow() - timedelta(hours=2))
+        ben = person("ben", last_seen_at=utcnow() - timedelta(hours=2))
+        here = person("here", last_seen_at=utcnow())                      # reading right now
+        quiet = person("quiet", notify_email=False, last_seen_at=utcnow() - timedelta(hours=2))
+        db.session.commit()
+        # A post row is needed for the link, but posts carry a PostgreSQL column: stand one in
+        post = N(id=7, title="How do I show proof of funds?")
+        with app.test_request_context():
+            yield app, sent, post, {"asha": asha, "ben": ben, "here": here, "quiet": quiet}
+
+
+def run(sent, post, to, actor, kind, body="Here is what I did."):
+    notify_service.notify(to.id, actor, kind, post, N(id=1, body=body))
+    db.session.commit()
+    notify_service.send_pending()
+    return sent
+
+
+def test_an_answer_to_your_question_reaches_your_inbox(site):
+    _app, sent, post, who = site
+    run(sent, post, who["asha"], who["ben"], "answer")
+
+    assert len(sent) == 1
+    to, subject, html = sent[0]
+    assert to == "asha@example.org"
+    assert subject == "Ben answered your question"
+    assert "How do I show proof of funds?" in html and "Here is what I did." in html
+    assert "https://theyouthmatters.com/p/7" in html
+    assert "/settings" in html  # how to turn it off, in every one
+
+
+def test_a_reply_and_a_mention_are_emailed_too(site):
+    _app, sent, post, who = site
+    run(sent, post, who["asha"], who["ben"], "reply")
+    run(sent, post, who["asha"], who["ben"], "mention")
+    assert [s[1] for s in sent] == ["Ben replied to you", "Ben mentioned you"]
+
+
+def test_votes_and_the_rest_stay_on_the_bell(site):
+    _app, sent, post, who = site
+    for kind in ("upvote", "followed_post", "system", "moderation"):
+        notify_service.notify(who["asha"].id, who["ben"], kind, post)
+    db.session.commit()
+    notify_service.send_pending()
+    assert sent == []
+    # ...but the bell still has every one of them
+    assert db.session.scalar(db.select(db.func.count(Notification.id))) == 4
+
+
+def test_nobody_is_emailed_who_should_not_be(site):
+    _app, sent, post, who = site
+    run(sent, post, who["here"], who["ben"], "answer")    # still on the site
+    run(sent, post, who["quiet"], who["ben"], "answer")   # turned it off
+    notify_service.notify(who["ben"].id, who["ben"], "answer", post)  # their own doing
+    db.session.commit()
+    notify_service.send_pending()
+    assert sent == []
+
+
+def test_nothing_is_emailed_when_the_answer_did_not_save(site):
+    """notify() only queues. Without the commit and the send_pending() after it, nothing goes."""
+    _app, sent, post, who = site
+    notify_service.notify(who["asha"].id, who["ben"], "answer", post, N(id=1, body="x"))
+    db.session.rollback()
+    assert sent == []

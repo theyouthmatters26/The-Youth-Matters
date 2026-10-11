@@ -48,6 +48,9 @@ class User(Model):
     # Counselling time bought and not yet spent, in minutes: whole numbers, so half-hour sessions add up exactly
     counseling_minutes = db.Column(db.Integer, nullable=False, default=0, server_default="0")
 
+    # An answer, a reply or an @mention also reaches their inbox (services/notify.py)
+    notify_email = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
+
     last_seen_at = db.Column(db.DateTime(timezone=True), default=utcnow)
 
     target_country = db.relationship("Country")

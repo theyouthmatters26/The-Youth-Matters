@@ -86,6 +86,8 @@ def edit_me():
         if data["studyLevel"] not in (None, "", *STUDY_LEVELS):
             abort(400, "Choose a study level from the list.")
         u.study_level = data["studyLevel"] or None
+    if "notifyEmail" in data:
+        u.notify_email = bool(data["notifyEmail"])
     if "targetCountry" in data:
         slug = data["targetCountry"]
         u.target_country = db.session.scalar(db.select(Country).filter_by(slug=slug)) if slug else None

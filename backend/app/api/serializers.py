@@ -25,6 +25,7 @@ def me(u):
     return {**user_brief(u), "email": u.email, "emailVerified": u.email_verified, "status": u.status,
             "verification": step, "dateOfBirth": u.date_of_birth.isoformat() if u.date_of_birth else None,
             "counselingMinutes": u.counseling_minutes or 0,
+            "notifyEmail": bool(u.notify_email),
             # Google-only accounts have none, so the website knows not to ask for one
             "hasPassword": bool(u.password_hash)}
 

@@ -15,7 +15,7 @@ from ..extensions import db, limiter
 from ..models import Category, Comment, Community, Country, Follow, Post, PostImage, SavedPost, Subject, User, Vote
 from ..models.base import utcnow
 from ..services import content, images, staff, storage
-from ..services.notify import notify, notify_mentions
+from ..services.notify import notify, notify_mentions, send_pending
 from ..services.ranking import hot_sql
 from . import serializers as s
 
@@ -161,6 +161,7 @@ def create_post():
     db.session.add(Vote(user_id=user.id, target_type="post", target_id=p.id, value=1))
     notify_mentions(content.mentions(f"{title} {body}"), user, p)
     db.session.commit()
+    send_pending()  # after the commit: nothing is emailed about a question that did not save
     return jsonify(post=s.post(p, with_body=True, state={"vote": 1}), censored=flagged_title or flagged_body), 201
 
 

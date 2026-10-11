@@ -12,7 +12,7 @@ from ..extensions import db, limiter
 from ..models import Comment, Post, Vote
 from ..models.base import utcnow
 from ..services import content, staff
-from ..services.notify import notify, notify_mentions
+from ..services.notify import notify, notify_mentions, send_pending
 from . import serializers as s
 from .posts import _post, member, viewer
 
@@ -73,6 +73,7 @@ def create_comment(post_id):
         told.add(post.author_id)
     notify_mentions(content.mentions(body), user, post, c, already=told)
     db.session.commit()
+    send_pending()  # after the commit: nothing is emailed about an answer that did not save
     return jsonify(comment=s.comment(c, 1), censored=censored), 201
 
 

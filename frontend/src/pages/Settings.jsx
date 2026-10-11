@@ -145,6 +145,7 @@ export default function Settings() {
     setForm({
       displayName: data.displayName, bio: data.bio || '', targetCountry: data.targetCountry?.slug || '',
       studyLevel: data.studyLevel || '', university: data.university || '', course: data.course || '', intake: data.intake || '',
+      notifyEmail: account.notifyEmail !== false,
     })
   }, [data])
 
@@ -152,6 +153,7 @@ export default function Settings() {
   if (!form) return <div className="container page post-loading"><Spinner /> Loading your profile</div>
 
   const set = (k) => (e) => { setForm({ ...form, [k]: e.target.value }); setSaved(false) }
+  const tick = (k) => (e) => { setForm({ ...form, [k]: e.target.checked }); setSaved(false) }
   const applied = (res) => { setAccount(res.me); setProfile(res.profile) }
   const save = async (e) => {
     e.preventDefault()
@@ -218,6 +220,13 @@ export default function Settings() {
           </div>
           <div className="field"><label htmlFor="s-intake">Intake</label><input id="s-intake" className="input" value={form.intake} onChange={set('intake')} maxLength={40} placeholder="September 2026" /></div>
         </div>
+        <label className="check settings-check">
+          <input type="checkbox" checked={form.notifyEmail} onChange={tick('notifyEmail')} />
+          <span>
+            Email me when someone answers my question, replies to me or mentions me.
+            <span className="hint">Only those three. We never email about votes, and nothing is sent while you are still on the site.</span>
+          </span>
+        </label>
         <FormError>{error}</FormError>
         <div className="settings-save">
           {saved && <span className="saved-note" role="status"><Check size={15} /> Saved</span>}

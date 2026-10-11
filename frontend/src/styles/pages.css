@@ -611,3 +611,6 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
   .founder::before { font-size: 8rem; }
   .founder-copy blockquote p { font-size: var(--step-0); }
 }
+
+.settings-check { align-items: start; }
+.settings-check .hint { display: block; margin-top: 2px; font-size: var(--step--2); color: var(--faint); }
