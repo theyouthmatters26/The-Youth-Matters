@@ -182,7 +182,8 @@ export default function Chatrooms() {
             <FormError>{error}</FormError>
             <label htmlFor="chat-msg" className="visually-hidden">Message</label>
             <input id="chat-msg" className="input" value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={1000}
-              placeholder={`Message #${current?.name || room}. Type @TYMAi to ask the assistant.`} autoComplete="off" />
+              placeholder={`Message #${current?.name || room}. Type @TYMAi to ask the assistant.`}
+              autoComplete="off" autoCorrect="on" autoCapitalize="sentences" />
             <button className="btn btn-primary" aria-label="Send" disabled={!draft.trim()}><Send size={16} /></button>
           </form>
         </section>

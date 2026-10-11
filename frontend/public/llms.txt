@@ -138,7 +138,7 @@ The Help and Safety page also gives practical advice: meet in a public place if 
 
 ## Payments, cancellations and refunds
 
-The only paid offering on TYM today is counselling hours for mentor sessions. Hours are sold in packages, paid for in advance through Razorpay by UPI, card or net banking, with prices shown in Indian rupees (INR). The price is the same whichever mentor the hours are spent on. TYM does not receive or store full card numbers or banking passwords: the payment provider handles them.
+The only paid offering on TYM today is counselling hours for mentor sessions. Hours are sold in packages, paid for in advance through Cashfree by UPI, card or net banking, with prices shown in Indian rupees (INR). The price is the same whichever mentor the hours are spent on. TYM does not receive or store full card numbers or banking passwords: the payment provider handles them.
 
 A student can cancel up to 24 hours before a session, and the session's time goes straight back on their counselling hours to book another time. Every payment gets an invoice number and a receipt by email. Approved refunds go back through the same payment channel, and the time they take to appear depends on the bank or payment provider.
 

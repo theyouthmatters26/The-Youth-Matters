@@ -36,7 +36,7 @@ on the same structure: **subject → country → questions and chat rooms → me
 - **Ask TYM AI.** Private one-to-one help with SOPs, visas and shortlists. Conversations are saved so
   you can come back to them.
 - **Mentors.** Browse verified student mentors, see their open times in your own time zone, pay through
-  Razorpay and meet on a video call. You can cancel for a refund and leave a review afterwards.
+  Cashfree and meet on a video call. You can cancel for a refund and leave a review afterwards.
 - **A private chat with your mentor.** Paying for a session asks that mentor for a chat. Once they
   accept it, the two of you message each other before and after the call. Only the mentor can put a
   video call link in it, so nobody can be talked into joining a call somewhere else.
@@ -90,7 +90,7 @@ work from a 320px phone to a wide desktop.
 | Database | PostgreSQL, including full-text search |
 | Age check | RapidOCR reads the date of birth from a photo ID |
 | AI assistant | Claude, through the Anthropic API |
-| Payments | Razorpay (orders, checkout, webhooks, refunds) |
+| Payments | Cashfree (orders, checkout, webhooks, refunds) |
 | Email | Resend |
 | Uploads | DigitalOcean Spaces in production, a local folder in development |
 | Hosting | DigitalOcean with Gunicorn and Nginx |
@@ -191,8 +191,8 @@ committed. Only names that start with `VITE_` are sent to the browser.
 | `CONTACT_EMAIL` | Where the contact form and mentor applications are sent. | `support@theyouthmatters.com` |
 | `GOOGLE_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID` | Google sign-in. The same client ID goes in both. | The Google button says it is not switched on yet. |
 | `GOOGLE_CLIENT_SECRET` | Not used by the sign-in flow. | Nothing changes. |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Mentor session payments. Test keys (`rzp_test_...`) work end to end without real money. | Bookings cannot be paid for. |
-| `RAZORPAY_WEBHOOK_SECRET` | Lets Razorpay confirm a payment even if the browser closes early. | Payments are confirmed from the browser only. |
+| `CASHFREE_APP_ID`, `CASHFREE_SECRET_KEY` | Counselling hour payments. Sandbox keys work end to end without real money. | Hours cannot be bought. |
+| `CASHFREE_ENV` | `sandbox` or `production`. Picks which Cashfree the server and the checkout window talk to. | `sandbox` |
 | `ANTHROPIC_API_KEY` | Lets TYM AI write its own answers with Claude. | TYM AI replies with what students in the community already said. |
 | `AI_MODEL` | Which Claude model to use. | `claude-opus-5-5` |
 | `VITE_SITE_URL` | Your public address, used in links for search engines. | The address the site is opened on. |
@@ -257,7 +257,7 @@ are stored privately and only the team can open them. When the team approves, th
 live mentor profile with bookable times.
 
 **Booking and paying.** The calendar shows a mentor's open times in the visitor's own time zone.
-Choosing a time holds it for 15 minutes and creates a Razorpay order. The API checks Razorpay's
+Choosing a time holds it for 15 minutes and creates a Cashfree order. The API checks Cashfree's
 signature before confirming. The database refuses double bookings, and if a slot was taken while a
 payment was pending, the money is refunded automatically. Students can cancel up to 24 hours before for
 a full refund.
@@ -295,7 +295,7 @@ backend/                       The API (Flask)
     services/                  The logic behind the routes
       identity.py                Reads the date of birth from a photo ID
       tymai.py                   The AI assistant: finds community answers, asks Claude
-      payments.py                Razorpay orders, signatures and refunds
+      payments.py                Cashfree orders, signatures and refunds
       availability.py            Weekly hours into bookable times, time-zone safe
       content.py, images.py      Cleans text, resizes photos and strips their location data
       notify.py, mailer.py       In-app notifications and email
@@ -350,7 +350,7 @@ renewed with `POST /auth/refresh`. Sensitive routes are rate limited.
 | FAQ | `GET /faqs`, `POST /faqs`, `GET /faqs/mine` |
 | Mentor applications | `GET` or `POST /mentor-application`. For the team: `GET /admin/mentor-applications`, `GET /admin/mentor-applications/<id>/files/<cv or proof>`, `POST /admin/mentor-applications/<id>/decision` |
 | Bookings | `GET` or `POST /bookings`, `POST /bookings/<id>/verify`, `POST /bookings/<id>/cancel`, `POST /bookings/<id>/review` |
-| Payments | `POST /payments/razorpay/webhook` |
+| Payments | `POST /payments/cashfree/webhook` |
 | Uploads | `GET /media/<key>` (post photos, profile photos and covers only) |
 | Blog | `GET /blogs`, `GET /blogs/<slug>` |
 | Contact | `POST /contact` |
@@ -405,7 +405,7 @@ A few habits that keep the code consistent:
 1. On DigitalOcean, create a managed PostgreSQL (with a database called `tymdatabase`) and a Spaces
    bucket.
 2. Fill in `.env` on the server: strong `SECRET_KEY` and `JWT_SECRET_KEY` (the API refuses to serve
-   without them), the `DB_` settings or `DATABASE_URL`, the Spaces keys, live Resend and Razorpay keys,
+   without them), the `DB_` settings or `DATABASE_URL`, the Spaces keys, live Resend and Cashfree keys,
    the Anthropic key, `ADMIN_EMAIL` with `ADMIN_PASSWORD_HASH`, and `VITE_SITE_URL`.
 3. Create the tables and what the site needs to start: countries, topics, chat rooms, the TYM AI
    account and the three starter guides.
@@ -423,9 +423,9 @@ A few habits that keep the code consistent:
    public pages to be built) and serve `frontend/dist` with Nginx. `deploy/nginx.conf` is a working
    site: it looks for a built page first and falls back to `app.html`, compresses text, lets browsers
    keep the versioned files, and passes `/api` to the API with the visitor's address.
-6. In Razorpay, add a webhook to `https://<your-domain>/api/payments/razorpay/webhook` for the
-   `payment.captured` and `order.paid` events, and put its secret in `RAZORPAY_WEBHOOK_SECRET`. Keep
-   automatic capture switched on.
+6. In the Cashfree dashboard, add a webhook to `https://<your-domain>/api/payments/cashfree/webhook`
+   for the payment success event, and set `CASHFREE_ENV=production`. Cashfree signs webhooks with
+   `CASHFREE_SECRET_KEY`, so there is no separate webhook secret to set.
 7. In Google Cloud Console, add your domain to the sign-in client's JavaScript origins.
 8. Update the domain in `frontend/public/robots.txt` if it is not `theyouthmatters.com`. The sitemap is
    written by the build from `VITE_SITE_URL`.
@@ -444,7 +444,7 @@ A few habits that keep the code consistent:
 - Chat rooms with saved messages and `@TYMAi`
 - Ask TYM AI with saved conversations
 - Mentor applications with team approval
-- Mentor booking, Razorpay payments, refunds and reviews
+- Mentor booking, Cashfree payments, refunds and reviews
 - The admin panel: support inbox with a person in the AI chat, contact enquiries, members, moderation
   and strikes, community, blog editor, mentors, payments, team access and exports
 - Public pages built ahead of time into HTML, with a sitemap, for fast first loads and search engines

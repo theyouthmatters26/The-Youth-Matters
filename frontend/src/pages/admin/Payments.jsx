@@ -53,11 +53,11 @@ function PaymentSheet({ p, onClose }) {
         ['Counselling time', p.minutes && hoursText(p.minutes)],
         ['Paid on', day(p.at)],
         ['Invoice', p.invoice],
-        ['Razorpay order', p.orderId && <span className="mono">{p.orderId}</span>],
-        ['Razorpay payment', p.paymentId && <span className="mono">{p.paymentId}</span>],
-        ['Razorpay refund', p.refundId && <span className="mono">{p.refundId}</span>],
+        ['Gateway order', p.orderId && <span className="mono">{p.orderId}</span>],
+        ['Gateway payment', p.paymentId && <span className="mono">{p.paymentId}</span>],
+        ['Gateway refund', p.refundId && <span className="mono">{p.refundId}</span>],
       ]} />
-      <p className="adm-hint">To refund a package, refund it in the Razorpay dashboard and take the hours off the member under Members.</p>
+      <p className="adm-hint">To refund a package, refund it in the Cashfree dashboard and take the hours off the member under Members.</p>
     </Sheet>
   )
 }
@@ -239,7 +239,7 @@ export function Packages() {
           ))}
         </ul>
       )}
-      <p className="adm-hint">Every mentor costs the same: students buy hours here and spend them on any mentor. A 30 minute session uses half an hour.</p>
+      <p className="adm-hint">Every mentor costs the same: students buy hours here and spend them on any mentor. A 60 minute session uses 1 hour.</p>
       {open && <PackageForm p={open === 'new' ? null : open} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); list.reload() }} />}
     </>
   )

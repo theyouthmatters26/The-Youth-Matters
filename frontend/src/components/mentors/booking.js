@@ -1,4 +1,4 @@
-// Small helpers for the booking flow: dates in the viewer's own time zone, Razorpay Checkout,
+// Small helpers for the booking flow: dates in the viewer's own time zone, Cashfree Checkout,
 // and a calendar file so the session lands in Google Calendar, Apple Calendar or Outlook.
 
 export const viewerZone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -26,15 +26,19 @@ export const hoursText = (minutes) => {
   return `${hours} ${hours === 1 ? 'hour' : 'hours'}`
 }
 
-export function loadRazorpay() {
-  if (window.Razorpay) return Promise.resolve()
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script')
-    s.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    s.onload = resolve
-    s.onerror = () => reject(new Error('The payment window could not load. Check your connection and try again.'))
-    document.head.appendChild(s)
-  })
+// Cashfree's checkout, loaded the first time somebody buys. `mode` comes from the server, so
+// sandbox keys open the sandbox window and live keys the real one.
+export function loadCashfree(mode) {
+  const ready = window.Cashfree
+    ? Promise.resolve()
+    : new Promise((resolve, reject) => {
+      const s = document.createElement('script')
+      s.src = 'https://sdk.cashfree.com/js/v3/cashfree.js'
+      s.onload = resolve
+      s.onerror = () => reject(new Error('The payment window could not load. Check your connection and try again.'))
+      document.head.appendChild(s)
+    })
+  return ready.then(() => window.Cashfree({ mode }))
 }
 
 const icsDate = (iso) => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')

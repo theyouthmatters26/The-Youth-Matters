@@ -9,7 +9,7 @@ export function timeAgo(iso) {
 
 export const formatCount = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace('.0', '')}k` : String(n))
 
-// Amounts from the API are in minor units (paise), like Razorpay
+// Amounts from the API are in minor units (paise)
 export const formatMoney = (minor, currency = 'INR') =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(minor / 100)
 

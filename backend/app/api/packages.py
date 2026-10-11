@@ -1,9 +1,12 @@
-"""Counselling hours: fixed packages bought with Razorpay and spent on sessions with any mentor.
+"""Counselling hours: fixed packages bought with Cashfree and spent on sessions with any mentor.
 
     GET  /packages                        what is on sale
-    POST /packages/<id>/order             open a Razorpay order for one
-    POST /packages/payments/<id>/verify   Checkout's success callback: check the signature, add the hours
-    POST /payments/razorpay/webhook       the same from Razorpay (the browser closed early)
+    POST /packages/<id>/order             open a Cashfree order for one
+    POST /packages/payments/<id>/verify   after checkout: ask Cashfree whether it was paid, add the hours
+    POST /payments/cashfree/webhook       the same from Cashfree (the browser closed early)
+
+Nothing the browser reports is believed. Both routes ask Cashfree for the order's status and only
+"PAID" adds hours, so a forged callback buys nothing.
 
 Hours are kept as whole minutes on the member (User.counseling_minutes). Buying adds them here;
 booking takes them and a cancellation in time gives them back (api/bookings.py).
@@ -44,12 +47,12 @@ def take_minutes(user_id, minutes):
         .values(counseling_minutes=User.counseling_minutes - minutes)).rowcount)
 
 
-def credit(payment, razorpay_payment_id):
+def credit(payment, gateway_payment_id):
     """Mark a package payment paid and add its hours. True when this call did it. Checkout and two
     webhooks can arrive in the same second: one statement claims the payment, and only the call that
     changed the row adds the hours, so they are added once."""
     claimed = db.session.execute(update(Payment).where(Payment.id == payment.id, Payment.status == "created")
-                                 .values(status="paid", razorpay_payment_id=razorpay_payment_id)).rowcount
+                                 .values(status="paid", gateway_payment_id=gateway_payment_id)).rowcount
     if not claimed:
         return False
     add_minutes(payment.user_id, payment.minutes)
@@ -89,52 +92,70 @@ def order(package_id):
                   amount_minor=p.price_minor, currency=p.currency)
     db.session.add(pay)
     db.session.flush()
+    order_id = f"tym-{pay.id}"  # ours, and unique: Cashfree allows letters, numbers, _ and -
     try:
-        created = payments.create_order(p.price_minor, p.currency, receipt=f"package-{pay.id}",
-                                        notes={"payment_id": str(pay.id), "package": p.title})
+        created = payments.create_order(
+            order_id, p.price_minor, p.currency,
+            customer={"id": current_user.id, "name": current_user.display_name, "email": current_user.email},
+            note=f"{p.title}: {hours_text(pay.minutes)} of counselling")
     except payments.PaymentError:
         db.session.rollback()
         abort(502, "We could not reach the payment provider. Try again in a moment.")
-    pay.razorpay_order_id = created["id"]
+    pay.gateway_order_id = created["order_id"]
     db.session.commit()
     return jsonify(paymentId=pay.id, checkout={
-        "key": payments.key_id(), "orderId": pay.razorpay_order_id, "amount": pay.amount_minor, "currency": pay.currency,
-        "name": "The Youth Matters", "description": f"{p.title}: {hours_text(pay.minutes)} of counselling",
-        "prefill": {"name": current_user.display_name, "email": current_user.email}}), 201
+        "paymentSessionId": created["payment_session_id"], "mode": payments.mode(),
+        "orderId": pay.gateway_order_id, "amount": pay.amount_minor, "currency": pay.currency,
+        "description": f"{p.title}: {hours_text(pay.minutes)} of counselling"}), 201
+
+
+def _settle(pay, gateway_payment_id):
+    """Ask Cashfree whether this order was paid, and if so add the hours once. True when they went on."""
+    try:
+        if payments.order_status(pay.gateway_order_id) != "PAID":
+            return None
+    except payments.PaymentError:
+        return False
+    credited = credit(pay, gateway_payment_id or pay.gateway_order_id)
+    db.session.commit()
+    if credited:
+        _receipt(pay)
+    return True
 
 
 @bp.post("/packages/payments/<int:payment_id>/verify")
 @jwt_required()
 @limiter.limit("30 per hour")
 def verify(payment_id):
+    """Checkout has closed. Cashfree hands the browser no signature to pass on, so the only thing
+    worth believing is Cashfree's own answer, asked for here."""
     pay = db.session.get(Payment, payment_id)
     if not pay or pay.user_id != current_user.id or pay.kind != "package":
         abort(404, "We could not find that payment.")
-    data = request.get_json(silent=True) or {}
-    order_id, rp_payment = data.get("razorpay_order_id"), data.get("razorpay_payment_id")
-    if order_id != pay.razorpay_order_id or not payments.valid_payment(order_id, rp_payment, data.get("razorpay_signature")):
-        abort(400, "We could not confirm this payment. If money left your account, write to "
+    settled = _settle(pay, (request.get_json(silent=True) or {}).get("cfPaymentId"))
+    if settled is False:
+        abort(502, "We could not reach the payment provider to confirm this. Your hours will appear "
+                   "shortly; write to support@theyouthmatters.com if they do not.")
+    if settled is None:
+        abort(400, "This payment has not gone through. If money left your account, write to "
                    "support@theyouthmatters.com with your payment ID and we will sort it out.")
-    credited = credit(pay, rp_payment)
-    db.session.commit()
-    if credited:
-        _receipt(pay)
     db.session.refresh(current_user)
     return jsonify(counselingMinutes=current_user.counseling_minutes, invoiceNumber=pay.invoice_number)
 
 
-@bp.post("/payments/razorpay/webhook")
+@bp.post("/payments/cashfree/webhook")
 @limiter.exempt
 def webhook():
-    if not payments.valid_webhook(request.get_data(), request.headers.get("X-Razorpay-Signature")):
+    """Cashfree signs the timestamp and the raw body with our secret key (services/payments.py)."""
+    if not payments.valid_webhook(request.headers.get("x-webhook-timestamp"), request.get_data(),
+                                  request.headers.get("x-webhook-signature")):
         abort(400, "Invalid signature.")
     event = request.get_json(silent=True) or {}
-    if event.get("event") in ("payment.captured", "order.paid"):
-        entity = event["payload"]["payment"]["entity"]
-        pay = db.session.scalar(db.select(Payment).where(Payment.razorpay_order_id == entity["order_id"]))
+    if event.get("type") == "PAYMENT_SUCCESS_WEBHOOK":
+        data = event.get("data") or {}
+        order_id = (data.get("order") or {}).get("order_id")
+        pay = db.session.scalar(db.select(Payment).where(Payment.gateway_order_id == order_id)) if order_id else None
         if pay and pay.kind == "package":
-            credited = credit(pay, entity["id"])
-            db.session.commit()
-            if credited:
-                _receipt(pay)
+            # The payload is only a nudge: _settle asks Cashfree what really happened
+            _settle(pay, str((data.get("payment") or {}).get("cf_payment_id") or "") or None)
     return jsonify(ok=True)

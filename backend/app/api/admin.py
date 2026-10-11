@@ -907,7 +907,7 @@ def payment_list():
         return {"id": pay.id, "status": pay.status, "amountMinor": pay.amount_minor, "currency": pay.currency,
                 "at": pay.created_at.isoformat(), "member": {**s.user_brief(who), "email": who.email},
                 "package": pay.package.title if pay.package else None, "minutes": pay.minutes, "invoice": pay.invoice_number,
-                "orderId": pay.razorpay_order_id, "paymentId": pay.razorpay_payment_id, "refundId": pay.razorpay_refund_id}
+                "orderId": pay.gateway_order_id, "paymentId": pay.gateway_payment_id, "refundId": pay.gateway_refund_id}
 
     def total(*where):
         return int(db.session.scalar(db.select(db.func.coalesce(db.func.sum(Payment.amount_minor), 0)).where(*where)))

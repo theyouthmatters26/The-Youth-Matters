@@ -17,6 +17,7 @@ export const NAV = [
   { to: '/community', label: 'Community ChatRoom' },
   { to: '/ai', label: 'Ask TYM AI', highlight: true },
   { to: '/mentors', label: 'TYM Mentors' },
+  { to: '/loan-consultation', label: 'Study Abroad Loan' },
   { to: '/faq', label: 'FAQ' },
   { to: '/case-studies', label: 'Case Studies' },
   { to: '/blogs', label: 'Blogs' },
@@ -136,7 +137,7 @@ function NotificationBell() {
 function accountLinks(user) {
   const profile = `/u/${user.username}`
   return [
-    ['/my', LayoutDashboard, 'My TYM'],
+    ['/my', LayoutDashboard, 'TYM Community'],
     [profile, User, 'Your profile'],
     [`${profile}?tab=Saved`, Bookmark, 'Saved questions'],
     [`${profile}?tab=Sessions`, CalendarCheck, 'Your sessions'],
@@ -169,7 +170,7 @@ function AccountMenu({ user }) {
     <div className="account-menu" ref={ref}>
       <button className="account-me" aria-haspopup="menu" aria-expanded={open} aria-label="Your account" onClick={() => setOpen(!open)}>
         <Avatar user={user} size={30} />
-        <span>My TYM</span>
+        <span>My profile</span>
         <ChevronDown size={14} aria-hidden className="account-caret" />
       </button>
       {open && (

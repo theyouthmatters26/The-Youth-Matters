@@ -1,13 +1,26 @@
 import { Link } from 'react-router-dom'
-import Photo from '../../components/ui/Photo'
+import Photo, { shipped } from '../../components/ui/Photo'
 import { useAuth } from '../../lib/auth'
 import { useMeta } from '../../lib/meta'
 
 const VALUES = [
-  ['Honest over polished', 'Answers come from students who have filed the same forms, paid the same deposits and missed the same deadlines.'],
+  ['Honest answers, not sales talk', 'The people answering have already been through it themselves, so you hear what actually happened. TYM is not an agent and earns nothing from where you choose to apply.'],
   ['Safe by design', 'Every member is 18 or older, checked against a photo ID. Abuse is filtered automatically and reviewed by people.'],
   ['Free where it counts', 'Questions, answers, chatrooms and the AI Counsellor cost nothing. Mentors are optional.'],
 ]
+
+// Her photograph is in. Replace `message` with Sumayya's own words when she sends them.
+const FOUNDER = {
+  name: 'Sumayya Samreen',
+  role: 'Founder, The Youth Matters',
+  photo: '/images/founder.jpg',
+  message: [
+    'I started The Youth Matters because I remember how lonely the decision to study abroad can feel. '
+    + 'The forms, the deposits, the deadlines, and nobody to ask who had actually been through it.',
+    'This is the place I wish I had: students who have already made the move, mentors who answer '
+    + 'honestly, and a community that does not sell you anything you do not need.',
+  ],
+}
 
 export default function About() {
   const { account } = useAuth()
@@ -32,6 +45,24 @@ export default function About() {
           {account
             ? <Link to="/community" className="btn btn-primary">Open the community</Link>
             : <Link to="/register" className="btn btn-primary">Join the community</Link>}
+        </div>
+      </section>
+
+      {/* A word from the founder. Replace FOUNDER.message with Sumayya's own words when
+          she sends them. */}
+      <section className={`founder${shipped(FOUNDER.photo) ? '' : ' is-solo'}`} aria-labelledby="founder-title">
+        {shipped(FOUNDER.photo) && (
+          <figure className="founder-photo">
+            <Photo src={FOUNDER.photo} alt={`${FOUNDER.name}, founder of The Youth Matters`}
+              sizes="(max-width: 860px) 40vw, 260px" />
+          </figure>
+        )}
+        <div className="founder-copy">
+          <p className="eyebrow" id="founder-title">A word from our founder</p>
+          <blockquote>
+            {FOUNDER.message.map((line) => <p key={line}>{line}</p>)}
+          </blockquote>
+          <p className="founder-name"><strong>{FOUNDER.name}</strong><span>{FOUNDER.role}</span></p>
         </div>
       </section>
 

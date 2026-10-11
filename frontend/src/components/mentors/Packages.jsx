@@ -5,7 +5,7 @@ import { api, useApi } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { formatMoney } from '../../lib/format'
 import { FormError, Spinner } from '../auth/fields'
-import { hoursText, loadRazorpay } from './booking'
+import { hoursText, loadCashfree } from './booking'
 import './mentors.css'
 
 // Counselling hours on sale: the same price whichever mentor they are spent on. Anyone can see them;
@@ -24,29 +24,22 @@ export default function Packages({ onBought }) {
     setDone('')
     try {
       const { paymentId, checkout: c } = await api(`/packages/${p.id}/order`, { method: 'POST' })
-      await loadRazorpay()
-      const rzp = new window.Razorpay({
-        key: c.key, order_id: c.orderId, amount: c.amount, currency: c.currency,
-        name: c.name, description: c.description, prefill: c.prefill, theme: { color: '#0b0b0c' },
-        handler: async (paid) => {
-          setBusy(p.id)
-          try {
-            const res = await api(`/packages/payments/${paymentId}/verify`, { method: 'POST', body: paid })
-            setAccount({ ...account, counselingMinutes: res.counselingMinutes })
-            setDone(`${hoursText(p.hours * 60)} added. You now have ${hoursText(res.counselingMinutes)}.`)
-            onBought?.(res.counselingMinutes)
-          } catch (e) {
-            setProblem(e.message)
-          } finally {
-            setBusy(null)
-          }
-        },
-        modal: { ondismiss: () => setBusy(null) },
-      })
-      rzp.on('payment.failed', (r) => setProblem(`${r.error?.description || 'The payment did not go through.'} No money was taken. Try again or use another method.`))
-      rzp.open()
+      const cashfree = await loadCashfree(c.mode)
+      // The window closes either way; the server then asks Cashfree what actually happened, so a
+      // closed tab or a failed card cannot add hours and a slow bank still gets caught by the webhook.
+      const result = await cashfree.checkout({ paymentSessionId: c.paymentSessionId, redirectTarget: '_modal' })
+      if (result?.error && !result?.paymentDetails) {
+        setProblem(`${result.error.message || 'The payment did not go through.'} No money was taken unless your bank says otherwise. Try again or use another method.`)
+        setBusy(null)
+        return
+      }
+      const res = await api(`/packages/payments/${paymentId}/verify`, { method: 'POST', body: {} })
+      setAccount({ ...account, counselingMinutes: res.counselingMinutes })
+      setDone(`${hoursText(p.hours * 60)} added. You now have ${hoursText(res.counselingMinutes)}.`)
+      onBought?.(res.counselingMinutes)
     } catch (e) {
       setProblem(e.message)
+    } finally {
       setBusy(null)
     }
   }
@@ -84,7 +77,7 @@ export default function Packages({ onBought }) {
       </ul>
       <FormError>{problem}</FormError>
       {done && <p className="book-note" role="status">{done}</p>}
-      <p className="book-fine">Hours work with every TYM mentor and do not expire. Secure checkout by Razorpay: UPI, cards, net banking and wallets.</p>
+      <p className="book-fine">Hours work with every TYM mentor and do not expire. Secure checkout by Cashfree: UPI, cards and net banking.</p>
     </div>
   )
 }

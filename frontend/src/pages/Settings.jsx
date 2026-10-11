@@ -81,7 +81,7 @@ function DeleteAccount({ account, onDone }) {
       <div className="settings-danger">
         <div>
           <strong>Delete my account</strong>
-          <p className="muted">Your profile, questions, answers and messages go for good. You cannot sign in again.</p>
+          <p className="muted">Your profile, questions, answers and messages go for good.</p>
         </div>
         <button className="btn btn-ghost btn-sm" onClick={() => setOpen(true)}><Trash2 size={14} /> Delete my account</button>
       </div>

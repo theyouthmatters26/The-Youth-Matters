@@ -79,7 +79,7 @@ class Booking(Model):
 
 class CounselingPackage(Model):
     """A block of counselling hours at a fixed price, the same for every mentor. Students buy one with
-    Razorpay; the hours are added to User.counseling_minutes and spent by booking sessions."""
+    Cashfree; the hours are added to User.counseling_minutes and spent by booking sessions."""
     __tablename__ = "counseling_packages"
 
     title = db.Column(db.String(80), nullable=False)
@@ -100,9 +100,10 @@ class Payment(Model):
     minutes = db.Column(db.Integer)  # counselling time this payment adds to the member's balance
     amount_minor = db.Column(db.Integer, nullable=False)
     currency = db.Column(db.String(3), nullable=False, default="INR")
-    razorpay_order_id = db.Column(db.String(64), unique=True)
-    razorpay_payment_id = db.Column(db.String(64), unique=True)
-    razorpay_refund_id = db.Column(db.String(64))
+    # What the payment gateway calls this payment. Named for the job, not the provider.
+    gateway_order_id = db.Column(db.String(64), unique=True)
+    gateway_payment_id = db.Column(db.String(64), unique=True)
+    gateway_refund_id = db.Column(db.String(64))
     status = db.Column(enum("created", "paid", "failed", "refunded", name="payment_status"),
                        nullable=False, default="created")
     invoice_number = db.Column(db.String(32), unique=True)

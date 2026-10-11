@@ -46,10 +46,11 @@ class Config:
     SPACES_BUCKET = os.getenv("SPACES_BUCKET") or "tym-media"
 
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-    # Razorpay: test keys (rzp_test_...) work end to end without real money
-    RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
-    RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
-    RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
+    # Cashfree: the sandbox keys work end to end without real money. Cashfree signs its webhooks
+    # with the same secret key, so there is no separate webhook secret to keep.
+    CASHFREE_APP_ID = os.getenv("CASHFREE_APP_ID")
+    CASHFREE_SECRET_KEY = os.getenv("CASHFREE_SECRET_KEY")
+    CASHFREE_ENV = os.getenv("CASHFREE_ENV") or "sandbox"  # sandbox until the account is live
     RESEND_API_KEY = os.getenv("RESEND_API_KEY")
     MAIL_FROM = os.getenv("MAIL_FROM") or "The Youth Matters <no-reply@theyouthmatters.com>"
     CONTACT_EMAIL = os.getenv("CONTACT_EMAIL") or "support@theyouthmatters.com"  # contact form and mentor applications
@@ -78,8 +79,9 @@ class TestConfig(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite://"
     SQLALCHEMY_ENGINE_OPTIONS = {}
     RATELIMIT_STORAGE_URI = "memory://"
-    # Nothing outside this machine: a test run must not send email, call Claude or touch Razorpay,
+    # Nothing outside this machine: a test run must not send email, call Claude or touch Cashfree,
     # whatever keys happen to be in .env. A test that wants one sets it itself.
     RESEND_API_KEY = None
     ANTHROPIC_API_KEY = None
-    RAZORPAY_KEY_ID = RAZORPAY_KEY_SECRET = RAZORPAY_WEBHOOK_SECRET = None
+    CASHFREE_APP_ID = CASHFREE_SECRET_KEY = None
+    CASHFREE_ENV = "sandbox"

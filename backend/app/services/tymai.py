@@ -53,7 +53,7 @@ button.
 are students and recent graduates of universities abroad, and study abroad consultants. Every mentor costs the \
 same; mentors do not set prices. The Mentors page can be searched by name, university, course or what they help \
 with, and filtered by country.
-- Counselling hours: a student buys a package of hours on the TYM Mentors page, paying through Razorpay (UPI, \
+- Counselling hours: a student buys a package of hours on the TYM Mentors page, paying through Cashfree (UPI, \
 card or net banking). The hours are added to their account and work with any mentor. Booking a session takes its \
 length from the hours, so a 30 minute session uses half an hour. Hours do not expire.
 - Booking: on the TYM Mentors page choose a mentor, pick a day and time (shown in your own time zone), write \
@@ -262,9 +262,9 @@ SITE_ANSWERS = [
      "straight back on your counselling hours to book another slot. Inside 24 hours it cannot be cancelled on the "
      "site, so write to support@theyouthmatters.com. For a refund of hours you have not used, write to "
      "info@theyouthmatters.com."),
-    (r"\b(?:counsell?ing hours?|packages?|price|pricing|cost|costs|fees?|charges?|how much|pay|payment|razorpay)\b",
+    (r"\b(?:counsell?ing hours?|packages?|price|pricing|cost|costs|fees?|charges?|how much|pay|payment|cashfree)\b",
      "Mentor sessions are paid for with counselling hours, and every mentor costs the same. {packages} You buy a "
-     "package on the TYM Mentors page through Razorpay (UPI, card or net banking), the hours are added to your "
+     "package on the TYM Mentors page through Cashfree (UPI, card or net banking), the hours are added to your "
      "account, and each session you book takes its length from them, so a 30 minute session uses half an hour. "
      "Hours work with any mentor and do not expire. Everything else on TYM is free."),
     (r"\b(?:book|booking|schedule|session|sessions|appointment|one[- ]to[- ]one|1[- ]?to[- ]?1|mentors?|counsell?ors?)\b",

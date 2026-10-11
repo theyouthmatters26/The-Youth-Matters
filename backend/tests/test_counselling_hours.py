@@ -54,7 +54,7 @@ def minutes(user_id):
 
 def buy(user_id, package_id):
     pay = Payment(user_id=user_id, kind="package", package_id=package_id, minutes=60, amount_minor=85000,
-                  razorpay_order_id=f"order_{user_id}")
+                  gateway_order_id=f"order_{user_id}")
     db.session.add(pay)
     db.session.commit()
     return pay

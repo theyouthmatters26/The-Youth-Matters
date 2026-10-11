@@ -606,7 +606,7 @@ def payments_csv():
     def line(pay, member):
         return [pay.created_at.date().isoformat(), member.display_name, member.email, pay.package.title if pay.package else "",
                 f"{(pay.minutes or 0) / 60:g}", f"{pay.amount_minor / 100:.2f}", pay.currency, pay.status,
-                pay.invoice_number or "", pay.razorpay_payment_id or "", pay.razorpay_refund_id or ""]
+                pay.invoice_number or "", pay.gateway_payment_id or "", pay.gateway_refund_id or ""]
 
     return _csv("tym-payments.csv", ["Date", "Member", "Email", "Package", "Hours", "Amount", "Currency", "Status",
-                                     "Invoice", "Razorpay payment", "Razorpay refund"], [line(p, u) for p, u in rows])
+                                     "Invoice", "Gateway payment", "Gateway refund"], [line(p, u) for p, u in rows])

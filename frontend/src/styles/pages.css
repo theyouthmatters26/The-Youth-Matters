@@ -572,3 +572,42 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
 .dash-wallet-grid div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); font-size: var(--step--1); }
 .dash-wallet-grid dt { color: var(--muted); }
 .dash-wallet-grid dd { margin: 0; font-weight: 500; text-align: right; }
+
+/* A word from the founder: a dark band, the way the rest of the site carries emphasis */
+.founder {
+  position: relative; overflow: hidden;
+  display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: center; gap: var(--s-7);
+  margin-top: var(--s-8); padding: var(--s-7);
+  border-radius: var(--radius-lg); background: var(--night); color: var(--on-ink);
+  box-shadow: var(--shadow-lg);
+}
+/* An oversized quote mark, set behind the words */
+.founder::before {
+  content: '“'; position: absolute; top: -0.32em; right: 0.06em;
+  font-family: var(--font-display); font-size: 13rem; line-height: 1;
+  color: rgba(255, 255, 255, 0.06); pointer-events: none;
+}
+.founder-photo { margin: 0; }
+.founder-photo img {
+  width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 0 0 8px rgba(255, 255, 255, 0.04);
+}
+.founder-copy { position: relative; display: grid; gap: var(--s-4); }
+.founder-copy .eyebrow { color: var(--on-ink-faint); }
+.founder-copy blockquote { margin: 0; display: grid; gap: var(--s-4); }
+.founder-copy blockquote p {
+  font-family: var(--font-display); font-size: var(--step-1); line-height: 1.45;
+  letter-spacing: -0.01em; text-wrap: pretty; color: var(--on-ink);
+}
+.founder-name { display: grid; gap: 2px; margin-top: var(--s-2); font-size: var(--step--1); }
+.founder-name strong { font-weight: 500; }
+.founder-name span { color: var(--on-ink-muted); }
+/* Without her photograph the words simply take the whole band */
+.founder.is-solo { grid-template-columns: minmax(0, 1fr); }
+
+@media (max-width: 860px) {
+  .founder { grid-template-columns: minmax(0, 1fr); gap: var(--s-5); padding: var(--s-6); text-align: left; }
+  .founder-photo { width: 104px; }
+  .founder::before { font-size: 8rem; }
+  .founder-copy blockquote p { font-size: var(--step-0); }
+}

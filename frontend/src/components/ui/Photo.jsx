@@ -17,6 +17,11 @@ export const cityPhoto = (country) => {
   return photos[shipped] ? shipped : STAND_IN
 }
 
+// True when a picture has actually been made (frontend/scripts/photos.py). Lets a page leave a
+// space out rather than point at a file that is not there: these pages are built ahead of time, so
+// the onError stand-in below is not listening yet.
+export const shipped = (src) => Boolean(photos[src])
+
 export const copies = (src, widths, tall = '') =>
   widths.map((w) => `${src.replace(/\.(jpg|png)$/, '')}-${tall}${w}.avif ${w}w`).join(', ')
 

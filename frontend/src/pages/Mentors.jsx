@@ -37,13 +37,14 @@ export default function Mentors() {
         <h1 className="mentor-title">Book a <span>Mentor / student</span> who has done it</h1>
         <p>Mentors are students as well as consultants, and every one is checked by our team. Buy counselling
           hours, pick any mentor and a time in your own time zone, and meet on a video call. Your mentor opens a
-          private chat with you before the call.</p>
+          private chat with you before the call: brief them on what you want to discuss, so they come to the call
+          prepared on your topic.</p>
       </header>
 
       <ul className="trust-row">
         <li><ShieldCheck size={16} aria-hidden /> Verified by our team</li>
         <li><CalendarCheck size={16} aria-hidden /> Free cancellation up to 24 hours before</li>
-        <li><Lock size={16} aria-hidden /> Secure payment with Razorpay</li>
+        <li><Lock size={16} aria-hidden /> Secure payment with Cashfree</li>
       </ul>
 
       <aside className="mentor-join">
@@ -59,7 +60,7 @@ export default function Mentors() {
       <section className="mentor-pricing" id="hours" aria-labelledby="hours-title">
         <header className="section-head">
           <h2 id="hours-title" className="display">First, get counselling hours</h2>
-          <p>One price for every mentor. Buy hours once, then choose any mentor below and book a time with them: a 30 minute session uses half an hour.</p>
+          <p>One price for every mentor. Buy hours once, then choose any mentor below and book a time with them: a 60 minute session uses 1 hour.</p>
         </header>
         <Packages />
       </section>
@@ -85,7 +86,7 @@ export default function Mentors() {
           ? 'No mentor matches that yet. Here is every other mentor you can book.'
           : words.length > 0
             ? `${list.length} ${list.length === 1 ? 'mentor matches' : 'mentors match'} ${words.join(' + ')}.`
-            : 'Search a country, a university or course, a mentor\u2019s name, a language, or what you need help '
+            : 'Search a country, a university or course, a mentor\u2019s name, or what you need help '
             + 'with: visas, SOPs, scholarships, housing, part-time work. Every word you add narrows it down.'}
       </p>
 

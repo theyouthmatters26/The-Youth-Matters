@@ -102,6 +102,15 @@
    1600
   ]
  },
+ "/images/founder.jpg": {
+  "w": 480,
+  "h": 480,
+  "widths": [
+   160,
+   320,
+   480
+  ]
+ },
  "/images/hero-students.jpg": {
   "w": 1600,
   "h": 1067,
