@@ -13,7 +13,7 @@ import '../components/mentors/mentors.css'
 const STEPS = [
   ['Pick a time', 'Every time is shown in your own time zone, so there is no maths to do.'],
   ['Pay securely', 'UPI, cards or net banking through Cashfree. You get a receipt by email.'],
-  ['Meet on video', 'The join link arrives by email and in My TYM. Cancel up to 24 hours before and the time goes back on your counselling hours.'],
+  ['Meet on video', 'Your mentor opens a private chat and shares the call link there. Cancel up to 24 hours before and the time goes back on your counselling hours.'],
 ]
 
 function Stars({ value }) {

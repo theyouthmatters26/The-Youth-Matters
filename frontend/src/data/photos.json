@@ -102,6 +102,28 @@
    1600
   ]
  },
+ "/images/founder/founder1.jpg": {
+  "w": 801,
+  "h": 801,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   801
+  ]
+ },
+ "/images/founder/founder2.jpg": {
+  "w": 789,
+  "h": 798,
+  "widths": [
+   160,
+   320,
+   480,
+   720,
+   789
+  ]
+ },
  "/images/founder.jpg": {
   "w": 480,
   "h": 480,

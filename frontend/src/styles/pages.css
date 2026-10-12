@@ -249,7 +249,7 @@ form.card-pad { padding: var(--s-7); gap: var(--s-5); }
 /* About / Contact */
 .about-story {
   display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(32px, 6vw, 88px);
-  align-items: center; padding-bottom: var(--section);
+  align-items: center; padding-bottom: calc(var(--section) / 2);
 }
 .about-photo { margin: 0; }
 .about-photo img { width: 100%; aspect-ratio: 4 / 5; max-height: 520px; object-fit: cover; object-position: 40% center; border-radius: var(--radius-lg); }
@@ -613,3 +613,29 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
 }
 
 .settings-check { align-items: start; }
+
+/* Our story: a founder either side of how it began */
+.story {
+  display: grid; grid-template-columns: 260px minmax(0, 1fr) 260px; align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+}
+.story-face { margin: 0; }
+.story-face figcaption { margin-top: var(--s-3); font-size: var(--step--1); font-weight: 500; text-align: center; }
+.story-face img {
+  width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line), 0 0 0 8px var(--tint);
+}
+.story-copy { display: grid; gap: var(--s-3); text-align: center; }
+.story-copy h2 { font-size: var(--step-3); }
+.story-copy p { color: var(--muted); text-wrap: pretty; }
+/* Room before the values below, so the rule under the names is not sitting on them.
+   Set here rather than on .value-grid, which the home and features pages also use. */
+.story { margin-bottom: var(--s-7); }
+
+/* Our story: a founder either side of how it began */
+@media (max-width: 900px) {
+  /* The faces sit side by side above the words rather than squeezing them to nothing */
+  .story { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-5); }
+  .story-copy { grid-column: 1 / -1; order: 1; }
+  .story-face { order: 0; max-width: 200px; justify-self: center; }
+}

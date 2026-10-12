@@ -22,15 +22,33 @@ from .posts import member
 bp = Blueprint("ai", __name__)
 
 HISTORY = 20  # earlier turns sent with each question
+# How many messages a student may send once a person is on the other end. The team answers by hand,
+# so this keeps one conversation from becoming a queue of its own.
+HUMAN_LIMIT = 5
+OVER_LIMIT = ("You have sent the 5 messages this request allows. Our team has everything you wrote and "
+              "will reply right here, and we will email you when they do. If it cannot wait, write to "
+              "support@theyouthmatters.com.")
 # "can I talk to a human", "connect me to a real person", "I want an agent": asking in words works like the button
 WANTS_PERSON = re.compile(
     r"\b(?:talk|speak|chat|connect|transfer|get|need|want|reach)\b[^.?!\n]{0,40}\b"
     r"(?:(?:a|an|the|real|actual|live) human(?! (?:rights|resources?|biology|anatomy|geography|sciences?|behaviou?r))|"
     r"real person|a person|someone real|an? agent|live agent|representative|someone from (?:the|your) team|"
     r"the team|your team|support team|customer (?:care|support|service))\b", re.I)
-ASKED = ("Done. I have told the TYM team that you would like to talk to a person. Someone will reply right "
-         "here, and we will email you when they do. I am not going anywhere in the meantime, so keep "
-         "asking me things if you like.")
+# Sent whichever way they ask: the button below the chat, or the same thing in their own words.
+ASKED = ("We'll pass you over to one of our Mentors. We're a messaging service rather than a live chat, "
+         "which means our responses aren't always immediate - you can reply whenever it suits you. If we "
+         "don't hear back within 5 minutes of our reply, the chat will pause to keep things running "
+         "smoothly. Don't worry - you can pick up where you left off, as long as you don't clear the "
+         "conversation.")
+
+
+def _sent_to_the_team(c):
+    """How many the student has written since they asked for a person."""
+    if not c.human_requested_at:
+        return 0
+    return db.session.scalar(db.select(db.func.count(AiMessage.id)).where(
+        AiMessage.conversation_id == c.id, AiMessage.role == "user",
+        AiMessage.created_at >= c.human_requested_at)) or 0
 
 
 def _conversation(conversation_id):
@@ -100,6 +118,10 @@ def ask():
         c = AiConversation(user_id=user.id, title=title.replace("\n", " "))
         db.session.add(c)
         db.session.flush()
+    # Checked before the message is saved, so the one over the line is not kept either
+    if c.status in ("human", "waiting") and _sent_to_the_team(c) >= HUMAN_LIMIT:
+        # 403, not 429: the rate limiter owns 429 and replaces the message with its own
+        abort(403, OVER_LIMIT)
     earlier = _messages(c)[-HISTORY:]
 
     sent = [handoff.add_message(c, "user", question)]
@@ -135,6 +157,7 @@ def ask_for_a_person(conversation_id):
     elif c.status == "ai":
         c.status, c.human_requested_at = "waiting", utcnow()
         handoff.alert_team(c, "asked to talk to a person")
+        handoff.add_message(c, "assistant", ASKED)  # the button says the same as asking in words
     db.session.commit()
     return jsonify(_summary(c))
 

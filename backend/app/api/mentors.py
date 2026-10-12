@@ -4,16 +4,22 @@
     GET /mentors/<id>                  one mentor, with their latest reviews
     GET /mentors/<id>/availability     their open times
     GET /mentors/me/wallet             a mentor's own earnings, for their dashboard
+    GET /mentors/me                    the signed-in mentor's own profile, as they edit it
+    PATCH /mentors/me                  change it; the directory and their page show it straight away
 """
 from flask import Blueprint, abort, current_app, jsonify, request
 from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy import func
 
-from ..extensions import db
+from ..extensions import db, limiter
 from ..models import AvailabilitySlot, Booking, Community, CounselingPackage, Country, MentorProfile, MentorReview, Subject, User
 from ..models.base import utcnow
-from ..services import availability
+from ..services import availability, content
+from ..services.availability import DAYS
 from . import serializers as s
+
+HHMM = __import__("re").compile(r"^([01]\d|2[0-3]):[0-5]\d\Z")
+ZONES = __import__("zoneinfo").available_timezones()
 
 bp = Blueprint("mentors", __name__)
 
@@ -76,6 +82,114 @@ def hourly_rate_minor():
     rows = db.session.execute(db.select(CounselingPackage.price_minor, CounselingPackage.hours)
                               .where(CounselingPackage.is_active, CounselingPackage.hours > 0)).all()
     return min((round(price / hours) for price, hours in rows), default=0)
+
+
+def _me():
+    """The signed-in mentor's profile, or 404."""
+    m = db.session.scalar(db.select(MentorProfile).where(MentorProfile.user_id == current_user.id))
+    if not m:
+        abort(404, "This account is not a mentor.")
+    return m
+
+
+def _mine(m):
+    """Everything the mentor edits, including the weekly hours the public view leaves out."""
+    return {**s.mentor(m), "weeklyHours": m.weekly_hours or {}, "country": m.community.country.slug}
+
+
+def _clean_text(data, key, label, lo, hi, current):
+    if key not in data:
+        return current
+    value, _ = content.clean(data.get(key), hi + 1)
+    if not lo <= len(value) <= hi:
+        abort(400, f"{label}: write between {lo} and {hi} characters.")
+    return value
+
+
+def _clean_list(data, key, label, most, longest, current):
+    if key not in data:
+        return current
+    items = data.get(key)
+    if not isinstance(items, list):
+        abort(400, f"{label}: we could not read that list.")
+    items = list(dict.fromkeys(content.clean(str(x), longest + 1)[0] for x in items))
+    items = [i for i in items if i]
+    if not 1 <= len(items) <= most:
+        abort(400, f"{label}: add between 1 and {most}.")
+    return items
+
+
+def _clean_hours(raw):
+    """{"mon": ["18:00", ...]} with real days and times, at least two a week."""
+    if not isinstance(raw, dict):
+        abort(400, "We could not read your weekly hours.")
+    clean = {d: sorted({t for t in raw.get(d, []) if isinstance(t, str) and HHMM.match(t)}) for d in DAYS}
+    clean = {d: times for d, times in clean.items() if times}
+    if not 2 <= sum(len(t) for t in clean.values()) <= 60:
+        abort(400, "Pick at least 2 weekly session times, and no more than 60.")
+    return clean
+
+
+@bp.get("/mentors/me")
+@jwt_required()
+def my_profile():
+    return jsonify(_mine(_me()))
+
+
+@bp.patch("/mentors/me")
+@jwt_required()
+@limiter.limit("60 per hour")
+def edit_my_profile():
+    """A mentor edits their own page. Everything here shows on the directory at once, so it is held
+    to the same lengths the application was."""
+    m = _me()
+    data = request.get_json(silent=True) or {}
+
+    m.headline = _clean_text(data, "headline", "Headline", 20, 160, m.headline)
+    m.about = _clean_text(data, "about", "About you", 150, 2000, m.about)
+    m.university = _clean_text(data, "university", "University", 2, 120, m.university)
+    m.course = _clean_text(data, "course", "Course", 2, 120, m.course)
+    if "experience" in data:
+        value, _ = content.clean(data.get("experience"), 256)
+        m.experience = value[:255] or None
+    m.topics = _clean_list(data, "topics", "Topics", 20, 60, m.topics)
+    m.languages = _clean_list(data, "languages", "Languages", 6, 30, m.languages)
+    if "linkedin" in data:
+        link = str(data.get("linkedin") or "").strip()
+        if link and not link.startswith("https://"):
+            abort(400, "Use your full LinkedIn link, starting with https://")
+        m.links = {"linkedin": link[:255]} if link else None
+    if "graduationYear" in data:
+        try:
+            year = int(data["graduationYear"])
+        except (TypeError, ValueError):
+            year = 0
+        if not 1970 <= year <= 2035:
+            abort(400, "Enter the year you graduated, or expect to.")
+        m.graduation_year = year
+
+    # These three decide what a slot is, so the times are rebuilt after any of them moves
+    moved = False
+    if "sessionMinutes" in data:
+        if data["sessionMinutes"] not in (30, 45, 60):
+            abort(400, "Choose a session length of 30, 45 or 60 minutes.")
+        moved = moved or m.session_minutes != data["sessionMinutes"]
+        m.session_minutes = data["sessionMinutes"]
+    if "timezone" in data:
+        if data["timezone"] not in ZONES:
+            abort(400, "Choose your time zone.")
+        moved = moved or m.timezone != data["timezone"]
+        m.timezone = data["timezone"]
+    if "weeklyHours" in data:
+        hours = _clean_hours(data["weeklyHours"])
+        moved = moved or m.weekly_hours != hours
+        m.weekly_hours = hours
+
+    db.session.flush()
+    if moved:
+        availability.rebuild_slots(m)
+    db.session.commit()
+    return jsonify(_mine(m))
 
 
 @bp.get("/mentors/me/wallet")

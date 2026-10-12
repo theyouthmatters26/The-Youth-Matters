@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Facebook, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react'
+import { Instagram, Youtube } from 'lucide-react'
 import { subjects } from '../../data/sample'
 import Photo from '../ui/Photo'
 import './layout.css'
@@ -17,15 +17,19 @@ export const FOOTER_LINKS = [
   ['/cookies', 'Cookies Policy'],
 ]
 
-// Put each profile's full address in href. One left empty still shows its icon, but as a picture and
-// not a link, so the footer never links to a social network's front page.
-const SOCIAL = [
-  { href: '', label: 'Facebook', Icon: Facebook },
-  { href: '', label: 'X', Icon: Twitter },
-  { href: '', label: 'Instagram', Icon: Instagram },
-  { href: '', label: 'YouTube', Icon: Youtube },
-  { href: '', label: 'LinkedIn', Icon: Linkedin },
+// lucide has no TikTok mark, so this one is drawn here, sized like the others
+const TikTok = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-1.79-2.46V9.78a5.77 5.77 0 1 0 4.88 5.7V9.01a7.35 7.35 0 0 0 4.29 1.37V7.3a4.28 4.28 0 0 1-3.23-1.48Z" />
+  </svg>
+)
 
+// The accounts TYM actually has. Add a platform here when there is a profile to point at: an icon
+// with nowhere to go is worse than no icon.
+const SOCIAL = [
+  { href: 'https://www.instagram.com/theyouthmatters26/', label: 'Instagram', Icon: Instagram },
+  { href: 'https://www.youtube.com/@TheYouthMatters26', label: 'YouTube', Icon: Youtube },
+  { href: 'https://www.tiktok.com/@theyouthmatters26', label: 'TikTok', Icon: TikTok },
 ]
 
 // The number students message on WhatsApp, digits only with the country code (wa.me wants it that way)

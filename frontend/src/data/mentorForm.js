@@ -30,10 +30,11 @@ export const EDUCATION = [
   ['qualification', 'Highest educational qualification *', 'select',
     ['Diploma', "Bachelor's Degree", "Master's Degree", 'MBA', 'PhD / Doctorate', 'Professional Qualification', 'Other']],
   ['field', 'Field or specialisation *', 'text'],
-  ['additionalQualifications', 'Additional qualifications or certifications', 'area'],
+  ['additionalQualifications', 'Your other qualifications', 'rows',
+    ['Qualification', 'University or institution', 'Country']],
   ['studiedAbroad', 'Have you personally studied outside your home country? *', 'yesno'],
-  ['abroadCountries', 'If yes: country or countries', 'text'], ['abroadInstitution', 'If yes: university or institution', 'text'],
-  ['abroadProgramme', 'If yes: programme or degree', 'text'], ['abroadDuration', 'If yes: duration', 'text'],
+  ['abroadStudy', 'Where you studied abroad', 'rows',
+    ['Country', 'University or institution', 'Programme or degree', 'Duration'], 'studiedAbroad'],
 ]
 export const PROFESSIONAL = [
   ['totalExperience', 'Total professional experience *', 'select', ['Less than 1 year', '1–3 years', '3–5 years', '5–10 years', '10+ years']],
@@ -44,16 +45,21 @@ export const PROFESSIONAL = [
   ['previousEmployers', 'Previous organisations, positions and how long you were there', 'area'],
 ]
 export const EXPERTISE = [
+  ['studyAbroadRole', 'Your professional background or connection to the study abroad field *', 'many',
+    ['Study Abroad Consultant', 'Overseas Admissions Advisor', 'Country Selection & Search Specialist',
+     'University Recruiter', 'Other']],
+  ['howYouKnow', 'How did you acquire your knowledge of study abroad processes, and why do you feel qualified to mentor students? *', 'area'],
   ['mentorCountries', 'Countries you can mentor students for *', 'many', COUNTRIES],
   ['studyAreas', 'Areas of study you can mentor *', 'many', STUDY_AREAS],
   ['expertise', 'Your expertise in helping students with international education *', 'area'],
 ]
 export const MENTORING = [
   ['mentoredBefore', 'Have you previously mentored or guided students?', 'yesno'],
-  ['mentoringExperience', 'If yes, describe your mentoring experience', 'area'],
-  ['mentoredCount', 'Approximate number of students or individuals mentored', 'select', ['1–10', '11–25', '26–50', '51–100', '100+']],
+  ['mentoringExperience', 'Describe your mentoring experience', 'area', null, 'mentoredBefore'],
+  ['mentoredCount', 'Approximate number of students or individuals mentored', 'select',
+    ['1–10', '11–25', '26–50', '51–100', '100+'], 'mentoredBefore'],
   ['helpedInternational', 'Have you previously helped students with international education?', 'yesno'],
-  ['helpedDescription', 'If yes, please describe', 'area'],
+  ['helpedDescription', 'Please describe', 'area', null, 'helpedInternational'],
   ['mentoringPlatforms', 'Organisations or platforms where you have mentored', 'text'],
 ]
 export const MOTIVATION = [
@@ -92,6 +98,11 @@ export const AGREEMENTS = [
   'I acknowledge that the personal information submitted through this application will be processed for the purpose of evaluating, onboarding, managing and communicating with me as a potential or approved mentor, in accordance with The Youth Matters Privacy Policy.',
 ]
 
+// Answers that cover a whole question: picking one makes the others meaningless (MentorApply.jsx)
+export const CATCH_ALL = ['Open to all formats', 'Flexible']
+
 export const ALL_FIELDS = [...PERSONAL, ...EDUCATION, ...PROFESSIONAL, ...EXPERTISE, ...MENTORING, ...MOTIVATION, ...AVAILABILITY, ...DECLARATION]
 export const required = ([, label]) => label.endsWith('*')
+// A field that only matters after a Yes somewhere else: the fifth item names that question.
+export const follows = ([, , , , dependsOn]) => dependsOn
 export const plain = (label) => label.replace(/ \*$/, '')

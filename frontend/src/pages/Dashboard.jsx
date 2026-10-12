@@ -85,7 +85,7 @@ function MentorWallet({ username }) {
 export default function Dashboard() {
   const { user } = useAuth()
   const location = useLocation()
-  useMeta({ title: 'My TYM', path: '/my' })
+  useMeta({ title: 'TYM Community', path: '/my' })
   const profile = useApi(`/users/${user.username}`)
   const communities = useApi('/users/me/communities')
   const bookings = useApi('/bookings')
@@ -108,7 +108,7 @@ export default function Dashboard() {
     <div className="container page dashboard">
       <header className="dash-head">
         <div>
-          <p className="eyebrow">My TYM</p>
+          <p className="eyebrow">TYM Community</p>
           <h1>{greeting()}, {user.displayName.split(' ')[0]}.</h1>
           <p className="muted">Here is what is new in the communities you follow.</p>
         </div>

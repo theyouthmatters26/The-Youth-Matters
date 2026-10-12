@@ -200,3 +200,53 @@
 
 /* Under "Continue with Google": what it skips, what it does not */
 .google-note { margin-top: var(--s-3); font-size: var(--step--2); line-height: 1.55; color: var(--muted); text-align: center; text-wrap: pretty; }
+
+.check.is-off { opacity: 0.45; cursor: not-allowed; }
+.check.is-off input { cursor: not-allowed; }
+
+/* One entry per row, with the way to drop it beside it */
+.apply-row { display: flex; align-items: center; gap: var(--s-3); }
+.apply-row + .apply-row { margin-top: var(--s-2); }
+.apply-row .input { flex: 1 1 auto; }
+.apply-row .btn-text { flex: none; }
+.apply-add { width: auto; justify-self: start; margin-top: var(--s-2); }
+
+/* Add a whole range at once, above the timetable */
+.week-add {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3);
+  margin-bottom: var(--s-3); padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--paper);
+}
+.week-add-days { display: flex; flex-wrap: wrap; gap: 6px; }
+.week-add-when { display: flex; align-items: center; gap: var(--s-2); }
+.week-add-when .select { width: auto; padding-right: var(--s-6); }
+.week-add-when .btn { width: auto; flex: none; white-space: nowrap; }
+@media (max-width: 600px) {
+  .week-add { flex-direction: column; align-items: stretch; }
+  .week-add-when { flex-wrap: wrap; }
+  .week-add-when .select { flex: 1 1 0; }
+}
+
+/* One qualification per row: the columns, then the way to drop it */
+.apply-cols { display: grid; gap: var(--s-2); align-items: center; }  /* columns set per question */
+.apply-cols + .apply-cols { margin-top: var(--s-2); }
+.apply-drop {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--paper); color: var(--muted); cursor: pointer;
+}
+.apply-drop:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+.apply-drop:disabled { opacity: 0.35; cursor: not-allowed; }
+@media (max-width: 720px) {
+  /* Stack the columns on a phone, with the remove button on its own line */
+  .apply-cols { grid-template-columns: minmax(0, 1fr) !important; }
+  .apply-cols + .apply-cols { margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--line-soft); }
+  .apply-drop { justify-self: end; }
+}
+
+/* A heading inside a section, for the blocks a long section breaks into */
+.apply-sub {
+  margin: var(--s-5) 0 var(--s-1); font-size: var(--step--1); font-weight: 600;
+  padding-bottom: var(--s-2); border-bottom: 1px solid var(--line-soft);
+}
+.apply-sub:first-child { margin-top: 0; }
+.apply-sub .faint { font-weight: 400; }

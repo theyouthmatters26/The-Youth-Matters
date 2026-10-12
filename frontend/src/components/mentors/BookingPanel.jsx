@@ -69,7 +69,7 @@ function Booked({ booking }) {
       </div>
       <p className="book-fine">{hoursText(booking.minutes)} came off your counselling hours. We have asked
         {' '}{booking.mentor.user.displayName.split(' ')[0]} to open a chat with you: you will get an email
-        when they do. We emailed you the details, and your sessions are always in <Link to="/my?tab=Sessions" className="link">My TYM</Link>.</p>
+        when they do. We emailed you the details, and your sessions are always in <Link to="/my?tab=Sessions" className="link">TYM Community</Link>.</p>
     </div>
   )
 }
@@ -88,6 +88,7 @@ export default function BookingPanel({ mentor }) {
   const [monthOffset, setMonthOffset] = useState(0)
   const [day, setDay] = useState(null)
   const [slot, setSlot] = useState(null)
+  const [count, setCount] = useState(1)   // how many of the mentor's slots the session runs for
   const [stage, setStage] = useState('pick') // pick -> details -> done
   const [topic, setTopic] = useState('')
   const [busy, setBusy] = useState(false)
@@ -97,7 +98,21 @@ export default function BookingPanel({ mentor }) {
   const first = slots.length ? new Date(slots[0].startsAt) : new Date()
   const last = slots.length ? new Date(slots[slots.length - 1].startsAt) : new Date()
   const month = new Date(first.getFullYear(), first.getMonth() + monthOffset, 1)
-  const need = mentor.sessionMinutes
+  // Ends the student may choose: each hour that follows the start with no gap and nothing booked
+  // in it. One slot is always offered; the rest appear only while the mentor is actually free.
+  const runFrom = (from) => {
+    if (!from) return []
+    const sameDay = byDay[day] || []
+    const run = [from]
+    for (let i = sameDay.indexOf(from) + 1; i < sameDay.length; i += 1) {
+      if (sameDay[i].startsAt !== run[run.length - 1].endsAt) break
+      run.push(sameDay[i])
+    }
+    return run.slice(0, 8)
+  }
+  const ends = runFrom(slot)
+  const chosen = ends[count - 1] || slot
+  const need = mentor.sessionMinutes * count
   const balance = account?.counselingMinutes || 0
   const firstName = mentor.user.displayName.split(' ')[0]
 
@@ -107,7 +122,7 @@ export default function BookingPanel({ mentor }) {
     setBusy(true)
     setError('')
     try {
-      const res = await api('/bookings', { method: 'POST', body: { slotId: slot.id, topic, timezone: viewerZone } })
+      const res = await api('/bookings', { method: 'POST', body: { slotId: slot.id, slots: count, topic, timezone: viewerZone } })
       setAccount({ ...account, counselingMinutes: res.counselingMinutes })
       setBooked(res.booking)
       setStage('done')
@@ -129,7 +144,7 @@ export default function BookingPanel({ mentor }) {
   return (
     <aside className="book" id="book" aria-label={`Book a session with ${firstName}`}>
       <header className="book-head">
-        <p className="book-price">{mentor.sessionMinutes} min<span> session</span></p>
+        <p className="book-price">{mentor.sessionMinutes} min<span> per slot, book as many as you need</span></p>
         <p className="book-sub"><Video size={15} aria-hidden /> One-to-one video call · requires counselling hours</p>
       </header>
 
@@ -156,16 +171,32 @@ export default function BookingPanel({ mentor }) {
                   <div className="time-grid">
                     {byDay[day].map((s) => (
                       <button key={s.id} className={`time${slot?.id === s.id ? ' is-on' : ''}`} aria-pressed={slot?.id === s.id}
-                        onClick={() => setSlot(s)}>{formatTime(s.startsAt)}</button>
+                        onClick={() => { setSlot(s); setCount(1) }}>{formatTime(s.startsAt)}</button>
                     ))}
                   </div>
+                  {slot && (
+                    <div className="book-until">
+                      <label htmlFor="book-end" className="book-label">Until</label>
+                      <select id="book-end" className="select" value={count}
+                        onChange={(e) => setCount(Number(e.target.value))}>
+                        {ends.map((e, i) => (
+                          <option key={e.id} value={i + 1}>
+                            {formatTime(e.endsAt)} &middot; {hoursText(mentor.sessionMinutes * (i + 1))}
+                          </option>
+                        ))}
+                      </select>
+                      {ends.length === 1 && (
+                        <span className="book-hint">{firstName} has no free hour straight after this one.</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="book-hint">Pick a day to see the times. Days in bold have open slots.</p>
               )}
               <p className="book-zone">Times in {zoneName()}</p>
               <button className="btn btn-primary btn-block" disabled={!slot} onClick={() => setStage('details')}>
-                {slot ? `Continue with ${formatTime(slot.startsAt)}` : 'Choose a time'}
+                {slot ? `Continue with ${formatTime(slot.startsAt)} \u2013 ${formatTime(chosen.endsAt)}` : 'Choose a time'}
               </button>
             </>
           )}
@@ -177,7 +208,7 @@ export default function BookingPanel({ mentor }) {
           <button className="book-back" onClick={() => { setStage('pick'); setError('') }}><ArrowLeft size={15} /> Change time</button>
           <div className="book-summary">
             <strong>{formatDay(slot.startsAt)}</strong>
-            <span>{formatTime(slot.startsAt)} – {formatTime(slot.endsAt)} · {zoneName()}</span>
+            <span>{formatTime(slot.startsAt)} – {formatTime(chosen.endsAt)} · {hoursText(need)} · {zoneName()}</span>
             <span className="faint">{formatTime(slot.startsAt, mentor.timezone)} for {firstName} in {city(mentor.timezone)}</span>
           </div>
           <div className="field">

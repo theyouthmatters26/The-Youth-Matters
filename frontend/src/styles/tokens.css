@@ -21,14 +21,19 @@
   --line-soft: #ebebed;
   --tint: #e7e7ea;
 
-  /* Dark surfaces */
-  --night: #09090a;
-  --night-2: #111113;
-  --night-3: #19191c;
+  /* Dark surfaces, from the client's palette. Three tones that stay apart from each other:
+     the nav bar is lightest (#404043, in layout.css), then the banded sections, then everything
+     else. The footer reading the same as the nav bar is what this spacing avoids. */
+  --night: #2e2e33;      /* footer, dark cards, the admin rail: the darkest of the three */
+  --night-band: #3c3c41; /* the banded sections, e.g. the mentors grid on the home page */
+  --night-2: #52545e;    /* cards sitting on a band */
+  --night-3: #5c5e69;    /* the same card, hovered */
   --night-line: rgba(255, 255, 255, 0.09);
   --on-ink: #f5f5f6;
-  --on-ink-muted: rgba(245, 245, 246, 0.62);
-  --on-ink-faint: rgba(245, 245, 246, 0.52);
+  /* These surfaces are lighter than the near-black they were written for, so the second line on a
+     card needs more of the white to stay readable */
+  --on-ink-muted: rgba(245, 245, 246, 0.78);
+  --on-ink-faint: rgba(245, 245, 246, 0.70);
 
   --danger: #a12b2b;
 

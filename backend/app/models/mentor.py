@@ -54,6 +54,9 @@ class Booking(Model):
     )
 
     slot_id = db.Column(db.Integer, db.ForeignKey("availability_slots.id"), nullable=False)
+    # Where the session ends. A booking can run across several of the mentor's slots now, so the
+    # starting slot's own end is not the session's end (services/availability.py).
+    ends_at = db.Column(db.DateTime(timezone=True))
     mentor_id = db.Column(db.Integer, db.ForeignKey("mentor_profiles.id"), nullable=False)
     student_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     status = db.Column(enum("pending_payment", "confirmed", "cancelled", "completed", "expired",

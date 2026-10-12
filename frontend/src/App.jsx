@@ -32,6 +32,7 @@ const ROUTES = [
   ['/u/:username', page(() => import('./pages/Profile'))],
   ['/my', page(() => import('./pages/Dashboard')), true],
   ['/settings', page(() => import('./pages/Settings')), true],
+  ['/my/mentor', page(() => import('./pages/MentorSettings')), true],
 
   ['/chat', page(() => import('./pages/Chatrooms')), true],
   ['/chat/:room', page(() => import('./pages/Chatrooms')), true],

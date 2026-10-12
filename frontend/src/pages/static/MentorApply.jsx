@@ -1,11 +1,12 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BadgeCheck, CalendarClock, Check, Clock3, FileText, HeartHandshake, KeyRound, Upload, Wallet, X } from 'lucide-react'
 import { FormError, Spinner, SubmitButton } from '../../components/auth/fields'
 import MentorCard from '../../components/mentors/MentorCard'
 import Avatar from '../../components/ui/Avatar'
 import { countries } from '../../data/sample'
-import { AGREEMENTS, ALL_FIELDS, AVAILABILITY, CODE_OF_CONDUCT, DECLARATION, EDUCATION, EXPERTISE, KEY_AREAS, MENTORING, MOTIVATION, PERSONAL, PROFESSIONAL, plain, required } from '../../data/mentorForm'
+import { AGREEMENTS, ALL_FIELDS, AVAILABILITY, CATCH_ALL, CODE_OF_CONDUCT, DECLARATION, EDUCATION, EXPERTISE, KEY_AREAS, MENTORING, MOTIVATION, PERSONAL, PROFESSIONAL, follows, plain, required } from '../../data/mentorForm'
+import { LANGUAGES, TOPIC_MAX, TagInput, WeekGrid, ZONES, myZone, slotCount } from '../../components/mentors/scheduler'
 import { api, useApi } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { fullDate } from '../../lib/format'
@@ -30,120 +31,45 @@ const STEPS = [
   ['Review', 'Our team checks your documents and may ask for a short call.'],
   ['Go live', 'Your profile appears in TYM Mentors and students can book you.'],
 ]
-const DAYS = [['mon', 'Mon'], ['tue', 'Tue'], ['wed', 'Wed'], ['thu', 'Thu'], ['fri', 'Fri'], ['sat', 'Sat'], ['sun', 'Sun']]
-const HOURS = Array.from({ length: 17 }, (_, i) => `${String(i + 6).padStart(2, '0')}:00`) // 06:00 to 22:00
-const PRESETS = [
-  ['Weekday evenings', ['mon', 'tue', 'wed', 'thu', 'fri'], ['18:00', '19:00', '20:00']],
-  ['Weekend mornings', ['sat', 'sun'], ['09:00', '10:00', '11:00']],
-]
-const LANGUAGES = ['English', 'Hindi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Marathi', 'Bengali', 'Gujarati', 'Punjabi', 'Urdu']
 const MAX_FILE = 5 * 1024 * 1024
 const DRAFT = 'tym.mentorDraft'
-const myZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/London'
-const ZONES = (() => { try { return Intl.supportedValuesOf('timeZone') } catch { return [myZone()] } })()
 const EMPTY = {
   country: 'uk', university: '', course: '', graduated: false, graduationYear: '', headline: '', about: '', experience: '',
   topics: [], languages: ['English'], linkedin: '', sessionMinutes: 30, timezone: myZone(), weeklyHours: {},
   details: {},
 }
-const slotCount = (hours) => Object.values(hours).reduce((n, t) => n + t.length, 0)
+// Between the columns of one "rows" answer. Written and read in Questions() and nowhere else.
+const ROW_SEP = ' \u00b7 '
+// The education questions are shown in three places in section 3, not one list
+const onlyEducation = (keys) => EDUCATION.filter(([k]) => keys.includes(k))
 
-function TagInput({ id, value, onChange, suggestions, max, placeholder }) {
-  const [text, setText] = useState('')
-  const add = (t) => {
-    const v = t.trim().replace(/,$/, '')
-    if (v && !value.includes(v) && value.length < max) onChange([...value, v])
-    setText('')
-  }
-  return (
-    <div className="tag-input">
-      <div className="tag-box">
-        {value.map((t) => (
-          <span key={t} className="tag">{t}
-            <button type="button" onClick={() => onChange(value.filter((x) => x !== t))} aria-label={`Remove ${t}`}><X size={12} /></button>
-          </span>
-        ))}
-        {value.length < max && (
-          <input id={id} value={text} maxLength={60} placeholder={value.length ? 'Add another' : placeholder}
-            onChange={(e) => setText(e.target.value)} onBlur={() => text && add(text)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(text) }
-              if (e.key === 'Backspace' && !text && value.length) onChange(value.slice(0, -1))
-            }} />
-        )}
-      </div>
-      <div className="tag-suggest">
-        {suggestions.filter((s) => !value.includes(s)).map((s) => (
-          <button key={s} type="button" className="chip" onClick={() => add(s)} disabled={value.length >= max}>+ {s}</button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// Weekly start times, like a timetable. Click, or press and drag across cells, to paint them.
-function WeekGrid({ value, update }) {
-  const paint = useRef(null)
-  useEffect(() => {
-    const stop = () => { paint.current = null }
-    window.addEventListener('pointerup', stop)
-    return () => window.removeEventListener('pointerup', stop)
-  }, [])
-  const has = (d, h) => Boolean(value[d]?.includes(h))
-  const set = (d, h, on) => update((prev) => {
-    const day = new Set(prev[d] || [])
-    if (on) day.add(h); else day.delete(h)
-    return { ...prev, [d]: [...day].sort() }
-  })
-  const preset = (days, hours) => update((prev) => {
-    const next = { ...prev }
-    days.forEach((d) => { next[d] = [...new Set([...(next[d] || []), ...hours])].sort() })
-    return next
-  })
-  const total = slotCount(value)
-
-  return (
-    <div className="week">
-      <div className="week-tools">
-        {PRESETS.map(([label, days, hours]) => <button key={label} type="button" className="chip" onClick={() => preset(days, hours)}>+ {label}</button>)}
-        {total > 0 && <button type="button" className="btn-text" onClick={() => update(() => ({}))}>Clear</button>}
-        <span className="week-count"><strong className="mono">{total}</strong> {total === 1 ? 'time' : 'times'} a week</span>
-      </div>
-      <div className="week-grid" role="group" aria-label="Weekly session start times">
-        <span />
-        {DAYS.map(([d, label]) => <span key={d} className="week-day">{label}</span>)}
-        {HOURS.map((h) => (
-          <Fragment key={h}>
-            <span className="week-hour mono">{h}</span>
-            {DAYS.map(([d, label]) => (
-              <button key={d} type="button" className="week-cell" aria-pressed={has(d, h)} aria-label={`${label} ${h}`}
-                onPointerDown={(e) => { if (e.pointerType === 'mouse') { paint.current = !has(d, h); set(d, h, paint.current) } }}
-                onPointerEnter={(e) => { if (paint.current !== null && e.buttons === 1) set(d, h, paint.current) }}
-                onClick={(e) => { if (e.detail === 0 || e.nativeEvent.pointerType !== 'mouse') set(d, h, !has(d, h)) }} />
-            ))}
-          </Fragment>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// The client's questions (data/mentorForm.js). Answers live together in form.details.
+// The form's own questions (data/mentorForm.js), each drawn the way its kind asks for.
 function Questions({ fields, details, set }) {
   return fields.map((f) => {
     const [key, label, kind, options] = f
+    // "If yes" questions only belong on the page after that Yes
+    const after = follows(f)
+    if (after && details[after] !== 'Yes') return null
     const id = `q-${key}`
-    const value = details[key] ?? (kind === 'many' ? [] : '')
+    const value = details[key] ?? (kind === 'many' || kind === 'rows' ? [] : '')
     const need = required(f)
+
     if (kind === 'many') {
+      // "Open to all formats" and "Flexible" already cover the rest, so they stand alone: ticking
+      // one clears the others, and while it is ticked the others are out of reach.
+      const whole = options.find((o) => CATCH_ALL.includes(o))
+      const covered = whole && value.includes(whole)
       return (
         <fieldset key={key} className="field apply-many">
           <legend>{label}</legend>
           <div className="grid-2">
             {options.map((o) => (
-              <label key={o} className="check">
-                <input type="checkbox" checked={value.includes(o)}
-                  onChange={(e) => set(key, e.target.checked ? [...value, o] : value.filter((x) => x !== o))} />
+              <label key={o} className={`check${covered && o !== whole ? ' is-off' : ''}`}>
+                <input type="checkbox" checked={value.includes(o)} disabled={covered && o !== whole}
+                  onChange={(e) => {
+                    if (o === whole) return set(key, e.target.checked ? [o] : [])
+                    set(key, e.target.checked ? [...value.filter((x) => x !== whole), o] : value.filter((x) => x !== o))
+                  }} />
                 <span>{o}</span>
               </label>
             ))}
@@ -151,18 +77,70 @@ function Questions({ fields, details, set }) {
         </fieldset>
       )
     }
+
+    // One entry per row, a column each. Stored as one string per row so the answer stays a plain
+    // list like every other one; the separator is only ever written and read here.
+    if (kind === 'rows') {
+      const rows = Array.isArray(value) && value.length ? value : ['']
+      const cells = (row) => options.map((_, i) => row.split(ROW_SEP)[i] || '')
+      // Trailing blanks are dropped, the ones in between keep their place, so a half-filled row
+      // still reads back into the right columns.
+      const join = (parts) => {
+        const kept = [...parts]
+        while (kept.length && !kept[kept.length - 1].trim()) kept.pop()
+        return kept.join(ROW_SEP)
+      }
+      const write = (next) => set(key, next)
+      return (
+        <div key={key} className="field">
+          <label htmlFor={`${id}-0-0`} className="visually-hidden">{label}</label>
+          {rows.map((row, i) => (
+            <div key={i} className="apply-cols"
+              style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr)) auto` }}>
+              {options.map((col, c) => (
+                <input key={col} id={`${id}-${i}-${c}`} className="input" value={cells(row)[c]} maxLength={60}
+                  placeholder={col} aria-label={`${col}, entry ${i + 1}`}
+                  onChange={(e) => {
+                    const parts = cells(row)
+                    parts[c] = e.target.value
+                    write(rows.map((r, n) => (n === i ? join(parts) : r)))
+                  }} />
+              ))}
+              <button type="button" className="apply-drop" aria-label={`Remove entry ${i + 1}`}
+                disabled={rows.length === 1 && !rows[0]}
+                onClick={() => write(rows.length > 1 ? rows.filter((_, n) => n !== i) : [''])}>
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+          {rows.length < 10 && (
+            <button type="button" className="btn btn-ghost btn-sm apply-add" onClick={() => write([...rows, ''])}>
+              + Add another
+            </button>
+          )}
+        </div>
+      )
+    }
+
     if (kind === 'yesno') {
       return (
         <div key={key} className="field">
           <span className="apply-q">{label}</span>
           <fieldset className="segmented apply-two" aria-label={plain(label)}>
             {['Yes', 'No'].map((o) => (
-              <label key={o}><input type="radio" name={id} checked={value === o} onChange={() => set(key, o)} /><span>{o}</span></label>
+              <label key={o}><input type="radio" name={id} checked={value === o}
+                onChange={() => {
+                  set(key, o)
+                  // Answering No puts the follow-up questions away; anything typed into them goes
+                  // too, so the team never reads answers to a question that was withdrawn.
+                  if (o === 'No') ALL_FIELDS.filter((x) => follows(x) === key).forEach(([k]) => set(k, ''))
+                }} /><span>{o}</span></label>
             ))}
           </fieldset>
         </div>
       )
     }
+
     return (
       <div key={key} className="field">
         <label htmlFor={id}>{label}</label>
@@ -179,22 +157,6 @@ function Questions({ fields, details, set }) {
       </div>
     )
   })
-}
-
-function FileField({ id, label, hint, accept, file, onChange }) {
-  return (
-    <div className="field">
-      <label htmlFor={id}>{label}</label>
-      <label htmlFor={id} className={`dropzone${file ? ' has-file' : ''}`}>
-        {file ? <FileText size={20} aria-hidden /> : <Upload size={20} aria-hidden />}
-        <span>
-          <strong>{file ? file.name : 'Choose a file'}</strong>
-          <span>{file ? `${(file.size / 1024 / 1024).toFixed(1)} MB · choose again to replace` : hint}</span>
-        </span>
-      </label>
-      <input id={id} type="file" accept={accept} className="visually-hidden" onChange={(e) => { onChange(e.target.files[0] || null); e.target.value = '' }} />
-    </div>
-  )
 }
 
 function Section({ n, title, text, children }) {
@@ -215,6 +177,23 @@ function StatusCard({ icon: Icon, title, children }) {
       <Icon size={26} aria-hidden />
       <h2 className="display">{title}</h2>
       {children}
+    </div>
+  )
+}
+
+function FileField({ id, label, hint, accept, file, onChange }) {
+  return (
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id} className={`dropzone${file ? ' has-file' : ''}`}>
+        {file ? <FileText size={20} aria-hidden /> : <Upload size={20} aria-hidden />}
+        <span>
+          <strong>{file ? file.name : 'Choose a file'}</strong>
+          <span>{file ? `${(file.size / 1024 / 1024).toFixed(1)} MB · choose again to replace` : hint}</span>
+        </span>
+      </label>
+      <input id={id} type="file" accept={accept} className="visually-hidden"
+        onChange={(e) => { onChange(e.target.files[0] || null); e.target.value = '' }} />
     </div>
   )
 }
@@ -253,14 +232,20 @@ export default function MentorApply() {
   const submit = async (e) => {
     e.preventDefault()
     setError('')
-    const missing = ALL_FIELDS.find((f) => required(f) && !(form.details[f[0]] || '').length)
+    const asked = ALL_FIELDS.filter((f) => !follows(f) || form.details[follows(f)] === 'Yes')
+    const missing = asked.find((f) => required(f) && !(form.details[f[0]] || '').length)
+    // minLength on the fields does not fire for a draft restored from this device, so the two
+    // lengths the server insists on are checked here as well
+    const about = form.about.trim()
     const problem = !me.avatar ? 'Add a profile photo in step 1.'
       : missing ? `Please answer: ${plain(missing[1])}`
-        : !form.topics.length ? 'Choose at least one key area of expertise.'
-          : !form.languages.length ? 'Add the languages you can mentor in.'
-            : slotCount(form.weeklyHours) < 2 ? 'Pick at least 2 weekly session times.'
-              : !cv || !proof ? 'Add your CV and your qualification document.'
-                : agreed.includes(false) ? 'Please tick the Mentor Code of Conduct and each declaration.' : ''
+        : form.headline.trim().length < 20 ? 'Your headline needs at least 20 characters.'
+          : about.length < 150 ? `Your introduction needs at least 150 characters. ${150 - about.length} to go.`
+            : !form.topics.length ? 'Choose at least one key area of expertise.'
+            : !form.languages.length ? 'Add the languages you can mentor in.'
+              : slotCount(form.weeklyHours) < 2 ? 'Pick at least 2 weekly session times.'
+                : !cv || !proof ? 'Add your CV and your qualification document.'
+                  : agreed.includes(false) ? 'Please tick the Mentor Code of Conduct and each declaration.' : ''
     if (problem) return setError(problem)
     const body = new FormData()
     Object.entries(form).forEach(([k, v]) => body.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v)))
@@ -353,22 +338,19 @@ export default function MentorApply() {
           <div className="grid-2"><Questions fields={PERSONAL} details={form.details} set={setDetail} /></div>
         </Section>
 
-        <Section n={3} title="Educational background" text="Your highest qualification, and where you gained it.">
+        <Section n={3} title="Educational background"
+          text="One qualification per block. The first is the one students see on your profile; add as many others as you have.">
+          <p className="apply-sub">Main qualification <span className="faint">shown on your profile</span></p>
+          <Questions fields={onlyEducation(['qualification', 'field'])} details={form.details} set={setDetail} />
           <div className="grid-2">
-            <div className="field">
-              <label htmlFor="a-country">Country you will mentor for (your main one)</label>
-              <select id="a-country" className="select" value={form.country} onChange={set('country')}>
-                {countries.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-              </select>
-            </div>
             <div className="field">
               <label htmlFor="a-uni">Institution or university</label>
               <input id="a-uni" className="input" value={form.university} onChange={set('university')} required minLength={2} maxLength={120} placeholder="University of Leeds" />
             </div>
-          </div>
-          <div className="field">
-            <label htmlFor="a-course">Degree or qualification</label>
-            <input id="a-course" className="input" value={form.course} onChange={set('course')} required minLength={2} maxLength={120} placeholder="MSc Data Science" />
+            <div className="field">
+              <label htmlFor="a-course">Degree or qualification, as it is written</label>
+              <input id="a-course" className="input" value={form.course} onChange={set('course')} required minLength={2} maxLength={120} placeholder="MSc Data Science" />
+            </div>
           </div>
           <div className="grid-2">
             <fieldset className="segmented apply-two" aria-label="Where you are in your course">
@@ -385,7 +367,22 @@ export default function MentorApply() {
                 onChange={set('graduationYear')} required placeholder={String(form.graduated ? year - 1 : year + 1)} />
             </div>
           </div>
-          <Questions fields={EDUCATION} details={form.details} set={setDetail} />
+
+          <p className="apply-sub">Your other qualifications</p>
+          <Questions fields={onlyEducation(['additionalQualifications'])} details={form.details} set={setDetail} />
+
+          <p className="apply-sub">Studying abroad yourself</p>
+          <Questions fields={onlyEducation(['studiedAbroad', 'abroadStudy'])}
+            details={form.details} set={setDetail} />
+
+          <p className="apply-sub">Where your profile is listed</p>
+          <div className="field">
+            <label htmlFor="a-country">Main country you will mentor for</label>
+            <select id="a-country" className="select" value={form.country} onChange={set('country')}>
+              {countries.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+            </select>
+            <span className="hint">Your profile sits in this country&apos;s community. You can still list more countries further down.</span>
+          </div>
         </Section>
 
         <Section n={4} title="Professional experience">
@@ -395,8 +392,8 @@ export default function MentorApply() {
         <Section n={5} title="Study abroad expertise" text="Select every country and area you have substantial knowledge or experience with.">
           <Questions fields={EXPERTISE} details={form.details} set={setDetail} />
           <div className="field">
-            <div className="field-row"><label htmlFor="a-topics">Your key areas of expertise *</label><span className="hint">{form.topics.length}/8</span></div>
-            <TagInput id="a-topics" value={form.topics} onChange={setValue('topics')} suggestions={KEY_AREAS} max={8} placeholder="Choose your strongest areas, or type another" />
+            <div className="field-row"><label htmlFor="a-topics">Your key areas of expertise *</label><span className="hint">{form.topics.length}/{TOPIC_MAX}</span></div>
+            <TagInput id="a-topics" value={form.topics} onChange={setValue('topics')} suggestions={KEY_AREAS} max={TOPIC_MAX} placeholder="Choose your strongest areas, or type another" />
           </div>
           <p className="muted dash-small">Important: mentors should only provide visa, immigration, legal or financial guidance within the scope of their actual qualifications and expertise.</p>
         </Section>
@@ -414,7 +411,7 @@ export default function MentorApply() {
           <div className="field">
             <div className="field-row">
               <label htmlFor="a-about">About you</label>
-              <span className="hint">{form.about.length < 150 ? `${150 - form.about.length} more characters` : `${2000 - form.about.length} left`}</span>
+              <span className="hint">{form.about.length < 150 ? `${150 - form.about.length} more characters needed` : `${2000 - form.about.length} left`}</span>
             </div>
             <textarea id="a-about" className="textarea" rows={6} value={form.about} onChange={set('about')} required minLength={150} maxLength={2000}
               placeholder="Where you are from, why you went, what surprised you, and what you can help with." />
@@ -455,7 +452,7 @@ export default function MentorApply() {
           </div>
         </Section>
 
-        <Section n={9} title="Weekly hours" text={`Pick when sessions can start, in ${form.timezone.replace(/_/g, ' ')} time. Students see them in their own time zone. They are set when the team approves your application; to change them afterwards, write to support@theyouthmatters.com.`}>
+        <Section n={9} title="Weekly hours" text={`Add the hours you are free in one go, then change any single one in the grid below. Times are in ${form.timezone.replace(/_/g, ' ')}; students see them in their own time zone. They are set when the team approves your application; to change them afterwards, write to support@theyouthmatters.com.`}>
           <WeekGrid value={form.weeklyHours} update={(fn) => setForm((f) => ({ ...f, weeklyHours: fn(f.weeklyHours) }))} />
         </Section>
 

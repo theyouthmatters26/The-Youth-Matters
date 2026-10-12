@@ -26,6 +26,9 @@ from ..extensions import db, limiter
 from ..models import AvailabilitySlot, Booking, MentorMessage, MentorProfile, MentorReview
 from ..models.base import utcnow
 from ..services import availability, content, handoff, mailer
+
+# The longest a student may book in one go, counted in the mentor's own slots
+MAX_SLOTS = 8
 from ..services.notify import notify
 from . import serializers as s
 from .mentor_chat import open_thread
@@ -103,11 +106,27 @@ def create():
     if not mentor.is_verified or mentor.user.status != "active":  # hidden by the team, or the account is suspended
         abort(409, "This mentor is not taking bookings at the moment.")
 
-    minutes = mentor.session_minutes
+    # How long they asked for, as a number of the mentor's slots back to back. One keeps the old
+    # behaviour, so a caller that sends nothing books a single session as before.
+    try:
+        count = int(data.get("slots") or 1)
+    except (TypeError, ValueError):
+        count = 0
+    if not 1 <= count <= MAX_SLOTS:
+        abort(400, f"Choose a session length between one and {MAX_SLOTS} of this mentor's slots.")
+    run = availability.run_of_slots(mentor, slot, count)
+    if not run:
+        abort(409, "That length is not free in one go. Pick a shorter session or another start time.")
+    free = {sl.id for sl in availability.free_slots(mentor)}
+    if any(sl.id not in free for sl in run):
+        abort(409, TAKEN)
+
+    minutes = mentor.session_minutes * count
     if not take_minutes(current_user.id, minutes):
         raise NeedsHours(f"This session needs {hours_text(minutes)} of counselling time and you do not have enough. "
                          "Buy hours to book.")
     b = Booking(slot=slot, mentor=mentor, student=current_user, status="confirmed", minutes_deducted=minutes,
+                ends_at=run[-1].ends_at,
                 topic=str(data.get("topic") or "").strip()[:1000] or None,
                 student_timezone=data.get("timezone") if data.get("timezone") in available_timezones() else None)
     db.session.add(b)

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import Photo, { shipped } from '../../components/ui/Photo'
+import Photo from '../../components/ui/Photo'
 import { useAuth } from '../../lib/auth'
 import { useMeta } from '../../lib/meta'
 
@@ -8,19 +8,6 @@ const VALUES = [
   ['Safe by design', 'Every member is 18 or older, checked against a photo ID. Abuse is filtered automatically and reviewed by people.'],
   ['Free where it counts', 'Questions, answers, chatrooms and the AI Counsellor cost nothing. Mentors are optional.'],
 ]
-
-// Her photograph is in. Replace `message` with Sumayya's own words when she sends them.
-const FOUNDER = {
-  name: 'Sumayya Samreen',
-  role: 'Founder, The Youth Matters',
-  photo: '/images/founder.jpg',
-  message: [
-    'I started The Youth Matters because I remember how lonely the decision to study abroad can feel. '
-    + 'The forms, the deposits, the deadlines, and nobody to ask who had actually been through it.',
-    'This is the place I wish I had: students who have already made the move, mentors who answer '
-    + 'honestly, and a community that does not sell you anything you do not need.',
-  ],
-}
 
 export default function About() {
   const { account } = useAuth()
@@ -38,9 +25,9 @@ export default function About() {
         <div className="about-copy">
           <h2 className="display about-lede">Communication is the solution for the youth.</h2>
           <div className="prose stack">
-            <p>At TYM, we connect young people through seamless, intuitive and engaging chat. Founded in 2026, TYM was created by a team of passionate alumni who wanted to guide the youth through the critical decisions that come with studying abroad. We saw the chance to build a chat platform that puts its members first, and set out to make something special.</p>
-            <p>The Youth Matters grew out of our founder's own experience of how hard those decisions were during her study abroad journey. She holds a master's in Artificial Intelligence from a reputed university in the UK, and brings an international outlook from a childhood spent in the multicultural atmosphere of Dubai.</p>
-            <p>Thank you for being part of our journey. The TYM team</p>
+            <p>At TYM (The Youth Matters), we connect the youth through an engaging and easy-to-use chat platform. Founded in 2026 by a team of alumni, TYM was built to help students navigate the major decisions that come with studying abroad.</p>
+            <p>Our platform grew directly out of our founder&apos;s own experience with the challenges of moving overseas for school. After growing up in Dubai&apos;s multicultural environment and earning master&apos;s degrees from top UK universities, we wanted to build a community-first space to support the next generation of international students.</p>
+            <p>Thank you for being part of our journey.<br />&ndash; The TYM Team</p>
           </div>
           {account
             ? <Link to="/community" className="btn btn-primary">Open the community</Link>
@@ -48,22 +35,25 @@ export default function About() {
         </div>
       </section>
 
-      {/* A word from the founder. Replace FOUNDER.message with Sumayya's own words when
-          she sends them. */}
-      <section className={`founder${shipped(FOUNDER.photo) ? '' : ' is-solo'}`} aria-labelledby="founder-title">
-        {shipped(FOUNDER.photo) && (
-          <figure className="founder-photo">
-            <Photo src={FOUNDER.photo} alt={`${FOUNDER.name}, founder of The Youth Matters`}
-              sizes="(max-width: 860px) 40vw, 260px" />
-          </figure>
-        )}
-        <div className="founder-copy">
-          <p className="eyebrow" id="founder-title">A word from our founder</p>
-          <blockquote>
-            {FOUNDER.message.map((line) => <p key={line}>{line}</p>)}
-          </blockquote>
-          <p className="founder-name"><strong>{FOUNDER.name}</strong><span>{FOUNDER.role}</span></p>
+      <section className="story" aria-labelledby="story-title">
+        <figure className="story-face">
+          <Photo src="/images/founder/founder1.jpg" alt="Sumayya Samreen" sizes="(max-width: 900px) 40vw, 260px" />
+          <figcaption>Sumayya Samreen</figcaption>
+        </figure>
+        <div className="story-copy">
+          <p className="eyebrow">Our story</p>
+          <h2 id="story-title" className="display">The birth of The Youth Matters</h2>
+          <p>It all started from personal experience. We still remember how isolating it felt to decide
+            to study abroad: navigating the forms, deposits, deadlines, selections and approvals without
+            having anyone to turn to who had actually been through it.</p>
+          <p>This platform is the exact space we wish we had back then: real students who have made the
+            move, mentors who give honest answers, and a community focused entirely on what you actually
+            need.</p>
         </div>
+        <figure className="story-face">
+          <Photo src="/images/founder/founder2.jpg" alt="Sameera Maheen" sizes="(max-width: 900px) 40vw, 260px" />
+          <figcaption>Sameera Maheen</figcaption>
+        </figure>
       </section>
 
       <section className="value-grid">

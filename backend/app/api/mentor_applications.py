@@ -22,9 +22,10 @@ from flask_jwt_extended import current_user, jwt_required
 from markupsafe import escape
 
 from ..extensions import db, limiter
-from ..models import Community, Country, MentorApplication, MentorProfile, ModerationLog, Subject
+from ..models import (AccountClosure, Community, Country, MentorApplication, MentorProfile, ModerationLog,
+                      Subject)
 from ..models.base import utcnow
-from ..services import content, images, mailer, staff, storage
+from ..services import accounts, content, handoff, images, mailer, staff, storage
 from ..services.availability import DAYS
 from ..services.notify import notify
 
@@ -51,7 +52,8 @@ def _summary(a):
 # The registration form's own questions (frontend/src/data/mentorForm.js). These must be answered:
 REQUIRED = ("firstName", "lastName", "mobileCode", "mobile", "city", "currentCountry", "qualification", "field",
             "studiedAbroad", "totalExperience", "employment", "organisation", "jobTitle", "jobDescription",
-            "mentorCountries", "studyAreas", "expertise", "whyMentor", "studentsLearn", "approach", "formats",
+            "studyAbroadRole", "howYouKnow", "mentorCountries", "studyAreas", "expertise", "whyMentor",
+            "studentsLearn", "approach", "formats",
             "availability", "confirmName")
 KEY = re.compile(r"^[A-Za-z]{2,40}$")
 
@@ -70,7 +72,8 @@ def _details(raw):
         if not KEY.match(str(key)):
             continue
         if isinstance(value, list):
-            value = [content.clean(str(v), 81)[0][:80] for v in value[:20]]
+            # 160, not 80: one answer here can be a qualification, an institution and a country
+            value = [content.clean(str(v), 161)[0][:160] for v in value[:20]]
             value = [v for v in value if v]
         else:
             value = content.clean(str(value), 2001)[0][:2000]
@@ -189,7 +192,7 @@ def apply():
         university=_text(f, "university", "University", 2, 120), course=_text(f, "course", "Course", 2, 120),
         headline=_text(f, "headline", "Headline", 20, 160), about=_text(f, "about", "About you", 150, 2000),
         experience=_text(f, "experience", "Experience", 2, 255, required=False),
-        topics=_list(f, "topics", "Topics", 8, 60), languages=_list(f, "languages", "Languages", 6, 30),
+        topics=_list(f, "topics", "Topics", 20, 60), languages=_list(f, "languages", "Languages", 6, 30),
         linkedin=linkedin, session_minutes=minutes, timezone=tz,
         weekly_hours=weekly_hours(f.get("weeklyHours")), details=details,
     )
@@ -212,6 +215,34 @@ def apply():
     mailer.send_quietly(current_app.config["CONTACT_EMAIL"], f"[Mentor application #{a.id}] {user.display_name}", html,
                         reply_to=user.email)
     return jsonify(_summary(a)), 201
+
+
+def _turned_down(user, note):
+    """Tell them it was not approved and close the account, which is what the team asked for.
+
+    The account only exists to carry the application, so it goes with it. Everything they need to
+    come back is in the email, because there is nothing left to log in to. A row in
+    account_closures keeps the record of who was turned down and why."""
+    site = handoff.site_url()
+    mailer.send_quietly(user.email, "Your TYM mentor application",
+                        f"<p>Hi {escape(user.display_name.split()[0])},</p>"
+                        f"<p>Thank you for applying to mentor with The Youth Matters. We are not able to "
+                        f"approve your application this time.</p>"
+                        f"<blockquote style='margin:16px 0;padding:0 0 0 14px;border-left:3px solid #e5e5e5;"
+                        f"color:#444'>{escape(note or 'Our team could not approve it on this occasion.')}"
+                        f"</blockquote>"
+                        f"<p>Your mentor account has been closed, so there is nothing left to sign in to. "
+                        f"You are welcome to:</p>"
+                        f"<ul>"
+                        f"<li><a href='{site}/mentors/signup'>Apply again as a mentor</a> once you can meet "
+                        f"the points above</li>"
+                        f"<li><a href='{site}/register'>Join as a student</a> instead, which is free and "
+                        f"opens the community, the chatrooms and TYM AI</li>"
+                        f"</ul>"
+                        f"<p>Thank you for your interest in TYM.</p>")
+    db.session.add(AccountClosure(display_name=user.display_name, username=user.username, email=user.email,
+                                  reason=f"Mentor application rejected: {note or 'no note'}"[:1000],
+                                  kept=False, joined_at=user.created_at))
 
 
 def _admin():
@@ -278,10 +309,20 @@ def decide(application_id):
             a.user.status = "active"  # approving the application is what opens a mentor's account
         notify(a.user_id, current_user, "system",
                message="approved your mentor application. Students can book you now.")
-    else:
-        notify(a.user_id, current_user, "system",
-               message="reviewed your mentor application. Open TYM Mentors to see the note.")
     db.session.add(ModerationLog(actor_id=current_user.id, action=f"mentor_{a.status}", target_type="user",
                                  target_id=a.user_id, detail={"name": a.user.display_name}))
+    summary = _summary(a)
+    files = []
+    if a.status == "rejected":
+        user = a.user
+        # Only an account that exists to carry this application is closed. A student who also
+        # mentors, or somebody on the team, keeps everything: they had a life here before this form.
+        if user.role == "mentor" and user.status == "pending" and not accounts.has_records(user):
+            _turned_down(user, a.note)
+            files = accounts.erase(user, blog_author_id=None)
+        else:
+            notify(a.user_id, current_user, "system",
+                   message="reviewed your mentor application. Open TYM Mentors to see the note.")
     db.session.commit()
-    return jsonify(_summary(a))
+    accounts.remove_files(files)
+    return jsonify(summary)

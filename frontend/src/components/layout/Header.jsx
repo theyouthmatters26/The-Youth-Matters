@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Bookmark, CalendarCheck, ChevronDown, EllipsisVertical, KeyRound, LayoutDashboard, LogOut, Search, Settings, User, UserPlus, X } from 'lucide-react'
+import { Bell, Bookmark, CalendarCheck, ChevronDown, EllipsisVertical, GraduationCap, KeyRound, LayoutDashboard, LogOut, Search, Settings, User, UserPlus, X } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import { api } from '../../lib/api'
 import { resumePath, useAuth } from '../../lib/auth'
@@ -19,8 +19,8 @@ export const NAV = [
   { to: '/mentors', label: 'TYM Mentors' },
   { to: '/loan-consultation', label: 'Study Abroad Loan' },
   { to: '/faq', label: 'FAQ' },
-  { to: '/case-studies', label: 'Case Studies' },
   { to: '/blogs', label: 'Blogs' },
+  { to: '/case-studies', label: 'Case Studies' },
 ]
 
 function SearchDialog({ onClose }) {
@@ -142,7 +142,8 @@ function accountLinks(user) {
     [`${profile}?tab=Saved`, Bookmark, 'Saved questions'],
     [`${profile}?tab=Sessions`, CalendarCheck, 'Your sessions'],
     ['/settings', Settings, 'Profile settings'],
-  ]
+    user.role === 'mentor' && ['/my/mentor', GraduationCap, 'Your mentor profile'],
+  ].filter(Boolean)
 }
 
 // Avatar menu on wide screens, including the way out
