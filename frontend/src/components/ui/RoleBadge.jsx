@@ -1,7 +1,7 @@
 import { BadgeCheck, Shield } from 'lucide-react'
 import './ui.css'
 
-// OP / Verified Mentor / Admin / TYMAi highlights from Module 3.
+// OP / Verified Mentor / Admin / TYM AI highlights from Module 3.
 export default function RoleBadge({ role, isOp }) {
   return (
     <>

@@ -27,7 +27,7 @@ class Post(Model):
 
     is_pinned = db.Column(db.Boolean, nullable=False, default=False)
     is_deleted = db.Column(db.Boolean, nullable=False, default=False)
-    ai_answered_at = db.Column(db.DateTime(timezone=True))  # TYMAi 6-hour fallback marker
+    ai_answered_at = db.Column(db.DateTime(timezone=True))  # TYM AI 6-hour fallback marker
     # The answer the asker marked as the one that helped; shown first with a badge
     helpful_comment_id = db.Column(db.Integer, db.ForeignKey("comments.id", ondelete="SET NULL", use_alter=True, name="fk_posts_helpful_comment"))
     updated_at = db.Column(db.DateTime(timezone=True), default=utcnow)  # set only when the author edits

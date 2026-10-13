@@ -7,7 +7,7 @@ import { useApi } from '../../lib/api'
 import './home.css'
 
 // Right rail for country and post pages: the live chatroom, mentors who studied there,
-// the official rules, and TYMAi. Everything is about the country being read.
+// the official rules, and TYM AI. Everything is about the country being read.
 export default function SideRail({ country }) {
   const place = countryBySlug[country]
   const { data } = useApi(country ? `/mentors?country=${country}` : '/mentors')
@@ -55,7 +55,7 @@ export default function SideRail({ country }) {
 
       <div className="card card-pad ai-card">
         <h3 className="display">Stuck on your SOP at 2am?</h3>
-        <p>TYMAi reviews drafts, explains visa steps and helps you shortlist. Free and private.</p>
+        <p>TYM AI reviews drafts, explains visa steps and helps you shortlist. Free and private.</p>
         <Link to="/ai" className="btn btn-light btn-sm">Open the AI Lounge</Link>
       </div>
     </aside>

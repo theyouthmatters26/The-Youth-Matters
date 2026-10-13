@@ -14,7 +14,7 @@ const LEVELS = { undergraduate: 'Undergraduate', postgraduate: 'Postgraduate', p
 function StatusLine({ c }) {
   if (c.status === 'waiting') return <Pill tone="solid">Asked for a person</Pill>
   if (c.status === 'human') return <Pill tone={c.needsReply ? 'solid' : 'line'}>{c.needsReply ? 'Waiting for your reply' : `With ${c.assignedTo || 'the team'}`}</Pill>
-  return <Pill tone="muted">With TYMAi</Pill>
+  return <Pill tone="muted">With TYM AI</Pill>
 }
 
 // One conversation: the whole thread, who the student is, and a box to answer as yourself
@@ -49,7 +49,7 @@ function Thread({ id, onBack, onChanged }) {
     adminApi(`/admin/support/conversations/${id}`)
       .then((data) => { if (live) { setC(data); add(data.messages) } })
       .catch((err) => live && setError(err.message))
-    // New messages from the student (or TYMAi, or a teammate) arrive by polling
+    // New messages from the student (or TYM AI, or a teammate) arrive by polling
     const timer = setInterval(async () => {
       if (document.hidden || !lastId.current) return
       try {
@@ -130,7 +130,7 @@ function Thread({ id, onBack, onChanged }) {
         <div className="adm-thread-actions">
           <StatusLine c={c} />
           {c.status === 'human'
-            ? <button className="btn btn-ghost btn-sm" onClick={() => setStatus('ai')}><CornerUpLeft size={14} /> Hand back to TYMAi</button>
+            ? <button className="btn btn-ghost btn-sm" onClick={() => setStatus('ai')}><CornerUpLeft size={14} /> Hand back to TYM AI</button>
             : <button className="btn btn-ghost btn-sm" onClick={() => setStatus('human')}><UserRound size={14} /> Step in</button>}
           <button className="btn btn-ghost btn-sm adm-thread-delete" onClick={remove}><Trash2 size={14} /> Delete</button>
         </div>
@@ -143,7 +143,7 @@ function Thread({ id, onBack, onChanged }) {
           <li key={m.id} className={`adm-msg is-${m.role}`}>
             <p className="adm-msg-who">
               {m.role === 'user' ? c.student.displayName.split(' ')[0]
-                : m.role === 'assistant' ? <><Bot size={13} aria-hidden /> TYMAi</>
+                : m.role === 'assistant' ? <><Bot size={13} aria-hidden /> TYM AI</>
                   : m.author?.name === admin.name ? 'You' : m.author?.name}
               <time dateTime={m.createdAt}>{ago(m.createdAt)}</time>
             </p>
@@ -166,8 +166,8 @@ function Thread({ id, onBack, onChanged }) {
         <button className="btn btn-primary" disabled={busy || !draft.trim()}><Send size={15} /> Send</button>
         <p className="adm-reply-note">
           {c.status === 'human'
-            ? 'TYMAi is paused in this conversation. Hand it back when you are done.'
-            : 'Sending a reply puts TYMAi on hold here, and the student gets an email.'}
+            ? 'TYM AI is paused in this conversation. Hand it back when you are done.'
+            : 'Sending a reply puts TYM AI on hold here, and the student gets an email.'}
         </p>
       </form>
     </>
@@ -201,7 +201,7 @@ export default function Support({ onChanged }) {
   return (
     <>
       <PageHead eyebrow="Support" title="Step into a conversation"
-        text="Students talk to TYMAi here. When one asks for a person, or you want to add something, reply as yourself and TYMAi steps back." />
+        text="Students talk to TYM AI here. When one asks for a person, or you want to add something, reply as yourself and TYM AI steps back." />
 
       <div className={`adm-inbox${id ? ' has-open' : ''}`}>
         <div className="adm-inbox-list">
@@ -226,7 +226,7 @@ export default function Support({ onChanged }) {
                   <span className="adm-convo-text">
                     <span className="adm-convo-top"><strong>{c.student.displayName}</strong><time dateTime={c.lastAt}>{ago(c.lastAt)}</time></span>
                     <span className="adm-convo-title">{c.title}</span>
-                    <span className="adm-convo-last">{c.lastRole === 'user' ? '' : c.lastRole === 'human' ? 'Team: ' : 'TYMAi: '}{c.preview}</span>
+                    <span className="adm-convo-last">{c.lastRole === 'user' ? '' : c.lastRole === 'human' ? 'Team: ' : 'TYM AI: '}{c.preview}</span>
                   </span>
                   {c.needsReply && <span className="adm-dot" aria-label="Waiting for a person" />}
                 </button>

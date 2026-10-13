@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, CircleHelp, Flag, Globe, GraduationCap, KeyRound, LayoutDashboard, LogOut, Mail, Menu, MessagesSquare, Newspaper, Users, Wallet, X } from 'lucide-react'
+import { ArrowUpRight, CircleHelp, Flag, Globe, GraduationCap, KeyRound, LayoutDashboard, LogOut, Mail, Menu, MessagesSquare, Newspaper, Quote, Users, Wallet, X } from 'lucide-react'
 import { FormError, PasswordField, PasswordMeter, Spinner, SubmitButton } from '../../components/auth/fields'
 import Avatar from '../../components/ui/Avatar'
 import { AdminProvider, adminApi, useAdmin, useAdminApi } from '../../lib/admin'
 import AdminLogin from './AdminLogin'
 import Blog from './Blog'
+import CaseStudies from './CaseStudies'
 import Community from './Community'
 import Contact from './Contact'
 import Faqs from './Faqs'
@@ -30,6 +31,7 @@ const NAV = [
   { area: 'moderation', to: '/admin/moderation', label: 'Moderation', icon: Flag, page: Moderation },
   { area: 'community', to: '/admin/community', label: 'Community', icon: Globe, page: Community },
   { area: 'blog', to: '/admin/blog', label: 'Blog', icon: Newspaper, page: Blog },
+  { area: 'blog', to: '/admin/case-studies', label: 'Case Studies', icon: Quote, page: CaseStudies },
   { area: 'faq', to: '/admin/faq', label: 'FAQ', icon: CircleHelp, page: Faqs },
   { area: 'mentors', to: '/admin/mentors', label: 'Mentors', icon: GraduationCap, page: Mentors },
   { area: 'bookings', to: '/admin/payments', label: 'Payments', icon: Wallet, page: Payments },

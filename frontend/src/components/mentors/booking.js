@@ -1,3 +1,5 @@
+import { api } from '../../lib/api'
+
 // Small helpers for the booking flow: dates in the viewer's own time zone, Cashfree Checkout,
 // and a calendar file so the session lands in Google Calendar, Apple Calendar or Outlook.
 
@@ -39,6 +41,20 @@ export function loadCashfree(mode) {
       document.head.appendChild(s)
     })
   return ready.then(() => window.Cashfree({ mode }))
+}
+
+// Buy a package of counselling hours. Cashfree's window closes either way, so afterwards the
+// server asks Cashfree what actually happened: a closed tab or a failed card cannot add hours, and
+// a slow bank still gets caught by the webhook. Resolves with the new balance.
+export async function buyHours(packageId) {
+  const { paymentId, checkout: c } = await api(`/packages/${packageId}/order`, { method: 'POST' })
+  const cashfree = await loadCashfree(c.mode)
+  const result = await cashfree.checkout({ paymentSessionId: c.paymentSessionId, redirectTarget: '_modal' })
+  if (result?.error && !result?.paymentDetails) {
+    throw new Error(`${result.error.message || 'The payment did not go through.'} No money was taken `
+      + 'unless your bank says otherwise. Try again or use another method.')
+  }
+  return api(`/packages/payments/${paymentId}/verify`, { method: 'POST', body: {} })
 }
 
 const icsDate = (iso) => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')

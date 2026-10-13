@@ -93,7 +93,7 @@ export default function MentorSettings() {
         <p className="eyebrow">TYM Mentors</p>
         <h1>Your mentor profile</h1>
         <p>Everything here is what students see before they book you. Changes go live as soon as you save.</p>
-        <Link to={`/mentors/${data.id}`} className="btn btn-ghost btn-sm mentor-join">
+        <Link to={`/mentors/${data.id}`} className="btn btn-ghost btn-sm head-cta">
           See your public page <ArrowUpRight size={15} aria-hidden />
         </Link>
       </header>

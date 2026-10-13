@@ -76,8 +76,8 @@ export default function Footer() {
           <p className="footer-title">Community</p>
           <Link to="/community">Community ChatRoom</Link>
           <Link to="/mentors">TYM Mentors</Link>
-          <Link to="/blogs">Blogs</Link>
           <Link to="/case-studies">Case Studies</Link>
+          <Link to="/blogs">Blogs</Link>
         </div>
       </div>
 

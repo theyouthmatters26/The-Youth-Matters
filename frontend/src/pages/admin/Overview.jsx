@@ -105,7 +105,7 @@ export default function Overview() {
       <p className="adm-line">
         Across the community: <strong>{plural(o.community.answers, 'answer')}</strong>,{' '}
         <strong>{plural(o.community.chatToday, 'chat message')}</strong> in the last day,{' '}
-        <strong>{plural(o.community.aiConversations, 'conversation')}</strong> with TYMAi and{' '}
+        <strong>{plural(o.community.aiConversations, 'conversation')}</strong> with TYM AI and{' '}
         <strong>{plural(o.money.mentors, 'mentor')}</strong> in the directory.
       </p>
 

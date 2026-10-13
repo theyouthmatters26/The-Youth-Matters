@@ -1,8 +1,8 @@
 """A person from the team stepping into an Ask TYM AI conversation.
 
-    ai       TYMAi answers.
-    waiting  The student asked for a person. TYMAi keeps answering so they are not left stuck.
-    human    A team member is in the conversation. TYMAi stays quiet until it is handed back.
+    ai       TYM AI answers.
+    waiting  The student asked for a person. TYM AI keeps answering so they are not left stuck.
+    human    A team member is in the conversation. TYM AI stays quiet until it is handed back.
 
 Both sides hear about it by email (Resend): the team when a student is waiting, the student when a
 person replies. Emails are held to one per conversation every ALERT_EVERY so a chat is not a flood.

@@ -1,8 +1,8 @@
-"""TYMAi, the study-abroad assistant behind Ask TYM AI and @TYMAi in chat rooms.
+"""TYM AI, the study-abroad assistant behind Ask TYM AI and @TYMAi in chat rooms.
 
 Every answer starts from what students in the community already said: the closest answered
 questions are found with Postgres full-text search. With ANTHROPIC_API_KEY set, Claude writes the
-reply using those answers and the student's profile. Without a key, TYMAi points to the answers
+reply using those answers and the student's profile. Without a key, TYM AI points to the answers
 themselves, so the feature still helps on a fresh install.
 """
 import json
@@ -22,12 +22,12 @@ from ..models.base import utcnow
 log = logging.getLogger(__name__)
 
 DOCUMENTS_LIMIT = 60_000  # characters of policy pages in the prompt; it is cached, and they are long
-MENTORS_LIMIT = 120  # mentors listed for TYMAi to suggest from; past that it sends people to the Mentors page
+MENTORS_LIMIT = 120  # mentors listed for TYM AI to suggest from; past that it sends people to the Mentors page
 TITLES = {"/privacy": "Privacy Policy", "/cookies": "Cookie Policy", "/terms": "Terms and Conditions",
           "/help-safety": "Help and Safety", "/guidelines": "Community Guidelines",
           "/payment-terms": "Payment, Refund and Cancellation Terms", "/queries": "Queries and suggestions"}
 
-# What TYMAi knows about the website itself. It goes into the system prompt, and without an API key the
+# What TYM AI knows about the website itself. It goes into the system prompt, and without an API key the
 # built-in answers below are drawn from the same facts.
 SITE = """- The Youth Matters (TYM) is a study abroad community for people aged 18 to 32, at theyouthmatters.com. It is a \
 website that works on phones and computers. There is no app to download.
@@ -88,7 +88,7 @@ sign-up.
 - TYM is not an education agent: it does not submit applications or guarantee admission, scholarships, visas or \
 jobs."""
 
-RULES = """You are TYMAi, the assistant inside The Youth Matters, a community where students, \
+RULES = """You are TYM AI, the assistant inside The Youth Matters, a community where students, \
 mostly from India, help each other study abroad in the UK, US, Canada, Australia, Ireland and Germany.
 
 You help with shortlisting universities, applications and SOPs, student visas and proof of funds, \
@@ -319,7 +319,7 @@ SITE_ANSWERS = [(re.compile(pattern, re.I), text) for pattern, text in SITE_ANSW
 
 
 def _guides():
-    """The blog guides that are published, as a list TYMAi can point a student at."""
+    """The blog guides that are published, as a list TYM AI can point a student at."""
     rows = db.session.scalars(db.select(BlogPost).where(BlogPost.published_at.isnot(None))
                               .order_by(BlogPost.published_at.desc()).limit(30)).all()
     return "\n".join(f"- {b.title} (theyouthmatters.com/blogs/{b.slug}): {' '.join(b.excerpt.split())}" for b in rows)
@@ -327,7 +327,7 @@ def _guides():
 
 def _mentor_directory():
     """Every mentor taking bookings right now, one line each: who they are, where they studied and
-    what they help with, so TYMAi can name the one who fits and never invents anyone. The team
+    what they help with, so TYM AI can name the one who fits and never invents anyone. The team
     approving a mentor is all it takes for them to be suggested here."""
     rating = (db.select(MentorReview.mentor_id, db.func.avg(MentorReview.rating).label("stars"),
                         db.func.count().label("reviews"))
@@ -393,14 +393,14 @@ def _destinations():
 
 def _faq_page():
     """The FAQ page as the team keeps it, one line per question. It is the site's own word on how
-    things work, so TYMAi answers from the same text members read."""
+    things work, so TYM AI answers from the same text members read."""
     rows = db.session.scalars(db.select(Faq).where(Faq.status == "published", Faq.answer.isnot(None))
                               .order_by(Faq.sort_order, Faq.id).limit(60)).all()
     return "\n".join(f"- {f.question} {' '.join(f.answer.split())}" for f in rows)
 
 
 def site_facts():
-    """Everything TYMAi knows about the website: the facts written above, and what is live in the
+    """Everything TYM AI knows about the website: the facts written above, and what is live in the
     database now (destinations, prices, what mentors are paid, the FAQ page). If the database cannot
     be read, the live part is dropped and the rest stands: a chat must still answer."""
     parts = [SITE]
@@ -425,13 +425,13 @@ def site_facts():
         if guides := _guides():
             parts.append("\nThe guides published on the TYM blog. Point a student at the one that fits:\n" + guides)
     except Exception:  # noqa: BLE001  the written facts are enough to answer with
-        log.exception("TYMAi: could not read the live site facts")
+        log.exception("TYM AI: could not read the live site facts")
     try:
         parts.append("\nThe website's own policy pages, which are what TYM has committed to. Answer policy, "
                      "payment, refund, privacy and safety questions from these, in your own plain words, and say "
                      "which page it comes from:\n" + _documents())
     except Exception:  # noqa: BLE001  the policy pages are a file on disk; the rest still answers
-        log.exception("TYMAi: could not read the policy pages")
+        log.exception("TYM AI: could not read the policy pages")
     return "\n".join(parts)
 
 
@@ -462,7 +462,7 @@ def small_talk(user, text):
     if BYE.match(text):
         return f"Take care, {name}. All the best with your plans, and come back any time."
     if WHO_ARE_YOU.search(text) and len(text) <= 120:
-        return ("I am TYMAi, the assistant inside The Youth Matters. I can help with shortlisting universities, SOPs "
+        return ("I am TYM AI, the assistant inside The Youth Matters. I can help with shortlisting universities, SOPs "
                 "and applications, student visas and proof of funds, scholarships, housing and part-time work, and I "
                 "can explain how the website works. I am an AI, so for anything official please confirm on the "
                 "government or university page. If you would rather have a human, press \"Talk to a person\" below.")
@@ -535,15 +535,15 @@ def answer(user, question, history=(), brief=False):
             fallbacks="default",
         )
     except anthropic.AuthenticationError:
-        log.error("TYMAi: ANTHROPIC_API_KEY was rejected")
+        log.error("TYM AI: ANTHROPIC_API_KEY was rejected")
         return _offline(found, UNAVAILABLE), sources
     except anthropic.RateLimitError:
-        return "TYMAi is busy right now. Try again in a minute.", sources
+        return "TYM AI is busy right now. Try again in a minute.", sources
     except (anthropic.APIStatusError, anthropic.APIConnectionError) as e:
-        log.warning("TYMAi: Claude API call failed: %s", e)
+        log.warning("TYM AI: Claude API call failed: %s", e)
         return _offline(found, UNAVAILABLE), sources
     except Exception:  # noqa: BLE001  a chat must never fail because the AI service did
-        log.exception("TYMAi: unexpected error calling Claude")
+        log.exception("TYM AI: unexpected error calling Claude")
         return _offline(found, UNAVAILABLE), sources
 
     if res.stop_reason == "refusal":

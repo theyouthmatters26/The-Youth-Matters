@@ -26,7 +26,7 @@ export function Sources({ items }) {
   )
 }
 
-export function Typing({ name = 'TYMAi' }) {
+export function Typing({ name = 'TYM AI' }) {
   return <p className="chat-typing" role="status"><span aria-hidden><i /><i /><i /></span> {name} is typing</p>
 }
 

@@ -3,7 +3,7 @@
     GET  /admin/support/conversations?filter=open|all&q=&page=     open = asked for a person, or with one
     GET  /admin/support/conversations/<id>                 the thread and who the student is
     GET  /admin/support/conversations/<id>/messages?after= new messages since `after` (the page polls)
-    POST /admin/support/conversations/<id>/messages        {body}: reply as yourself; TYMAi goes quiet
+    POST /admin/support/conversations/<id>/messages        {body}: reply as yourself; TYM AI goes quiet
     POST /admin/support/conversations/<id>/status          {status: human | ai}: step in, or hand back
     DELETE /admin/support/conversations/<id>               remove the conversation and its messages
 """
@@ -115,7 +115,7 @@ def delete_conversation(conversation_id):
 @bp.post("/admin/support/conversations/<int:conversation_id>/status")
 @jwt_required()
 def set_status(conversation_id):
-    """human: step in without writing yet (TYMAi stops answering). ai: hand the student back to TYMAi."""
+    """human: step in without writing yet (TYM AI stops answering). ai: hand the student back to TYM AI."""
     me = team_member("support")
     c = _conversation(conversation_id)
     status = (request.get_json(silent=True) or {}).get("status")

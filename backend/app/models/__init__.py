@@ -1,7 +1,7 @@
 """All models, imported here so Alembic sees the full schema."""
 from .chat import AiConversation, AiMessage, ChatMessage, ChatRoom, MentorMessage, MentorThread
 from .comment import Comment
-from .content import BlogPost, ContactMessage, Faq
+from .content import BlogPost, CaseStudy, ContactMessage, Faq
 from .community import Category, Community, Country, Follow, Subject
 from .mentor import (AvailabilitySlot, Booking, CounselingPackage, MentorApplication, MentorProfile, MentorReview,
                      Payment)
@@ -12,7 +12,7 @@ from .user import AccountClosure, Block, IdentityVerification, User
 from .vote import Vote
 
 __all__ = [
-    "AccountClosure", "AiConversation", "AiMessage", "AvailabilitySlot", "Block", "BlogPost", "Booking", "Category", "CounselingPackage",
+    "AccountClosure", "AiConversation", "AiMessage", "AvailabilitySlot", "Block", "BlogPost", "Booking", "CaseStudy", "Category", "CounselingPackage",
     "ChatMessage", "ChatRoom", "Comment", "Community", "ContactMessage", "Country", "Faq", "Follow",
     "IdentityVerification",
     "MentorApplication", "MentorMessage", "MentorProfile", "MentorReview", "MentorThread", "ModerationLog",

@@ -24,7 +24,7 @@ class ChatMessage(Model):
     room_id = db.Column(db.Integer, db.ForeignKey("chat_rooms.id", ondelete="CASCADE"), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     body = db.Column(db.String(2000), nullable=False)
-    sources = db.Column(db.JSON)  # TYMAi replies: [{"postId", "title"}] community questions it drew on
+    sources = db.Column(db.JSON)  # TYM AI replies: [{"postId", "title"}] community questions it drew on
     is_deleted = db.Column(db.Boolean, nullable=False, default=False)
 
     author = db.relationship("User")
@@ -32,8 +32,8 @@ class ChatMessage(Model):
 
 class AiConversation(Model):
     """Private 1-on-1 thread in Ask TYM AI. A person from the team can step in (services/handoff.py):
-    ai = TYMAi answers; waiting = the student asked for a person, TYMAi keeps answering meanwhile;
-    human = a team member is handling it and TYMAi is paused."""
+    ai = TYM AI answers; waiting = the student asked for a person, TYM AI keeps answering meanwhile;
+    human = a team member is handling it and TYM AI is paused."""
     __tablename__ = "ai_conversations"
     __table_args__ = (db.Index("ix_ai_conversations_inbox", "status", "last_message_at"),)
 

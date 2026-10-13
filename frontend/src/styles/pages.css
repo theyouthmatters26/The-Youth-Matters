@@ -283,12 +283,19 @@ form.card-pad { padding: var(--s-7); gap: var(--s-5); }
 .apply-steps .mono { color: var(--faint); padding-top: 2px; }
 .apply-steps p { color: var(--muted); font-size: var(--step--1); }
 /* Mentor application: numbered sections, live card preview on the side */
+/* The short row of reassurances under a page heading: mentors directory, booking form */
+.trust-row { list-style: none; display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-6); margin: calc(var(--s-5) * -1) 0 var(--s-6); padding: 0; font-size: var(--step--1); color: var(--muted); }
+.trust-row li { display: inline-flex; align-items: center; gap: var(--s-2); }
+
 .apply-layout { grid-template-columns: minmax(0, 1fr) 340px; }
 .apply-sections { gap: var(--s-4); }
 .apply-section > header { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--s-2); margin-bottom: var(--s-5); }
 .apply-section h2 { font-family: var(--font-display); font-size: var(--step-2); font-weight: 400; line-height: 1.15; }
 .apply-section header p { margin-top: var(--s-1); font-size: var(--step--1); max-width: 60ch; }
 .apply-num { padding-top: 6px; color: var(--faint); }
+/* ...and on the booking form they count themselves, so a new section cannot break the order */
+.apply-sections { counter-reset: apply-section; }
+.apply-num.auto::before { counter-increment: apply-section; content: counter(apply-section, decimal-leading-zero); }
 .apply-photo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-5); }
 .apply-section .segmented { align-self: end; }
 .apply-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -626,6 +633,8 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
   box-shadow: 0 0 0 1px var(--line), 0 0 0 8px var(--tint);
 }
 .story-copy { display: grid; gap: var(--s-3); text-align: center; }
+/* "Our Story" reads as part of the title, not a label above it */
+.story-eyebrow { font-size: var(--step-1); font-weight: 500; letter-spacing: 0; color: var(--muted); }
 .story-copy h2 { font-size: var(--step-3); }
 .story-copy p { color: var(--muted); text-wrap: pretty; }
 /* Room before the values below, so the rule under the names is not sitting on them.
@@ -639,3 +648,29 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
   .story-copy { grid-column: 1 / -1; order: 1; }
   .story-face { order: 0; max-width: 200px; justify-self: center; }
 }
+
+/* What a session costs, beside the booking form */
+.price-list { list-style: none; margin: 0 0 var(--s-3); padding: 0; display: grid; gap: var(--s-2); }
+.price-list li { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3);
+  padding-bottom: var(--s-2); border-bottom: 1px solid var(--line-soft); font-size: var(--step--1); }
+.price-list li:last-child { border-bottom: 0; }
+.price-list strong { font-size: var(--step-0); }
+.book-sent { align-items: start; }
+
+/* Picking a package before the form is filled in: the shop's card, as a radio button */
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--s-3); }
+.plan {
+  display: grid; gap: 2px; align-content: start; padding: var(--s-4);
+  border: 1px solid var(--line); border-radius: var(--radius-lg); cursor: pointer;
+  transition: border-color 0.3s var(--ease), background 0.3s var(--ease);
+}
+.plan:hover { border-color: var(--muted); }
+.plan:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+.plan.is-on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: var(--chalk); }
+.plan-radio { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.plan-hours { font-weight: 500; }
+.plan-price { font-family: var(--font-display); font-size: var(--step-2); line-height: 1.15; }
+.plan-note { font-size: var(--step--1); color: var(--muted); }
+
+/* Sending the form: the button at its own width, not a bar stretched across the whole card */
+.book-send { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3) var(--s-5); }

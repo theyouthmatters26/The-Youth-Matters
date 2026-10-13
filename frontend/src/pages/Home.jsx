@@ -248,7 +248,9 @@ function Blogs() {
 }
 
 function Story() {
-  const story = caseStudies[0]
+  // Whichever case study the team put first in the admin panel, with the example as the fallback
+  const { data } = useApi('/case-studies')
+  const story = data?.[0] || caseStudies[0]
   return (
     <section className="section" aria-label="An example journey">
       <div className="container story" data-reveal>

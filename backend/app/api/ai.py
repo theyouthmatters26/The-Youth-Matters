@@ -1,11 +1,11 @@
-"""Ask TYM AI: private one-to-one conversations with TYMAi (Module 7). A person from the team can
+"""Ask TYM AI: private one-to-one conversations with TYM AI (Module 7). A person from the team can
 step in (services/handoff.py); the student sees their replies in the same conversation.
 
     GET    /ai/conversations                       yours, latest first
     GET    /ai/conversations/<id>                  one conversation with its messages
     GET    /ai/conversations/<id>/messages?after=  anything new since `after` (the page polls this)
     POST   /ai/messages                            {body, conversationId?}; starts one when none is given
-    POST   /ai/conversations/<id>/human            ask for a person, or {cancel: true} to go back to TYMAi
+    POST   /ai/conversations/<id>/human            ask for a person, or {cancel: true} to go back to TYM AI
     DELETE /ai/conversations/<id>
 """
 import re
@@ -126,7 +126,7 @@ def ask():
 
     sent = [handoff.add_message(c, "user", question)]
     if c.status == "human":
-        # A person is handling this one: TYMAi stays quiet and the team hears the student wrote
+        # A person is handling this one: TYM AI stays quiet and the team hears the student wrote
         handoff.alert_team(c, "replied and is waiting for you")
         db.session.commit()
     elif c.status == "ai" and len(question) <= 200 and WANTS_PERSON.search(question):
@@ -139,7 +139,7 @@ def ask():
         db.session.commit()
         text, sources = tymai.answer(user, question, handoff.as_history(earlier))
         db.session.refresh(c)
-        if c.status != "human":  # nobody stepped in while TYMAi was writing
+        if c.status != "human":  # nobody stepped in while TYM AI was writing
             sent.append(handoff.add_message(c, "assistant", text, sources=sources))
             db.session.commit()
     return jsonify(conversation=_summary(c), messages=[handoff.message_json(m) for m in sent]), 201

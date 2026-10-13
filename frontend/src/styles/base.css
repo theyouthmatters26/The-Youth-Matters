@@ -89,7 +89,9 @@ button { cursor: pointer; }
 .btn-light { background: var(--on-ink); color: var(--ink); }
 .btn-light:hover { background: #fff; }
 .btn-block { width: 100%; }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* Still the button's own colour, only quieter: a flat light grey reads as broken rather than
+   as "not yet". */
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* Forms */
 .field { display: grid; gap: var(--s-2); }

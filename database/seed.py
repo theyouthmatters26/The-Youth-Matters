@@ -1,7 +1,7 @@
 """What a new database needs before the site works, and optionally a demo community to look at.
 
     cd backend
-    python ../database/seed.py           a live site: subjects, countries, topics, chat rooms, the TYMAi
+    python ../database/seed.py           a live site: subjects, countries, topics, chat rooms, the TYM AI
                                          account and the three starter guides. No people, no passwords.
     python ../database/seed.py --demo    your own computer: all of that plus demo students, mentors,
                                          questions and chat, every demo account on the password below.
@@ -256,7 +256,7 @@ FAQS = [
      "photo is never stored: we keep the date of birth, not the document."),
     ("Who are TYM Mentors?", "Mentors are students as well as consultants. Each one is checked by our team "
      "before they can take bookings."),
-    ("What is TYMAi?", "Our study abroad assistant, free to use. It joins a chat room when you type @TYMAi, and "
+    ("What is TYM AI?", "Our study abroad assistant, free to use. It joins a chat room when you type @TYMAi, and "
      "answers privately in Ask TYM AI, where you can also ask for a person from our team. It is not 100% correct, "
      "so check all information on official sites before you act on it."),
     ("Can I chat with my mentor?", "Yes. When you book a session, your mentor gets a chat request. Once they accept "
@@ -323,7 +323,7 @@ def reference():
     cats = {s: Category(slug=s, name=n) for s, n in CATEGORIES}
     db.session.add_all([*subjects.values(), *countries.values(), *abroad.values(), *cats.values()])
 
-    bot = user("tymai", "TYMAi", role="bot", dob=date(2000, 1, 1))
+    bot = user("tymai", "TYM AI", role="bot", dob=date(2000, 1, 1))
     # The name on TYM's own guides. It has no password and no part of the admin panel, so nobody signs in as it.
     team = user("tym.team", "TYM Team", role="admin", dob=date(1995, 1, 1))
     db.session.add_all([bot, team])

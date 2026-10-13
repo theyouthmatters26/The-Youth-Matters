@@ -7,8 +7,10 @@
 */
 :root {
   /* Ink: text and solid controls on light surfaces */
-  --ink: #0b0b0c;
-  --ink-soft: #232326;
+  /* The client's palette has no black in it. This is the dark the whole site is drawn in: text,
+     and every filled chip, tag, badge and button. 11:1 on white, so nothing is harder to read. */
+  --ink: #3c3c41;
+  --ink-soft: #4a4a50;
   --slate: #3c3c41;
   --muted: #5f5f66;
   --faint: #68686f;        /* the lightest text: still 4.5:1 on the grey surfaces */

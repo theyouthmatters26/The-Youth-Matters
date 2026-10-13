@@ -462,3 +462,10 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
 .adm-closed-head > :first-child { flex: 1 1 260px; }
 .adm-closed-head time { font-size: var(--step--2); color: var(--faint); }
 .adm-closed-why { margin: 0; padding-left: var(--s-3); border-left: 2px solid var(--line); font-size: var(--step--1); color: var(--muted); }
+
+/* The answers on a contact message or a session booking, one per line */
+.adm-answers { display: grid; gap: 4px; margin: var(--s-3) 0 0; }
+.adm-answers > div { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: var(--s-3); font-size: var(--step--1); }
+.adm-answers dt { color: var(--muted); }
+.adm-answers dd { margin: 0; }
+@media (max-width: 720px) { .adm-answers > div { grid-template-columns: minmax(0, 1fr); gap: 0; } }

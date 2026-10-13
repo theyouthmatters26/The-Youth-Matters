@@ -3,7 +3,8 @@ from flask_jwt_extended import current_user, verify_jwt_in_request
 from flask_jwt_extended.exceptions import JWTExtendedException
 from jwt import PyJWTError
 
-from . import (admin, admin_content, ai, auth, blogs, bookings, chat, comments, contact, communities, faqs, feed,
+from . import (admin, admin_content, ai, auth, blogs, bookings, case_studies, chat, comments, contact,
+               communities, faqs, feed,
                media, mentor_applications, mentor_chat, mentors, moderation,
                notifications, packages, posts, search, support, users, verify, votes)
 
@@ -20,7 +21,7 @@ BLUEPRINTS = [
     auth.bp, users.bp, communities.bp, posts.bp, comments.bp, votes.bp, feed.bp, search.bp,
     notifications.bp, moderation.bp, chat.bp, mentors.bp, bookings.bp, blogs.bp, verify.bp, contact.bp, media.bp,
     ai.bp, mentor_applications.bp, admin.bp, support.bp, admin_content.bp, packages.bp, mentor_chat.bp,
-    faqs.bp,
+    faqs.bp, case_studies.bp,
 ]
 
 # Signing up (email, Google, photo ID) and asking the team for help
@@ -30,7 +31,8 @@ SIGN_UP = ("/api/auth/", "/api/verify/", "/api/contact")
 MENTOR_SIGN_UP = ("/api/mentor-application", "/api/users/me/avatar")
 # What a logged-out visitor can read
 PUBLIC_READS = ("/api/health", "/api/subjects", "/api/categories", "/api/posts", "/api/search", "/api/mentors",
-                "/api/blogs", "/api/media/", "/api/users/", "/api/packages", "/api/faqs")
+                "/api/blogs", "/api/media/", "/api/users/", "/api/packages", "/api/faqs",
+                "/api/case-studies")
 
 
 def open_to_unverified(method, path):

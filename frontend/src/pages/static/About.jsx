@@ -41,8 +41,8 @@ export default function About() {
           <figcaption>Sumayya Samreen</figcaption>
         </figure>
         <div className="story-copy">
-          <p className="eyebrow">Our story</p>
-          <h2 id="story-title" className="display">The birth of The Youth Matters</h2>
+          <p className="story-eyebrow">Our Story</p>
+          <h2 id="story-title" className="display">Birth of<br />The Youth Matters</h2>
           <p>It all started from personal experience. We still remember how isolating it felt to decide
             to study abroad: navigating the forms, deposits, deadlines, selections and approvals without
             having anyone to turn to who had actually been through it.</p>

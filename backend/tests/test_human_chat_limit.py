@@ -16,10 +16,15 @@ TABLES = [db.metadata.tables[t] for t in ("countries", "users", "identity_verifi
                                           "ai_conversations", "ai_messages", "notifications")]
 
 
+class NoLimit(TestConfig):
+    # Off before create_app, not after: the limiter reads this when it is built, and its counters
+    # live for the whole test run, so a user id reused by another file would trip this one.
+    RATELIMIT_ENABLED = False
+
+
 @pytest.fixture
 def site(monkeypatch):
-    app = create_app(TestConfig)
-    app.config["RATELIMIT_ENABLED"] = False
+    app = create_app(NoLimit)
     with app.app_context():
         db.metadata.create_all(db.engine, tables=TABLES)
         monkeypatch.setattr(ai_api.handoff, "alert_team", lambda c, heading: None)

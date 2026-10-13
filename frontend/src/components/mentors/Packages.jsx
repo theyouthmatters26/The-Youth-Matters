@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Lock } from 'lucide-react'
-import { api, useApi } from '../../lib/api'
+import { useApi } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { formatMoney } from '../../lib/format'
 import { FormError, Spinner } from '../auth/fields'
-import { hoursText, loadCashfree } from './booking'
+import { buyHours, hoursText } from './booking'
 import './mentors.css'
 
 // Counselling hours on sale: the same price whichever mentor they are spent on. Anyone can see them;
 // buying needs a verified account. onBought(minutes) runs once the hours are on the balance.
-export default function Packages({ onBought }) {
+// `book` is for the public page, where there is no checkout yet: the card leads to the booking form
+// and our team arranges payment by hand.
+export default function Packages({ onBought, book }) {
   const { user, account, setAccount } = useAuth()
   const location = useLocation()
   const { data, error, loading } = useApi('/packages')
@@ -23,17 +25,7 @@ export default function Packages({ onBought }) {
     setProblem('')
     setDone('')
     try {
-      const { paymentId, checkout: c } = await api(`/packages/${p.id}/order`, { method: 'POST' })
-      const cashfree = await loadCashfree(c.mode)
-      // The window closes either way; the server then asks Cashfree what actually happened, so a
-      // closed tab or a failed card cannot add hours and a slow bank still gets caught by the webhook.
-      const result = await cashfree.checkout({ paymentSessionId: c.paymentSessionId, redirectTarget: '_modal' })
-      if (result?.error && !result?.paymentDetails) {
-        setProblem(`${result.error.message || 'The payment did not go through.'} No money was taken unless your bank says otherwise. Try again or use another method.`)
-        setBusy(null)
-        return
-      }
-      const res = await api(`/packages/payments/${paymentId}/verify`, { method: 'POST', body: {} })
+      const res = await buyHours(p.id)
       setAccount({ ...account, counselingMinutes: res.counselingMinutes })
       setDone(`${hoursText(p.hours * 60)} added. You now have ${hoursText(res.counselingMinutes)}.`)
       onBought?.(res.counselingMinutes)
@@ -62,7 +54,11 @@ export default function Packages({ onBought }) {
               <p className="faint package-note">
                 {p.hours > 1 ? `${formatMoney(perHour(p), p.currency)} an hour${saving > 0 ? ` · save ${saving}%` : ''}` : 'One session with any mentor'}
               </p>
-              {user ? (
+              {book ? (
+                <Link to={`/book-a-session?plan=${p.id}`} className="btn btn-primary btn-sm btn-block">
+                  Book a session
+                </Link>
+              ) : user ? (
                 <button className="btn btn-primary btn-sm btn-block" onClick={() => buy(p)} disabled={busy !== null}>
                   {busy === p.id ? <><Spinner /> Opening secure payment</> : <><Lock size={14} /> Buy {hoursText(p.hours * 60)}</>}
                 </button>
@@ -77,7 +73,9 @@ export default function Packages({ onBought }) {
       </ul>
       <FormError>{problem}</FormError>
       {done && <p className="book-note" role="status">{done}</p>}
-      <p className="book-fine">Hours work with every TYM mentor and do not expire. Secure checkout by Cashfree: UPI, cards and net banking.</p>
+      <p className="book-fine">Hours work with every TYM mentor and do not expire.{book
+        ? ' Tell us what you need and our team confirms your mentor, your time and how to pay.'
+        : ' Secure checkout by Cashfree: UPI, cards and net banking.'}</p>
     </div>
   )
 }

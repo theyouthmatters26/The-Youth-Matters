@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarCheck, GraduationCap, Lock, Search, ShieldCheck } from 'lucide-react'
+import { CalendarCheck, GraduationCap, Search, ShieldCheck, Wallet } from 'lucide-react'
 import Gate from '../components/ui/Gate'
 import MentorCard, { MentorCardSkeleton } from '../components/mentors/MentorCard'
 import Packages from '../components/mentors/Packages'
@@ -44,7 +44,7 @@ export default function Mentors() {
       <ul className="trust-row">
         <li><ShieldCheck size={16} aria-hidden /> Verified by our team</li>
         <li><CalendarCheck size={16} aria-hidden /> Free cancellation up to 24 hours before</li>
-        <li><Lock size={16} aria-hidden /> Secure payment with Cashfree</li>
+        <li><Wallet size={16} aria-hidden /> You pay once we have confirmed your session</li>
       </ul>
 
       <aside className="mentor-join">
@@ -60,9 +60,10 @@ export default function Mentors() {
       <section className="mentor-pricing" id="hours" aria-labelledby="hours-title">
         <header className="section-head">
           <h2 id="hours-title" className="display">First, get counselling hours</h2>
-          <p>One price for every mentor. Buy hours once, then choose any mentor below and book a time with them: a 60 minute session uses 1 hour.</p>
+          <p>One price for every mentor, whoever you book. Pick the hours you need and tell us what you
+            are planning: we match you with the right mentor and confirm your session.</p>
         </header>
-        <Packages />
+        <Packages book />
       </section>
 
       <h2 className="display mentor-choose">Then choose any mentor</h2>

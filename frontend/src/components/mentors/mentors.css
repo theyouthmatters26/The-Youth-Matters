@@ -1,8 +1,6 @@
 /* Mentor directory, profile and the booking flow */
 
 /* Directory */
-.trust-row { list-style: none; display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-6); margin: calc(var(--s-5) * -1) 0 var(--s-6); padding: 0; font-size: var(--step--1); color: var(--muted); }
-.trust-row li { display: inline-flex; align-items: center; gap: var(--s-2); }
 .mentor-filters { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s-4); margin-bottom: var(--s-6); }
 .search-field {
   display: flex; align-items: center; gap: var(--s-2); width: min(100%, 320px); height: 44px; padding: 0 var(--s-4);
@@ -299,6 +297,10 @@
 .mentor-join strong { font-size: var(--step-0); font-weight: 500; }
 .mentor-join p { margin-top: 2px; font-size: var(--step--2); color: var(--on-ink-muted); }
 .mentor-join .btn { flex: none; width: auto; }
+
+/* A button on its own line under a heading. Those headers are grids, which would otherwise
+   stretch it across the whole column. */
+.head-cta { justify-self: start; }
 
 /* Choosing where the session ends, under the start times */
 .book-until { display: grid; gap: 6px; margin-top: var(--s-4); }

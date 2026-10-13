@@ -38,6 +38,7 @@ const ROUTES = [
   ['/chat/:room', page(() => import('./pages/Chatrooms')), true],
   ['/ai', page(() => import('./pages/AiLounge')), true],
   ['/mentors', page(() => import('./pages/Mentors'))],
+  ['/book-a-session', page(() => import('./pages/static/BookSession'))],
   ['/mentors/register', page(() => import('./pages/static/MentorApply'))],
   // Mentors have their own way in: the same two pages, without the photo-ID step (pages/auth)
   ['/mentors/signup', page(() => import('./pages/auth/Register'))],

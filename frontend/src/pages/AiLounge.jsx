@@ -10,7 +10,7 @@ import { timeAgo } from '../lib/format'
 import { useMeta } from '../lib/meta'
 import { Sources, Typing } from './Chatrooms'
 
-const TYMAI = { displayName: 'TYMAi', role: 'bot' }
+const TYMAI = { displayName: 'TYM AI', role: 'bot' }
 const POLL_MS = 5000 // a person from the team may reply at any moment
 const STARTERS = [
   'Review the opening paragraph of my SOP',
@@ -22,7 +22,7 @@ const STARTERS = [
 // Who is answering right now, and the way to ask for a person
 function Handoff({ convo, onAsk, onCancel, busy }) {
   if (convo.status === 'human') {
-    return <p className="handoff is-person"><UserRound size={15} aria-hidden /> <span><strong>{convo.person || 'Someone'} from the TYM team</strong> is with you. TYMAi is paused while they help.</span></p>
+    return <p className="handoff is-person"><UserRound size={15} aria-hidden /> <span><strong>{convo.person || 'Someone'} from the TYM team</strong> is with you. TYM AI is paused while they help.</span></p>
   }
   if (convo.status === 'waiting') {
     return (
@@ -35,7 +35,7 @@ function Handoff({ convo, onAsk, onCancel, busy }) {
   }
   return (
     <p className="handoff">
-      <span>You are talking to TYMAi. Prefer a person from our team?</span>
+      <span>You are talking to TYM AI. Prefer a person from our team?</span>
       <button type="button" className="btn btn-ghost btn-sm" onClick={onAsk} disabled={busy}><UserRound size={14} /> Talk to a person</button>
     </p>
   )
@@ -107,7 +107,7 @@ export default function AiLounge() {
     setDraft('')
     setError('')
     setMessages((m) => [...m, { id: 'pending', role: 'user', content: body }])
-    setThinking(convo?.status !== 'human') // with a person in the conversation, TYMAi does not answer
+    setThinking(convo?.status !== 'human') // with a person in the conversation, TYM AI does not answer
     try {
       const res = await api('/ai/messages', { method: 'POST', body: { body, conversationId: id || undefined } })
       // They opened another conversation while waiting: the answer stays in the one it was asked in
@@ -198,7 +198,7 @@ export default function AiLounge() {
                     <Avatar user={author} size={32} />
                     <div>
                       <p className="chat-meta">
-                        <strong>{m.role === 'assistant' ? 'TYMAi' : m.role === 'human' ? author.displayName : 'You'}</strong>
+                        <strong>{m.role === 'assistant' ? 'TYM AI' : m.role === 'human' ? author.displayName : 'You'}</strong>
                         {m.role === 'human' && <span className="chat-team">TYM team</span>}
                       </p>
                       <RichText text={m.content} className="chat-text" />
@@ -207,7 +207,7 @@ export default function AiLounge() {
                   </li>
                 )
               })}
-              {thinking && <li className="is-ai"><Avatar user={TYMAI} size={32} /><Typing name="TYMAi" /></li>}
+              {thinking && <li className="is-ai"><Avatar user={TYMAI} size={32} /><Typing name="TYM AI" /></li>}
             </ol>
           )}
           <form className="chat-input" onSubmit={(e) => { e.preventDefault(); ask(draft) }}>

@@ -48,7 +48,7 @@ export const users = {
   kabir: { username: 'kabir.s', displayName: 'Kabir Singh', avatar: '/images/people/kabir.s.jpg', role: 'mentor', bio: 'MSc Mechanical Engineering at TU Munich.', targetCountry: 'germany', studyLevel: 'Postgraduate' },
   hannah: { username: 'hannah.l', displayName: 'Hannah Lee', avatar: '/images/people/hannah.l.jpg', role: 'mentor', bio: 'Master of Teaching at the University of Melbourne.', targetCountry: 'australia', studyLevel: 'Postgraduate' },
   admin: { username: 'tym.team', displayName: 'TYM Team', role: 'admin' },
-  tymai: { username: 'tymai', displayName: 'TYMAi', role: 'bot' },
+  tymai: { username: 'tymai', displayName: 'TYM AI', role: 'bot' },
 }
 
 const h = (hours) => new Date(Date.now() - hours * 3600_000).toISOString()
@@ -217,7 +217,7 @@ export const faqs = [
   ['How do counselling hours work?', 'Every mentor costs the same. You buy a package of counselling hours once, and each session you book takes its length from your hours: a 30 minute session uses half an hour. Hours work with any TYM mentor and do not expire.'],
   ['Why do you ask for a photo ID?', 'The community is for adults only, so every member must be 18 or older. We read the date of birth from your passport, driving licence, Aadhaar, PAN or voter ID on our own servers. The photo is never stored: we keep the date of birth, not the document.'],
   ['Who are TYM Mentors?', 'Mentors are students as well as consultants. Each one is checked by our team before they can take bookings.'],
-  ['What is TYMAi?', 'Our study abroad assistant, free to use. It joins a chat room when you type @TYMAi, and answers privately in Ask TYM AI, where you can also ask for a person from our team. It is not 100% correct, so check all information on official sites before you act on it.'],
+  ['What is TYM AI?', 'Our study abroad assistant, free to use. It joins a chat room when you type @TYMAi, and answers privately in Ask TYM AI, where you can also ask for a person from our team. It is not 100% correct, so check all information on official sites before you act on it.'],
   ['Can I chat with my mentor?', 'Yes. When you book a session, your mentor gets a chat request. Once they accept it you can message each other in My TYM, before and after the call. Only your mentor can share the video call link in the chat, so never join a call from anywhere else.'],
   ['Can I share photos and files?', 'You can add photos to your questions and to your profile.'],
   ['How do I manage my notifications?', 'The bell at the top of every page shows new answers, replies, mentions and messages from your mentor. Open it to read the latest ones, and Notifications for the full list, where you can mark them all as read.'],

@@ -5,6 +5,11 @@ Blog (area "blog")
     GET    /admin/blog/<id>                  one article, for the editor
     POST   /admin/blog                       PATCH and DELETE /admin/blog/<id>
     POST   /admin/blog/image                 upload a cover photo -> {url}
+Case studies (area "blog")
+    GET    /admin/case-studies               every journey, hidden ones included
+    POST   /admin/case-studies               {name, route, course, quote}
+    PATCH  /admin/case-studies/<id>          any of those, plus {status, sortOrder}
+    DELETE /admin/case-studies/<id>
 Community (area "community")
     GET    /admin/questions?q=&filter=&page= POST /admin/questions/<id> {pinned, removed}
     GET    /admin/questions/<id>             the question with its answers; DELETE /admin/answers/<id> removes one
@@ -20,7 +25,7 @@ FAQ (area "faq")
     PATCH  /admin/faqs/<id>                  {question, answer, status, sortOrder}: answering publishes it
     DELETE /admin/faqs/<id>
 Contact form (area "support")
-    GET    /admin/contact?status=&page=      POST /admin/contact/<id> {status: new | done}, DELETE /admin/contact/<id>
+    GET    /admin/contact?status=&topic=&page=   POST /admin/contact/<id> {status}, DELETE /admin/contact/<id>
 Exports
     GET    /admin/members.csv                GET /admin/payments.csv
 """
@@ -32,18 +37,20 @@ from flask import Blueprint, Response, abort, jsonify, request
 from flask_jwt_extended import current_user, jwt_required
 
 from ..extensions import db
-from ..models import (BlogPost, Category, ChatMessage, ChatRoom, Comment, Community, ContactMessage, Country, Faq,
-                      Follow, Payment, Post, Subject, User)
+from ..models import (BlogPost, CaseStudy, Category, ChatMessage, ChatRoom, Comment, Community, ContactMessage,
+                      Country, Faq, Follow, Payment, Post, Subject, User)
 from ..models.base import utcnow
 from ..services import images, storage
 from . import serializers as s
 from .admin import _remove, paged, record, team_member
 from .blogs import article, card
+from .contact import TOPICS
 from .faqs import answered
 
 bp = Blueprint("admin_content", __name__)
 
 SITE_PATH = re.compile(r"^/(?!/)(?!.*\.\.)[\w\-./%]+$")  # a path on this site: no other address, no ../
+BOOKING = "Mentorship session"  # the topic the session booking form sends
 
 
 def _text(value, limit):
@@ -531,6 +538,70 @@ def delete_faq(faq_id):
 
 
 
+# ---------------------------------------------------------------- case studies
+
+# What the team fills in, and how long each one may be
+FIELDS = {"name": 80, "route": 120, "course": 120, "quote": 2000}
+
+
+def _case_json(c):
+    return {"id": c.id, "name": c.name, "route": c.route, "course": c.course, "quote": c.quote,
+            "status": c.status, "sortOrder": c.sort_order}
+
+
+def _case(case_id):
+    return db.session.get(CaseStudy, case_id) or abort(404, "We could not find that case study.")
+
+
+@bp.get("/admin/case-studies")
+@jwt_required()
+def case_studies():
+    team_member("blog")
+    rows = db.session.scalars(db.select(CaseStudy).order_by(CaseStudy.sort_order, CaseStudy.id))
+    return jsonify([_case_json(c) for c in rows])
+
+
+@bp.post("/admin/case-studies")
+@jwt_required()
+def add_case_study():
+    team_member("blog")
+    data = request.get_json(silent=True) or {}
+    values = {k: _text(data.get(k), limit) for k, limit in FIELDS.items()}
+    if not all(values.values()):
+        abort(400, "Fill in the name, the route, the course and the quote.")
+    last = db.session.scalar(db.select(db.func.max(CaseStudy.sort_order))) or 0
+    c = CaseStudy(**values, status="published", sort_order=last + 1)
+    db.session.add(c)
+    db.session.commit()
+    return jsonify(_case_json(c)), 201
+
+
+@bp.patch("/admin/case-studies/<int:case_id>")
+@jwt_required()
+def change_case_study(case_id):
+    team_member("blog")
+    c = _case(case_id)
+    data = request.get_json(silent=True) or {}
+    for field, limit in FIELDS.items():
+        if field in data:
+            setattr(c, field, _text(data[field], limit) or abort(400, f"The {field} cannot be empty."))
+    if data.get("status") in ("published", "hidden"):
+        c.status = data["status"]
+    if isinstance(data.get("sortOrder"), int):
+        c.sort_order = max(0, min(data["sortOrder"], 9999))
+    db.session.commit()
+    return jsonify(_case_json(c))
+
+
+@bp.delete("/admin/case-studies/<int:case_id>")
+@jwt_required()
+def delete_case_study(case_id):
+    team_member("blog")
+    db.session.delete(_case(case_id))
+    db.session.commit()
+    return jsonify(deleted=True)
+
+
 # ---------------------------------------------------------------- contact form inbox
 
 @bp.get("/admin/contact")
@@ -538,13 +609,20 @@ def delete_faq(faq_id):
 def contact_messages():
     team_member("support")
     status = request.args.get("status", "new")
+    # Session bookings come through the same form, so the inbox can be narrowed to just those
+    topic = request.args.get("topic")
+    where = [ContactMessage.status == status]
+    if topic in TOPICS:
+        where.append(ContactMessage.topic == topic)
 
     def row(m):
         return {"id": m.id, "name": m.name, "email": m.email, "topic": m.topic, "message": m.message,
                 "details": m.details or {}, "status": m.status, "at": m.created_at.isoformat()}
 
-    return jsonify(**paged(db.select(ContactMessage).where(ContactMessage.status == status).order_by(ContactMessage.id.desc()), row),
-                   new=db.session.scalar(db.select(db.func.count(ContactMessage.id)).where(ContactMessage.status == "new")))
+    counted = db.select(db.func.count(ContactMessage.id)).where(ContactMessage.status == "new")
+    return jsonify(**paged(db.select(ContactMessage).where(*where).order_by(ContactMessage.id.desc()), row),
+                   new=db.session.scalar(counted),
+                   bookings=db.session.scalar(counted.where(ContactMessage.topic == BOOKING)))
 
 
 @bp.post("/admin/contact/<int:message_id>")

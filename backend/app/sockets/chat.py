@@ -1,7 +1,7 @@
 """Real-time public chatrooms (Module 7).
 
 Phase 4 adds the authenticated `message` event: JWT check, mute check, censor(), persist
-ChatMessage, broadcast, and an inline TYMAi reply when the body starts with '@TYMAi'.
+ChatMessage, broadcast, and an inline TYM AI reply when the body starts with '@TYMAi'.
 """
 from flask_socketio import join_room, leave_room
 

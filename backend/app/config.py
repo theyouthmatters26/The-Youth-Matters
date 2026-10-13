@@ -61,7 +61,7 @@ class Config:
     # Public address of the website, for links in emails. Empty = the first address in CORS_ORIGINS.
     SITE_URL = (os.getenv("VITE_SITE_URL") or "").rstrip("/")
 
-    # TYMAi (Ask TYM AI and @TYMAi in chat rooms). Without a key it answers from the community instead.
+    # TYM AI (Ask TYM AI and @TYMAi in chat rooms). Without a key it answers from the community instead.
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
     AI_MODEL = os.getenv("AI_MODEL") or "claude-opus-5-5"
 

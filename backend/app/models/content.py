@@ -37,6 +37,22 @@ class ContactMessage(Model):
     handled_at = db.Column(db.DateTime(timezone=True))
 
 
+class CaseStudy(Model):
+    """A student's journey on the case studies page (api/case_studies.py).
+
+    Only the team writes these, in the admin panel: they are about real students, so nobody puts one
+    up on their own behalf."""
+    __tablename__ = "case_studies"
+
+    name = db.Column(db.String(80), nullable=False)
+    route = db.Column(db.String(120), nullable=False)        # "Hyderabad to Leeds"
+    course = db.Column(db.String(120), nullable=False)
+    quote = db.Column(db.Text, nullable=False)
+    status = db.Column(enum("published", "hidden", name="case_study_status"), nullable=False,
+                       default="published", server_default="published")
+    sort_order = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+
+
 class Faq(Model):
     """A question and its answer on the FAQ page (api/faqs.py).
 

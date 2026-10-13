@@ -10,8 +10,9 @@
   font-family: var(--font-body); font-weight: 600; font-size: 1.375rem; line-height: 1; letter-spacing: -0.01em;
   white-space: nowrap; color: var(--ink);
 }
-/* T, Y and M in the brand blue, straight off the logo the client supplied */
-.brand-name b, .footer-logo b { font-weight: inherit; color: #8091bc; }
+/* T, Y and M in the brand blue: the darker of the two the client sent, so one value reads on the
+   white masthead and on the dark footer alike. */
+.brand-name b, .footer-logo b { font-weight: inherit; color: #6e7fab; }
 
 .account { display: flex; align-items: center; gap: var(--s-1); }
 .account-link {

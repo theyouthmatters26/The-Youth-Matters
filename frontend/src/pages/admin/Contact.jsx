@@ -4,12 +4,16 @@ import { FormError } from '../../components/auth/fields'
 import { adminApi, useAdminApi } from '../../lib/admin'
 import { Confirm, Empty, Loading, PageHead, Pager, Pill, Tabs, ago } from './ui'
 
+const BOOKING = 'Mentorship session'   // what the session booking form sends as its topic
+
 // Messages from the site's contact form. Each is kept here whether or not email is switched on.
+// A session booking is one of these: the whole form arrives as its answers.
 export default function Contact({ onChanged }) {
   const [status, setStatus] = useState('new')
+  const [topic, setTopic] = useState('')
   const [page, setPage] = useState(1)
   const [error, setError] = useState('')
-  const list = useAdminApi(`/admin/contact?status=${status}&page=${page}`)
+  const list = useAdminApi(`/admin/contact?status=${status}&topic=${encodeURIComponent(topic)}&page=${page}`)
   const rows = list.data?.items || []
 
   const mark = async (m, to) => {
@@ -37,10 +41,12 @@ export default function Contact({ onChanged }) {
   return (
     <>
       <PageHead eyebrow="Enquiries" title="Messages from the contact form"
-        text="Everything people send through the Contact page on the site lands here, whether or not email is switched on. Reply from your own email, then mark it as dealt with." />
+        text="Everything people send through the Contact page and the session booking form lands here, whether or not email is switched on. Reply from your own email, then mark it as dealt with." />
       <div className="adm-toolbar">
         <Tabs label="Which messages" value={status} onChange={(s) => { setStatus(s); setPage(1) }}
           items={[['new', 'To answer', list.data?.new], ['done', 'Dealt with']]} />
+        <Tabs label="Which kind" value={topic} onChange={(t) => { setTopic(t); setPage(1) }}
+          items={[['', 'Everything'], [BOOKING, 'Session bookings', list.data?.bookings]]} />
       </div>
       <FormError>{error}</FormError>
       {list.error ? <Empty title="We could not load messages" text={list.error.message} />
@@ -60,8 +66,14 @@ export default function Contact({ onChanged }) {
                     <time dateTime={m.at}>{ago(m.at)}</time>
                   </div>
                   <p className="adm-prose">{m.message}</p>
+                  {/* A session booking brings a whole form, so each answer gets its own line
+                      rather than one run-on sentence */}
                   {Object.keys(m.details).length > 0 && (
-                    <p className="adm-report-by">{Object.entries(m.details).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(' · ')}</p>
+                    <dl className="adm-answers">
+                      {Object.entries(m.details).filter(([, v]) => v).map(([k, v]) => (
+                        <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
+                      ))}
+                    </dl>
                   )}
                   <div className="adm-action-row">
                     <a className="btn btn-primary btn-sm" href={`mailto:${m.email}?subject=${encodeURIComponent('Your message to The Youth Matters')}`}><Mail size={14} /> Reply by email</a>
