@@ -173,6 +173,224 @@ Every applicant agrees to the Mentor Code of Conduct: give honest and responsibl
 
 The TYM team reviews each application, checks the documents and may ask for a short call. Once approved, the mentor's profile appears in TYM Mentors and students can book them. Mentors choose their own hours and session length. They do not set a price: students pay TYM for counselling hours before they book.
 
+## Booking a mentorship session, step by step
+
+A one-to-one session with a TYM mentor is the one paid part of The Youth Matters, and the way it is arranged is deliberately simple. While the online payment gateway is being set up, the TYM team arranges each session by hand, which means a person reads every request and matches it to the right mentor rather than leaving it to a calendar.
+
+A student can start in one of two places. The first is the TYM Mentors page, where the price list sits near the top and each price has a button that reads Book a session. The second is the page of one particular mentor, where the student has already read that person's introduction, seen the areas they help with, read their reviews and decided that they want that person in particular. Both routes lead to the same place, which is the Mentorship Session Booking Form at https://theyouthmatters.com/book-a-session. When the student arrives from a mentor's own page, the form already knows who they asked for and says so at the top.
+
+The form is in six short sections, and it takes a few minutes rather than half an hour.
+
+The first section is the plan. The three packages of counselling hours are shown as cards with their prices, and the student picks the one that suits them. Nothing is charged at this point, and the form says so plainly.
+
+The second section is personal information: full name, email address, WhatsApp number with the country code, the country the student is living in now, and their current level of education, which may be high school, a bachelor's degree, a master's degree, working professional or something else.
+
+The third section is their study abroad plans: the destination they are aiming at, the degree or programme they want, the intake they are applying for, and the subject or course they have in mind.
+
+The fourth section is the session itself. The student ticks what they would like help with, from a list that covers university selection, applications, scholarships, the statement of purpose or personal statement, English language tests such as IELTS and TOEFL, visa guidance, course and career advice, and overall planning. They then give a preferred date, a preferred time, their own time zone, the format they prefer, and how long they would like the session to run.
+
+The fifth section is anything else: the main questions or challenges they want to discuss, whether they have applied anywhere yet, how they heard about The Youth Matters, and anything their mentor should know in advance.
+
+The sixth section is a confirmation. The student ticks to confirm that the information is accurate and types their name as a signature.
+
+A student does not need a TYM account to send this form. Anybody can fill it in. Having an account only matters later, because the private chat with the mentor opens on an account.
+
+The moment the form is sent, three emails go out at the same time. The student receives an acknowledgement confirming that the request arrived, explaining that the team is arranging it, and making clear that the session is not booked until a confirmation reaches them. The TYM team receives an email containing every answer laid out one per line, together with the plan the student chose and a link straight into the admin panel. If the student asked for a particular mentor, that mentor receives an email telling them that a student has asked for a session with them and what the student wants to cover, and the same message appears on their notification bell the next time they open the website.
+
+The request also appears immediately in the Sessions section of the admin panel, where it waits with a number beside it in the menu so that nothing is missed.
+
+The team then speaks to the student, agrees a time that works for both sides, and takes payment. Only when all of that is settled does the team assign the mentor, because assigning the mentor is what books the session. There is nothing left to confirm afterwards.
+
+## What happens when a session is confirmed
+
+Confirming a session does four things at once.
+
+The student receives an email confirming the session. It names their mentor, repeats the agreed date and time and how long the session runs, repeats whatever the team wrote about payment, and gives them a link straight into their conversation with that mentor.
+
+The mentor receives an email confirming the session. It names the student, tells the mentor what the student wants to cover, repeats the same agreed time, and gives them the same link into the conversation.
+
+Both of them see the confirmation on their notification bell the next time they open the website.
+
+Their private chat opens. Not a request waiting to be accepted, but an open conversation, ready to use from that moment. Because the team has already arranged everything, there is nothing for the mentor to accept or decline.
+
+If the student does not have a TYM account yet, everything above still happens except the chat, because there is no account for a conversation to belong to. In that case the student's email asks them to create a free account using the same email address, and the conversation is waiting for them as soon as they do.
+
+## What a mentorship session is actually like
+
+The private conversation between a student and their mentor is where the session happens.
+
+Before the call, the student can brief their mentor properly. Whatever they wrote on the booking form about what they wanted to cover is already in the conversation, so the mentor arrives prepared rather than spending the first ten minutes catching up on the basics. A student who wants their statement of purpose read can paste it in beforehand. A student who wants a shortlist reviewed can send the shortlist.
+
+Once a session has been booked, both the student and the mentor see a live countdown at the top of their conversation, ticking every second. Before the session begins it tells them how long there is until it starts. While the session is running it tells them how much of their time is left. If the conversation runs past the booked time it tells them how far over they are. Neither side has to guess, and neither side has to have the awkward conversation about whether the hour is up.
+
+The mentor shares the video call link inside that conversation, and only the mentor can do this. If a student tries to send a video call link the message is refused. This is deliberate. It means that nobody can be talked into joining a call somewhere they should not be, which is one of the most common ways that young people are targeted online.
+
+The mentor has the authority to end the session and presses End session in the conversation when they are both finished. A student cannot end it, so that nobody accidentally stops time they have paid for. The TYM team can also end a session from the admin panel, which covers the case where a mentor forgets or where something went wrong.
+
+Either way, a note appears in the conversation saying who ended it, the student receives a notification, and the countdown disappears. The conversation itself stays open afterwards. The point of ending a session is that the clock stops, not that two people are cut off in the middle of a sentence. A student can send a follow-up question the next day, and a mentor can send the document they promised, so the relationship continues rather than ending the moment the call does.
+
+After the session the student can leave a review, and mentor ratings on the directory are the average of those reviews.
+
+## Counselling hours in detail
+
+Counselling hours are how TYM prices mentorship, and the idea behind them is worth explaining because it is unusual.
+
+Every mentor on the platform costs exactly the same. A student never compares prices between mentors. This means they choose a mentor on how well that person fits their plans rather than on cost, and it means no mentor is quietly pushed to the bottom of the list for being more expensive than the others. A first-year master's student who moved to Leeds last September and a professional with ten years in admissions are priced identically, because what matters is which of them is right for this particular student's question.
+
+There are three packages. One hour costs one thousand rupees. Five hours cost four thousand rupees, which works out at eight hundred rupees an hour. Ten hours cost seven thousand rupees, which works out at seven hundred rupees an hour. Prices are shown in Indian rupees.
+
+Hours work with every mentor on the platform and they never expire. A student can buy five hours, spend one of them with a mentor in the United Kingdom this month, and spend the rest with a mentor in Canada next year when their plans have moved on. Nothing is lost by buying a larger package early.
+
+A session takes its length from the balance of hours. A sixty minute session takes sixty minutes off the balance. A student can book a longer session by booking consecutive times with the same mentor, which is useful for a proper working session on an application rather than a conversation.
+
+A session can be cancelled up to twenty four hours before it starts, and the time goes back onto the student's counselling hours. Inside twenty four hours the time is not returned, because the mentor has held that slot.
+
+These three prices are not fixed inside the software. The TYM team sets them in the admin panel, and the mentors page, the booking form and every mentor profile read the same three numbers from that one place, so a price can never be changed in one place and forgotten in another.
+
+## The destinations The Youth Matters covers
+
+Six destinations have their own community hub, their own chat room and their own mentors. Each one attracts a different kind of question.
+
+### The United Kingdom
+
+The United Kingdom is the busiest destination on TYM, largely because one year master's degrees make it attractive to Indian students who do not want to be away for two years. Questions cluster around the Confirmation of Acceptance for Studies, which a university issues once a place and a deposit are settled, and around the financial evidence a student visa application needs: how much has to be in an account, whose account it may be, how long it must sit there untouched, and which documents a bank must produce to prove it. Students also ask a great deal about the difference between a Russell Group university and the rest, whether it matters for employment, and about the Graduate Route that allows graduates to stay and work for a period after finishing.
+
+Accommodation questions are constant. University halls against a private studio, how a guarantor works for somebody with no United Kingdom credit history, what a deposit scheme is, and how students find flatmates before they fly. The TYM chat rooms are often used for exactly this: a student arriving in September finds three others going to the same city and they sort a house out between them.
+
+### The United States
+
+The United States brings a different set of questions, mostly because the process is longer and the paperwork is heavier. Students ask about the standardised tests, about how an assistantship or a scholarship changes the real cost, about the I twenty form a university issues, about the SEVIS fee, and about the visa interview itself, which is the part that causes the most anxiety. A student who has already sat that interview is the most valuable person in the room, and those conversations are among the most useful threads on the site.
+
+Students also ask about the practical training that allows graduates to work after their degree, about the difference between a public university and a private one in both cost and reputation, and about how to judge whether a scholarship offer is as good as it sounds once living costs are counted.
+
+### Canada
+
+Canada attracts students who are thinking about the longer term, because the path from study to work to permanent residence is clearer there than in most places. Questions are about the study permit, about the Guaranteed Investment Certificate that proves a student can support themselves, about which provinces are affordable, and about how long a post-graduation work permit lasts for a given length of programme.
+
+Weather, surprisingly, is a serious topic. So is the real cost of living in Toronto or Vancouver against a smaller city, and whether a college diploma is treated differently from a university degree by employers.
+
+### Australia
+
+Australia draws questions about the student visa, about the requirement to show genuine intent, about the generous rules on working while studying, and about the cost of living in Sydney and Melbourne, which surprises people who have budgeted from older numbers. Students ask about the difference between the Group of Eight universities and the rest, about regional study incentives, and about health cover, which is compulsory and often forgotten in a first budget.
+
+### Ireland
+
+Ireland is a smaller but growing destination on TYM, chosen by students who want an English-speaking country inside the European Union. Questions are about the stamp that student permission falls under, about the third level graduate programme that allows a period of work after study, about the housing shortage in Dublin, which is severe and worth planning around, and about how the cost compares with the United Kingdom.
+
+### Germany
+
+Germany is the destination for students who are thinking about cost above all, because public universities charge little or no tuition. The questions are therefore different in character. They are about the blocked account that proves a student can support themselves, about whether a programme is taught in English, about the admissions certificate that many applicants need, about language requirements for daily life even on an English-taught course, and about the long and document-heavy application process. Students who get through it tell others that the paperwork is the hard part and the studying is the easy part.
+
+## What students ask about most
+
+Across every destination, the questions on The Youth Matters fall into a handful of groups, and knowing them is the fastest way to understand what the community is for.
+
+**Choosing a country and a university.** Students want to know where their marks and their budget actually reach, not where a glossy prospectus suggests. They ask for honest comparisons between a well-known university in an expensive city and a less famous one where the course is stronger and the rent is half.
+
+**Applications and deadlines.** When to start, what a rolling intake means in practice, how many universities is sensible to apply to, and what to do when a reference is late.
+
+**The statement of purpose and the personal statement.** This is the single most common thing a student brings to a mentor session. The first paragraph is where most applications are won or lost, and a student who has written five drafts alone usually gets further in one hour with somebody who has read a hundred of them.
+
+**Money.** Tuition, living costs, the gap between the two, scholarships that are worth applying for against those that are not, education loans, and the financial evidence a visa application needs. This is where bad advice does the most damage, which is why TYM pushes people towards official sources for the numbers.
+
+**Visas.** The documents, the timing, the interview where there is one, and what happens if something is refused. TYM is clear that it is not an immigration adviser and that the government pages are the authority, but the experience of somebody who went through it last year is still worth a great deal.
+
+**Accommodation and the first month.** Where to live, how to avoid a scam, how much a deposit really is, what to pack and what to buy there, how to open a bank account and get a local phone number, and how to meet people in a city where nobody knows you.
+
+**Working and staying on.** How many hours a student may work, what kind of work is realistic, and what the rules are for staying after the degree finishes.
+
+## A typical year, month by month
+
+Students often ask what a sensible timeline looks like. For somebody aiming at an intake in the autumn of the following year, a rough shape looks like this.
+
+Twelve to eighteen months before: decide on a country and a rough budget, and start talking to people who are already there. This is the cheapest stage to change your mind in.
+
+Twelve months before: sit any English language test that is required, and start building a shortlist. Begin the first draft of a statement of purpose, because it will take many more drafts than anybody expects.
+
+Nine to twelve months before: approach referees early and politely. Finalise the shortlist, including at least one realistic choice as well as the ambitious ones.
+
+Eight to ten months before: submit applications. For destinations with rolling admissions, earlier is genuinely better, because places and scholarship money both run out.
+
+Six to eight months before: offers begin to arrive. Compare them on the whole cost rather than the tuition alone. Apply for scholarships, which almost always have earlier deadlines than people expect.
+
+Four to six months before: accept a place and pay the deposit. Arrange the financial evidence, which often has a minimum period it must sit in an account, so this cannot be left late.
+
+Three to four months before: apply for the visa. Book the interview where there is one. Start looking seriously at accommodation.
+
+One to two months before: book flights, sort insurance and health cover, join the chat room for your city and find the people arriving at the same time. Arrange the first few nights even if the long-term accommodation is not settled.
+
+The first month after arriving: open a bank account, get a local phone number, register with the university and with any local authority that requires it, and go to things. The students who settle fastest are the ones who say yes to the first few invitations.
+
+## Words students meet, and what they mean
+
+**Acceptance letter or offer letter.** The document from a university saying a place is available. It may be conditional, meaning results or documents are still needed, or unconditional.
+
+**Blocked account.** A bank account used in some countries, Germany most commonly, where a set sum is deposited and released monthly, proving a student can support themselves.
+
+**CAS.** Confirmation of Acceptance for Studies. The reference a United Kingdom university issues once a place and deposit are settled, needed for the visa application.
+
+**Conditional offer.** A place that depends on something still outstanding, usually final results or an English test score.
+
+**Financial evidence.** Proof that a student can pay tuition and living costs. Rules differ by country on the amount, whose account it may be in and how long it must have been there.
+
+**I twenty.** The document a United States university issues to an admitted international student, needed for the visa application.
+
+**IELTS and TOEFL.** The two most common English language tests. Universities and visa authorities set their own minimum scores, and the two are not interchangeable everywhere.
+
+**Intake.** The point in the year a course starts. Autumn and spring are the most common, and an intake can close long before the course begins.
+
+**Post-study work.** Permission to stay and work for a period after graduating. The name, the length and the conditions differ in every country and change often, so the official page is the only reliable source.
+
+**SOP.** Statement of purpose. The essay explaining why this course, why this university and why now. In the United Kingdom it is often called a personal statement.
+
+**SEVIS fee.** A fee paid by students going to the United States, separate from the visa fee.
+
+**Study permit.** What Canada calls the document allowing a person to study there.
+
+**Transcript.** The official record of marks from a previous school or university.
+
+## How the team keeps the website current
+
+Almost everything written on The Youth Matters is edited by the team rather than by a developer, which matters because it means the site does not go stale between releases.
+
+The frequently asked questions page is written and answered in the admin panel, and members can send a question in from the public page, which arrives for the team to answer. Answering one publishes it and tells the person who asked.
+
+Blog articles are written and published in the admin panel. Case studies, which are the student journeys on the case studies page and the quotation on the home page, are also written there.
+
+The three prices for counselling hours are set in the admin panel, and every page that shows a price reads from that one place.
+
+Countries, subjects and chat rooms are created and edited in the admin panel, which is how a new destination is opened.
+
+Mentor applications are reviewed in the admin panel, and mentors edit their own profiles themselves once they are approved.
+
+## How to get a good answer on The Youth Matters
+
+The community works best when a question gives people enough to answer properly, and the difference between a question that gets three answers and one that gets none is usually detail rather than luck.
+
+A question that works names the country, the stage the person is at and the specific thing they are stuck on. "How much money do I need for a United Kingdom student visa if my course starts in September and my father is funding it?" will be answered. "Visa help please" usually will not, because nobody knows where to begin.
+
+Context about the person matters as much as the question. Marks, budget, the intake being aimed at and whether an offer is already in hand change the answer completely, and leaving them out means the first three replies are all requests for the same information.
+
+Searching first is worth the two minutes it takes. Many questions have already been answered well, and the answer sitting there is often better than a new one, because it has been voted on and corrected by people who disagreed with parts of it.
+
+Marking the answer that helped is the part most people forget, and it is what keeps the site useful for the next person. The community also votes, so the most useful answer rises, but the person who asked is the only one who knows which answer actually solved their problem.
+
+Keeping it in public helps everybody. A question answered in a chat room helps one person for an hour. The same question asked properly, with a good answer under it, helps every person who searches for it afterwards. This is why The Youth Matters has no private messaging between members: the value of the place is in what is written down where others can find it.
+
+Being decent is the only rule that is enforced firmly. Members are between eighteen and thirty two and many of them are anxious about a decision that will shape years of their life. Abusive language is filtered automatically, including deliberate misspellings designed to slip past the filter, anybody can report a post or an answer, and the team reviews every report. Accounts can be suspended or removed.
+
+## Ask TYM AI, in more detail
+
+Ask TYM AI is the free artificial intelligence assistant, and it has two places it lives.
+
+The first is its own page, where a member has a private conversation with it. It answers study abroad questions at any hour, which matters when somebody is awake at two in the morning worrying about a deadline, and it keeps the thread so a conversation can be picked up later.
+
+The second is the chat rooms. Typing @TYMAi in a room brings it into the conversation, so a group working through a question together can ask it something without leaving the room.
+
+It is clear about what it is. The results may not be one hundred per cent correct, and for visa rules, fees and deadlines the official government and university pages are the authority. It is a fast way to understand a topic and a poor way to confirm a number.
+
+When somebody would rather speak to a person, they can ask for one, and the conversation is passed to the TYM team, who reply as themselves. Because that is a human service staffed by people rather than a live chat desk, each request allows five messages, which keeps the queue honest and the replies considered. If a request is not answered within a short period the chat pauses and the team follows up by email.
+
 ## What The Youth Matters does not offer
 
 To keep answers accurate, these are things TYM does not have at present:
@@ -214,6 +432,26 @@ To keep answers accurate, these are things TYM does not have at present:
 **What if I forget my password?** Choose Forgot password on the sign-in page and follow the instructions sent to the registered email address.
 
 **How do I delete my account?** Write to support@theyouthmatters.com from the registered email address.
+
+**How long does it take to get a session confirmed?** The team usually comes back within a day with a mentor and a time.
+
+**Can I choose which mentor I get?** Yes. Book from that mentor's own page and the request says who you asked for. If that person is not free the team will suggest somebody whose experience is as close to your plans.
+
+**Do I need a TYM account to book a session?** No. Anybody can send the booking form. An account is only needed for the private chat with your mentor, and the confirmation email explains how to create one with the same email address.
+
+**How do I know how long is left in my session?** A countdown runs at the top of your conversation with your mentor, and both of you see the same one.
+
+**Who ends a session?** The mentor, when you are both finished. The conversation stays open afterwards so you can send a follow-up question.
+
+**What happens if my mentor does not turn up?** Write to support@theyouthmatters.com. The team can see the session and will arrange another one.
+
+**Do counselling hours expire?** No. They stay on your account until you use them, and they work with any mentor.
+
+**Can I pay for a single session rather than a package?** Yes. One hour is a package in its own right.
+
+**Is there an app?** No. The Youth Matters is a website, and it works on phones, tablets and computers.
+
+**Which countries does TYM cover?** The United Kingdom, the United States, Canada, Australia, Ireland and Germany, each with its own community and chat room.
 
 **Who do I contact?** Ask for a person in Ask TYM AI, use the Contact page, or write to support@theyouthmatters.com.
 

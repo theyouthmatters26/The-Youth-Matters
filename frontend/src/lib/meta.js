@@ -25,7 +25,7 @@ function meta(attr, key, content) {
   el.setAttribute('content', content)
 }
 
-export function useMeta({ title, description, path, image, type = 'website', jsonLd }) {
+export function useMeta({ title, description, path, image, type = 'website', jsonLd, noindex = false }) {
   useEffect(() => {
     const previous = { title: document.title, description: document.head.querySelector('meta[name="description"]')?.content }
     const url = `${siteUrl}${path || window.location.pathname}`
@@ -39,6 +39,10 @@ export function useMeta({ title, description, path, image, type = 'website', jso
     meta('property', 'og:image', img)
     meta('name', 'twitter:card', 'summary_large_image')
     tag('link[rel="canonical"]', () => Object.assign(document.createElement('link'), { rel: 'canonical' })).href = url
+    // An address we do not have must not be indexed. The server answers 404 for these as well; this
+    // is the belt to that pair of braces, for anything the server still serves as the app shell.
+    meta('name', 'robots', noindex ? 'noindex, follow'
+      : 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1')
 
     const ld = jsonLd && tag('script#page-ld', () => Object.assign(document.createElement('script'), { id: 'page-ld', type: 'application/ld+json' }))
     if (ld) ld.textContent = JSON.stringify(jsonLd)
@@ -46,7 +50,8 @@ export function useMeta({ title, description, path, image, type = 'website', jso
     return () => {
       document.title = previous.title
       if (previous.description) meta('name', 'description', previous.description)
+      meta('name', 'robots', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1')
       document.head.querySelector('script#page-ld')?.remove()
     }
-  }, [title, description, path, image, type, jsonLd])
+  }, [title, description, path, image, type, jsonLd, noindex])
 }

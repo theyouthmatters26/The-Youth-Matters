@@ -5,6 +5,21 @@ Disallow: /api/
 Disallow: /my
 Disallow: /settings
 Disallow: /notifications
+Disallow: /ask
+Disallow: /search
+
+# Addresses that were never part of this website. Injected links from somewhere else point at
+# them, and every one of them answers 404. Listing them here keeps Google from spending its time
+# on them instead of on the pages that matter.
+Disallow: /index.php
+Disallow: /artikel/
+Disallow: /keamanan/
+Disallow: /*?tag=
+Disallow: /*+slot
+Disallow: /*+casina
+Disallow: /*+lucky
+Disallow: /*lucky+
+
 Allow: /
 
 Sitemap: https://theyouthmatters.com/sitemap.xml

@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useMeta } from '../lib/meta'
 
 export default function NotFound() {
+  // The server answers 404 for an address we do not have. This says the same thing to a crawler
+  // that was served the app shell anyway, so injected spam addresses can never be indexed.
+  useMeta({ title: 'Page not found', noindex: true })
   return (
     <div className="container page narrow" style={{ textAlign: 'left' }}>
       <p className="eyebrow">Gate closed</p>
