@@ -45,14 +45,6 @@ export default function SideRail({ country }) {
         </div>
       )}
 
-      {place?.official && (
-        <div className="card card-pad rail-official">
-          <h3 className="section-title">Check the official rules</h3>
-          <p className="muted">Visa rules change. Members share what worked for them; the government page has the final word.</p>
-          <a href={place.official.url} target="_blank" rel="noreferrer" className="text-link">{place.official.label} <ArrowUpRight size={14} /></a>
-        </div>
-      )}
-
       <div className="card card-pad ai-card">
         <h3 className="display">Stuck on your SOP at 2am?</h3>
         <p>TYM AI reviews drafts, explains visa steps and helps you shortlist. Free and private.</p>

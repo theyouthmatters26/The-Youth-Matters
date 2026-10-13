@@ -261,9 +261,6 @@
 .rail-messages strong { font-weight: 600; color: var(--ink); }
 .rail .mini-list { margin-top: var(--s-4); }
 .rail-more { margin-top: var(--s-4); }
-.rail-official { display: grid; gap: var(--s-3); }
-.rail-official p, .rail-official a { font-size: var(--step--1); }
-.rail-official .text-link { white-space: normal; }
 @keyframes live { 50% { opacity: 0.3; } }
 
 /* AI card in side rails */
