@@ -49,17 +49,23 @@
   /* The grey box around a helpful answer or an answer from TYM AI kept its desktop padding, which
      on a phone ate a quarter of every line while the words wrapped three to a line inside it. */
   .comment.is-helpful > .comment-body, .comment.is-ai > .comment-body { padding: var(--s-3); }
-  /* Indenting each level compounds: by the third there is more margin than sentence. Past that the
-     replies sit flat, and the rail down the side is what shows they are replies. */
+  /* Indenting each level compounds: by the third there is more margin than sentence, so past that
+     the replies sit flat. */
   .comment-list.nested .comment-list.nested .comment-list.nested {
     padding-left: 0; border-left: 0; margin-top: var(--s-4);
   }
+  /* No rules down the side of a thread on a phone. There is no room for them to mean anything, and
+     two pale lines beside every reply is all a reader sees. The small indent says reply on its own.
+     The collapse control stays where it was and still works; it simply stops being drawn. */
+  .comment-list.nested { border-left: 0; }
+  .comment-line { background: transparent; }
+  .comment-line:hover { background: transparent; }
 }
 
 /* The smallest phones still in use, and a window dragged narrow on a desktop */
 @media (max-width: 400px) {
   .post-full, .post-answers { padding: var(--s-4); }
-  .comment-list.nested { padding-left: var(--s-2); }
+  .comment-list.nested { padding-left: var(--s-2); border-left: 0; }
   .comment-list.nested .comment-list.nested { padding-left: 0; border-left: 0; }
   .comment.is-helpful > .comment-body, .comment.is-ai > .comment-body { padding: var(--s-2) var(--s-3); }
 }
