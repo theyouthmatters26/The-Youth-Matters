@@ -6,7 +6,7 @@ from jwt import PyJWTError
 from . import (admin, admin_content, ai, auth, blogs, bookings, case_studies, chat, comments, contact,
                communities, faqs, feed,
                media, mentor_applications, mentor_chat, mentors, moderation,
-               notifications, packages, posts, search, support, users, verify, votes)
+               notifications, packages, posts, search, session_requests, support, users, verify, votes)
 
 health_bp = Blueprint("health", __name__)
 
@@ -21,11 +21,11 @@ BLUEPRINTS = [
     auth.bp, users.bp, communities.bp, posts.bp, comments.bp, votes.bp, feed.bp, search.bp,
     notifications.bp, moderation.bp, chat.bp, mentors.bp, bookings.bp, blogs.bp, verify.bp, contact.bp, media.bp,
     ai.bp, mentor_applications.bp, admin.bp, support.bp, admin_content.bp, packages.bp, mentor_chat.bp,
-    faqs.bp, case_studies.bp,
+    faqs.bp, case_studies.bp, session_requests.bp,
 ]
 
 # Signing up (email, Google, photo ID) and asking the team for help
-SIGN_UP = ("/api/auth/", "/api/verify/", "/api/contact")
+SIGN_UP = ("/api/auth/", "/api/verify/", "/api/contact", "/api/session-requests")
 # A mentor account shows no photo ID: writing and sending its application, with the profile photo
 # that application needs, IS its sign-up, and it stays pending until the team approves it.
 MENTOR_SIGN_UP = ("/api/mentor-application", "/api/users/me/avatar")

@@ -227,8 +227,11 @@ export default function BookingPanel({ mentor }) {
             </button>
           ) : user ? (
             <div className="stack book-buy">
-              <p className="book-label">Buy hours to book</p>
-              <Packages />
+              <p className="book-label">Ask for this session</p>
+              <p className="book-fine">Payment is arranged by our team while the gateway is being set
+                up. Pick your hours and tell us what you need: we confirm {firstName} and your time by
+                email, and your chat with them opens here.</p>
+              <Packages book mentorId={mentor.id} />
             </div>
           ) : account ? (
             <Link to="/register" state={{ from: location.pathname }} className="btn btn-primary btn-block">Finish verifying to book</Link>

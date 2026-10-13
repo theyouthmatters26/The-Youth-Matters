@@ -130,6 +130,38 @@ class MentorReview(Model):
     booking = db.relationship("Booking", back_populates="review")
 
 
+class SessionRequest(Model):
+    """A session asked for through the booking form, while payments are arranged by hand.
+
+    Anyone can send one, with or without an account. The team assigns a mentor and confirms it in
+    the admin panel (api/session_requests.py); confirming opens the student's private chat with
+    that mentor, which is where the session itself happens (api/mentor_chat.py)."""
+    __tablename__ = "session_requests"
+
+    name = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(255), nullable=False, index=True)
+    whatsapp = db.Column(db.String(30))
+    # Set when the email belongs to an account. Without one there is nobody to open a chat with,
+    # so the team tells them to sign up: everything else about the request still works.
+    student_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    # Who they asked for, from that mentor's page. NULL when they came through /book-a-session.
+    wanted_mentor_id = db.Column(db.Integer, db.ForeignKey("mentor_profiles.id", ondelete="SET NULL"))
+    mentor_id = db.Column(db.Integer, db.ForeignKey("mentor_profiles.id", ondelete="SET NULL"))
+    package_id = db.Column(db.Integer, db.ForeignKey("counseling_packages.id", ondelete="SET NULL"))
+    status = db.Column(enum("new", "assigned", "confirmed", "cancelled", name="session_request_status"),
+                       nullable=False, default="new", server_default="new")
+    message = db.Column(db.Text)      # what they want to cover, passed to the mentor
+    answers = db.Column(db.JSON)      # the rest of the booking form, for the team
+    note = db.Column(db.String(500))  # the team's own note: the time agreed, how they paid
+    confirmed_at = db.Column(db.DateTime(timezone=True))
+    handled_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+
+    student = db.relationship("User", foreign_keys=[student_id])
+    wanted_mentor = db.relationship("MentorProfile", foreign_keys=[wanted_mentor_id])
+    mentor = db.relationship("MentorProfile", foreign_keys=[mentor_id])
+    package = db.relationship("CounselingPackage")
+
+
 class MentorApplication(Model):
     """Everything a mentor profile needs, held for the team to review. Approving it creates the
     MentorProfile (api/mentor_applications.py). CV and proof of study are private files."""

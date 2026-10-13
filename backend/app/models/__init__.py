@@ -4,7 +4,7 @@ from .comment import Comment
 from .content import BlogPost, CaseStudy, ContactMessage, Faq
 from .community import Category, Community, Country, Follow, Subject
 from .mentor import (AvailabilitySlot, Booking, CounselingPackage, MentorApplication, MentorProfile, MentorReview,
-                     Payment)
+                     Payment, SessionRequest)
 from .moderation import ModerationLog, Report, Strike
 from .notification import Notification
 from .post import Post, PostImage, SavedPost
@@ -17,5 +17,5 @@ __all__ = [
     "IdentityVerification",
     "MentorApplication", "MentorMessage", "MentorProfile", "MentorReview", "MentorThread", "ModerationLog",
     "Notification", "Payment", "Post", "PostImage", "Report",
-    "SavedPost", "Strike", "Subject", "User", "Vote",
+    "SavedPost", "SessionRequest", "Strike", "Subject", "User", "Vote",
 ]

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Check, Clock3, MessageSquare, Send, Wallet } from 'lucide-react'
+import { Check, Clock3, MessageSquare, Send, UserCheck, Wallet } from 'lucide-react'
 import { FormError, Spinner, SubmitButton } from '../../components/auth/fields'
 import { api, useApi } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
@@ -82,6 +82,9 @@ export default function BookSession() {
   const { account } = useAuth()
   const { data: plans } = useApi('/packages')
   const [params] = useSearchParams()
+  // Arriving from a mentor's page asks for that mentor by name; the team still confirms who it is
+  const wantedId = Number(params.get('mentor')) || null
+  const { data: wanted } = useApi(wantedId ? `/mentors/${wantedId}` : null)
   const [form, setForm] = useState(() => ({
     ...EMPTY,
     fullName: account?.displayName || '',
@@ -111,16 +114,17 @@ export default function BookSession() {
 
     setBusy(true)
     try {
-      await api('/contact', {
+      await api('/session-requests', {
         method: 'POST',
         body: {
           name: form.fullName.trim(),
           email: form.email.trim(),
-          topic: 'Mentorship session',
-          message: form.questions.trim() || 'A mentorship session request. The answers are below.',
-          details: {
+          whatsapp: form.whatsapp.trim(),
+          mentorId: wantedId,
+          packageId: plan.id,
+          message: form.questions.trim(),
+          answers: {
             Plan: `${plan.title} — ${formatMoney(plan.priceMinor, plan.currency)}`,
-            WhatsApp: form.whatsapp,
             'Lives in': form.residence,
             'Education level': form.education,
             Destination: form.destination,
@@ -186,6 +190,12 @@ export default function BookSession() {
       <div className="layout-2 apply-layout">
         <form className="stack apply-sections" onSubmit={send}>
           <Section title="Choose your plan">
+            {wanted && (
+              <p className="book-wanted">
+                <UserCheck size={16} aria-hidden /> You asked for <strong>{wanted.user.displayName}</strong>.
+                We will confirm them, or suggest someone just as close to your plans.
+              </p>
+            )}
             <p className="hint">One price for every mentor. Hours work with any TYM mentor and do not expire.</p>
             {plans ? (
               <div className="plan-grid" role="radiogroup" aria-label="Counselling hours">

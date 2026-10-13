@@ -464,6 +464,9 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
 .adm-closed-why { margin: 0; padding-left: var(--s-3); border-left: 2px solid var(--line); font-size: var(--step--1); color: var(--muted); }
 
 /* The answers on a contact message or a session booking, one per line */
+/* Assigning a mentor to a session request */
+.adm-assign { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-3) var(--s-4); margin: var(--s-4) 0; }
+@media (max-width: 700px) { .adm-assign { grid-template-columns: minmax(0, 1fr); } }
 .adm-answers { display: grid; gap: 4px; margin: var(--s-3) 0 0; }
 .adm-answers > div { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: var(--s-3); font-size: var(--step--1); }
 .adm-answers dt { color: var(--muted); }

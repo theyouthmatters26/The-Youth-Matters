@@ -26,7 +26,9 @@ EXAMPLES = [
 
 
 def upgrade():
-    status = sa.Enum("published", "hidden", name="case_study_status")
+    # VARCHAR + CHECK, the way every other enum in this schema is stored (models/base.py)
+    status = sa.Enum("published", "hidden", name="case_study_status",
+                     native_enum=False, create_constraint=True, length=32)
     table = op.create_table(
         "case_studies",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -46,4 +48,3 @@ def upgrade():
 
 def downgrade():
     op.drop_table("case_studies")
-    sa.Enum(name="case_study_status").drop(op.get_bind(), checkfirst=True)

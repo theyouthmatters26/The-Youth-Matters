@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, CircleHelp, Flag, Globe, GraduationCap, KeyRound, LayoutDashboard, LogOut, Mail, Menu, MessagesSquare, Newspaper, Quote, Users, Wallet, X } from 'lucide-react'
+import { ArrowUpRight, CalendarCheck, CircleHelp, Flag, Globe, GraduationCap, KeyRound, LayoutDashboard, LogOut, Mail, Menu, MessagesSquare, Newspaper, Quote, Users, Wallet, X } from 'lucide-react'
 import { FormError, PasswordField, PasswordMeter, Spinner, SubmitButton } from '../../components/auth/fields'
 import Avatar from '../../components/ui/Avatar'
 import { AdminProvider, adminApi, useAdmin, useAdminApi } from '../../lib/admin'
@@ -15,6 +15,7 @@ import Mentors from './Mentors'
 import Moderation from './Moderation'
 import Overview from './Overview'
 import Payments from './Payments'
+import Sessions from './Sessions'
 import Support from './Support'
 import Team from './Team'
 import { Person, Pill, Sheet } from './ui'
@@ -34,6 +35,7 @@ const NAV = [
   { area: 'blog', to: '/admin/case-studies', label: 'Case Studies', icon: Quote, page: CaseStudies },
   { area: 'faq', to: '/admin/faq', label: 'FAQ', icon: CircleHelp, page: Faqs },
   { area: 'mentors', to: '/admin/mentors', label: 'Mentors', icon: GraduationCap, page: Mentors },
+  { area: 'bookings', to: '/admin/sessions', label: 'Sessions', icon: CalendarCheck, page: Sessions, counts: 'sessions' },
   { area: 'bookings', to: '/admin/payments', label: 'Payments', icon: Wallet, page: Payments },
   { area: 'team', to: '/admin/team', label: 'Team', icon: KeyRound, page: Team },
 ]

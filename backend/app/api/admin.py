@@ -38,7 +38,7 @@ from markupsafe import escape
 from ..extensions import db, limiter
 from ..models import (AccountClosure, AiConversation, AvailabilitySlot, Booking, ChatMessage, ChatRoom, Comment,
                       CounselingPackage,
-                      ContactMessage, Faq, IdentityVerification, MentorApplication, MentorProfile, MentorReview,
+                      ContactMessage, Faq, IdentityVerification, MentorApplication, MentorProfile, MentorReview, SessionRequest,
                       ModerationLog, Payment, Post, Report, Strike, User)
 from ..models.base import utcnow
 from ..services import accounts, handoff, mailer, staff
@@ -220,6 +220,8 @@ def badges():
         out["mentors"] = count(MentorApplication.status == "pending")
     if staff.can(me, "faq"):
         out["faq"] = count(Faq.status == "pending")
+    if staff.can(me, "bookings"):
+        out["sessions"] = count(SessionRequest.status.in_(("new", "assigned")))
     return jsonify(out)
 
 

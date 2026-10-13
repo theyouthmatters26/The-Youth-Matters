@@ -10,9 +10,9 @@ import './mentors.css'
 
 // Counselling hours on sale: the same price whichever mentor they are spent on. Anyone can see them;
 // buying needs a verified account. onBought(minutes) runs once the hours are on the balance.
-// `book` is for the public page, where there is no checkout yet: the card leads to the booking form
-// and our team arranges payment by hand.
-export default function Packages({ onBought, book }) {
+// `book` is for the pages where there is no checkout yet: the card leads to the booking form and
+// our team arranges payment by hand. `mentorId` asks for that mentor on the way in.
+export default function Packages({ onBought, book, mentorId }) {
   const { user, account, setAccount } = useAuth()
   const location = useLocation()
   const { data, error, loading } = useApi('/packages')
@@ -55,7 +55,8 @@ export default function Packages({ onBought, book }) {
                 {p.hours > 1 ? `${formatMoney(perHour(p), p.currency)} an hour${saving > 0 ? ` · save ${saving}%` : ''}` : 'One session with any mentor'}
               </p>
               {book ? (
-                <Link to={`/book-a-session?plan=${p.id}`} className="btn btn-primary btn-sm btn-block">
+                <Link to={`/book-a-session?plan=${p.id}${mentorId ? `&mentor=${mentorId}` : ''}`}
+                  className="btn btn-primary btn-sm btn-block">
                   Book a session
                 </Link>
               ) : user ? (
