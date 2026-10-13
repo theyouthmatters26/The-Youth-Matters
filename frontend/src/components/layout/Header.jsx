@@ -19,8 +19,8 @@ export const NAV = [
   { to: '/mentors', label: 'TYM Mentors' },
   { to: '/loan-consultation', label: 'Study Abroad Loan' },
   { to: '/faq', label: 'FAQ' },
-  { to: '/blogs', label: 'Blogs' },
   { to: '/case-studies', label: 'Case Studies' },
+  { to: '/blogs', label: 'Blogs' },
 ]
 
 function SearchDialog({ onClose }) {
