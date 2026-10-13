@@ -465,6 +465,7 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
 
 /* The answers on a contact message or a session booking, one per line */
 /* Assigning a mentor to a session request */
+.adm-wide { grid-column: 1 / -1; }
 .adm-assign { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-3) var(--s-4); margin: var(--s-4) 0; }
 @media (max-width: 700px) { .adm-assign { grid-template-columns: minmax(0, 1fr); } }
 .adm-answers { display: grid; gap: 4px; margin: var(--s-3) 0 0; }

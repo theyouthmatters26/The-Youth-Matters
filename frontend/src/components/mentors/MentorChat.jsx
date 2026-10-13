@@ -136,17 +136,36 @@ function ShareMeeting({ c, onShared }) {
   )
 }
 
-// The booked session itself: time in this chat. The mentor closes it when they are done.
+// Hours, minutes and seconds between now and then, counted the way a clock is read
+const clock = (ms) => {
+  const whole = Math.max(0, Math.floor(ms / 1000))
+  const parts = [Math.floor(whole / 3600), Math.floor(whole / 60) % 60, whole % 60]
+  return (parts[0] ? parts : parts.slice(1)).map((n, i) => (i ? String(n).padStart(2, '0') : n)).join(':')
+}
+
+// The booked session itself: time in this chat, counting down for both of them. The mentor closes
+// it when they are done, and so can our team from the admin panel.
 function SessionBar({ session, asMentor, onChanged }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  if (!['live', 'overtime', 'upcoming'].includes(session.state)) return null
+  const [now, setNow] = useState(() => Date.now())
+  const running = ['live', 'overtime', 'upcoming'].includes(session.state)
+
+  // One tick a second while the session is in play. Nothing runs once it is over.
+  useEffect(() => {
+    if (!running) return undefined
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [running])
+
+  if (!running) return null
 
   const end = async () => {
     setBusy(true)
     setError('')
     try {
-      await api(`/bookings/${session.id}/end`, { method: 'POST' })
+      const where = session.kind === 'arranged' ? `/session-requests/${session.id}/end` : `/bookings/${session.id}/end`
+      await api(where, { method: 'POST' })
       onChanged()
     } catch (err) {
       setError(err.message)
@@ -154,14 +173,19 @@ function SessionBar({ session, asMentor, onChanged }) {
     }
   }
 
+  const starts = new Date(session.startsAt).getTime()
+  const ends = new Date(session.endsAt).getTime()
   const when = new Date(session.startsAt).toLocaleString('en-GB',
     { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const left = session.state === 'upcoming' ? starts - now : ends - now
+
   return (
     <div className={`mchat-session is-${session.state}`} role="status">
       <span>
-        {session.state === 'upcoming' && <><Clock size={14} aria-hidden /> Your {session.minutes} minute session is on {when}. You can write before then.</>}
-        {session.state === 'live' && <><Clock size={14} aria-hidden /> Your session is on now, until {new Date(session.endsAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.</>}
-        {session.state === 'overtime' && <><Clock size={14} aria-hidden /> The booked time is up.{asMentor ? ' End it when you are done.' : ' Your mentor will close it when you are both done.'}</>}
+        <Clock size={14} aria-hidden />
+        {session.state === 'upcoming' && <>Your {session.minutes} minute session is on {when}. Starts in <b className="mchat-clock">{clock(left)}</b>.</>}
+        {session.state === 'live' && <>Session running. <b className="mchat-clock">{clock(left)}</b> left of your {session.minutes} minutes.</>}
+        {session.state === 'overtime' && <>The booked time is up, <b className="mchat-clock">{clock(now - ends)}</b> over.{asMentor ? ' End it when you are done.' : ' Your mentor will close it when you are both done.'}</>}
       </span>
       {asMentor && session.state !== 'upcoming' && (
         <button className="btn btn-ghost btn-sm" onClick={end} disabled={busy}>{busy ? <Spinner /> : 'End session'}</button>

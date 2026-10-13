@@ -16,13 +16,15 @@ Only the mentor can put a video call link in the conversation: a student's messa
 refused, so nobody can be talked into joining a call somewhere else.
 """
 import re
+from datetime import timedelta
 
 from flask import Blueprint, abort, jsonify, request
 from flask_jwt_extended import current_user, jwt_required
 from markupsafe import escape
 
 from ..extensions import db, limiter, member_key
-from ..models import AvailabilitySlot, Booking, MentorMessage, MentorProfile, MentorThread, User
+from ..models import (AvailabilitySlot, Booking, MentorMessage, MentorProfile, MentorThread,
+                      SessionRequest, User)
 from ..models.base import utcnow
 from ..services import content, handoff, mailer
 from ..services.notify import notify
@@ -90,11 +92,32 @@ def _session(mentor_id, student_id):
                Booking.status == "confirmed")
         .order_by(AvailabilitySlot.starts_at).limit(1))
     if not b:
-        return None
+        return _arranged(mentor_id, student_id, now)
     if time_is_up(b):
         db.session.commit()
-    return {"id": b.id, "state": s.session_state(b, now), "startsAt": b.slot.starts_at.isoformat(),
-            "endsAt": b.slot.ends_at.isoformat(), "minutes": b.minutes_deducted or b.mentor.session_minutes}
+    return {"kind": "booking", "id": b.id, "state": s.session_state(b, now),
+            "startsAt": b.slot.starts_at.isoformat(), "endsAt": b.slot.ends_at.isoformat(),
+            "minutes": b.minutes_deducted or b.mentor.session_minutes}
+
+
+def _arranged(mentor_id, student_id, now):
+    """A session the team put together by hand (api/session_requests.py). It has no slot of its own,
+    so its clock is the start time and the length the team agreed with the student."""
+    r = db.session.scalar(
+        db.select(SessionRequest)
+        .where(SessionRequest.mentor_id == mentor_id, SessionRequest.student_id == student_id,
+               SessionRequest.status == "confirmed", SessionRequest.starts_at.isnot(None),
+               SessionRequest.ended_at.is_(None))
+        .order_by(SessionRequest.starts_at.desc()).limit(1))
+    if not r:
+        return None
+    starts = r.starts_at
+    ends = starts + timedelta(minutes=r.minutes or 60)
+    if starts.tzinfo is None:        # SQLite hands times back without a zone; PostgreSQL keeps it
+        now = now.replace(tzinfo=None)
+    state = "upcoming" if now < starts else "live" if now < ends else "overtime"
+    return {"kind": "arranged", "id": r.id, "state": state, "startsAt": starts.isoformat(),
+            "endsAt": ends.isoformat(), "minutes": r.minutes or 60}
 
 
 def _conversation(t, mentor, me, other, last=None, unread=0):

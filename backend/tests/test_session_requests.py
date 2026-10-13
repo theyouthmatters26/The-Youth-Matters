@@ -225,3 +225,102 @@ def test_only_the_team_can_book_one(site):
     body = {"name": "Asha", "email": "asha@example.org", "mentorId": mentors[0].id}
     assert client.post("/api/admin/session-requests", json=body).status_code == 401
     assert client.post("/api/admin/session-requests", headers=student, json=body).status_code == 403
+
+
+# ---------------------------------------------------------------- the session clock
+
+from datetime import timedelta                                          # noqa: E402
+
+from app.models.base import utcnow                                      # noqa: E402
+from app.models import MentorMessage                                    # noqa: E402
+
+
+def booked(client, head, mentors, when, minutes=60):
+    made = client.post("/api/admin/session-requests", headers=head, json={
+        "name": "Asha Rao", "email": "asha@example.org", "mentorId": mentors[0].id,
+        "startsAt": when.isoformat(), "minutes": minutes, "message": "Visa financials."})
+    assert made.status_code == 201, made.get_json()
+    return made.get_json()
+
+
+def chat(client, who, mentors, student):
+    return client.get(f"/api/mentor-chats/{mentors[0].id}/{student}", headers=who).get_json()["session"]
+
+
+def test_the_clock_the_team_sets_is_what_both_of_them_see(site):
+    client, _sent, mentors, head, asha = site
+    start = utcnow() + timedelta(days=1)
+    row = booked(client, head, mentors, start, minutes=90)
+    assert row["minutes"] == 90 and row["startsAt"]
+
+    student = {"Authorization": f"Bearer {create_access_token(str(asha))}"}
+    mentor = {"Authorization": f"Bearer {create_access_token(str(mentors[0].user_id))}"}
+    for who in (student, mentor):
+        session = chat(client, who, mentors, asha)
+        assert session["kind"] == "arranged" and session["state"] == "upcoming"
+        assert session["minutes"] == 90
+
+
+def test_a_session_that_has_started_is_live_and_then_runs_over(site):
+    client, _sent, mentors, head, asha = site
+    booked(client, head, mentors, utcnow() - timedelta(minutes=10), minutes=60)
+    student = {"Authorization": f"Bearer {create_access_token(str(asha))}"}
+    assert chat(client, student, mentors, asha)["state"] == "live"
+
+    row = db.session.scalar(db.select(SessionRequest))
+    row.starts_at = utcnow() - timedelta(minutes=90)
+    db.session.commit()
+    assert chat(client, student, mentors, asha)["state"] == "overtime"
+
+
+def test_the_mentor_can_end_their_own_session(site):
+    client, _sent, mentors, head, asha = site
+    row = booked(client, head, mentors, utcnow() - timedelta(minutes=10))
+    mentor = {"Authorization": f"Bearer {create_access_token(str(mentors[0].user_id))}"}
+
+    done = client.post(f"/api/session-requests/{row['id']}/end", headers=mentor)
+    assert done.status_code == 200, done.get_json()
+    db.session.expire_all()
+    assert db.session.get(SessionRequest, row["id"]).ended_at is not None
+
+    # the chat says so, and stays open
+    note = db.session.scalar(db.select(MentorMessage).filter_by(kind="system"))
+    assert "ended the session" in note.body and "still message each other" in note.body
+    assert chat(client, mentor, mentors, asha) is None       # the bar goes away
+    assert db.session.scalar(db.select(MentorThread)).status == "accepted"
+
+
+def test_a_student_cannot_end_the_time_they_paid_for(site):
+    client, _sent, mentors, head, asha = site
+    row = booked(client, head, mentors, utcnow() - timedelta(minutes=10))
+    student = {"Authorization": f"Bearer {create_access_token(str(asha))}"}
+
+    assert client.post(f"/api/session-requests/{row['id']}/end", headers=student).status_code == 404
+    assert client.post(f"/api/session-requests/{row['id']}/end").status_code == 401
+    db.session.expire_all()
+    assert db.session.get(SessionRequest, row["id"]).ended_at is None
+
+
+def test_a_session_cannot_be_ended_before_it_starts(site):
+    client, _sent, mentors, head, _asha = site
+    row = booked(client, head, mentors, utcnow() + timedelta(days=2))
+    mentor = {"Authorization": f"Bearer {create_access_token(str(mentors[0].user_id))}"}
+    assert client.post(f"/api/session-requests/{row['id']}/end", headers=mentor).status_code == 409
+
+
+def test_the_team_can_end_a_session_from_the_admin_panel(site):
+    client, _sent, mentors, head, asha = site
+    row = booked(client, head, mentors, utcnow() - timedelta(minutes=10))
+
+    done = client.patch(f"/api/admin/session-requests/{row['id']}", headers=head, json={"end": True})
+    assert done.status_code == 200
+    assert done.get_json()["endedAt"] is not None
+    student = {"Authorization": f"Bearer {create_access_token(str(asha))}"}
+    assert chat(client, student, mentors, asha) is None
+
+
+def test_both_emails_carry_the_agreed_time(site):
+    client, sent, mentors, head, _asha = site
+    booked(client, head, mentors, utcnow() + timedelta(days=3), minutes=90)
+    for row in sent:
+        assert "When:" in row[2] and "90 minutes" in row[2], row[1]

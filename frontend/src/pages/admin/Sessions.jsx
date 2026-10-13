@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Mail, MessageSquare, Plus, UserCheck } from 'lucide-react'
+import { Check, Mail, MessageSquare, Plus, Square, UserCheck } from 'lucide-react'
 import { FormError, Spinner } from '../../components/auth/fields'
 import { adminApi, useAdminApi } from '../../lib/admin'
 import { useApi } from '../../lib/api'
@@ -10,10 +10,49 @@ import { Confirm, Empty, Loading, PageHead, Pager, Pill, Tabs, ago } from './ui'
 // email and opens their chat on the site.
 const TONE = { new: 'warn', assigned: 'line', confirmed: 'good', cancelled: 'muted' }
 const LABEL = { new: 'Needs a mentor', assigned: 'Mentor assigned', confirmed: 'Confirmed', cancelled: 'Closed' }
+const LENGTHS = [30, 45, 60, 90, 120, 180, 240]
+
+// The session clock, picked rather than typed: a date, a time, and how long it runs. Both people
+// see a countdown in their chat drawn from exactly this.
+function When({ id, date, time, minutes, onChange, disabled }) {
+  return (
+    <>
+      <div className="field">
+        <label htmlFor={`${id}-date`}>Session date</label>
+        <input id={`${id}-date`} type="date" className="input" value={date} disabled={disabled}
+          onChange={(e) => onChange({ date: e.target.value, time, minutes })} />
+      </div>
+      <div className="field">
+        <label htmlFor={`${id}-time`}>Start time <span className="faint">Your time zone</span></label>
+        <input id={`${id}-time`} type="time" className="input" value={time} disabled={disabled}
+          onChange={(e) => onChange({ date, time: e.target.value, minutes })} />
+      </div>
+      <div className="field">
+        <label htmlFor={`${id}-mins`}>How long</label>
+        <select id={`${id}-mins`} className="select" value={minutes} disabled={disabled}
+          onChange={(e) => onChange({ date, time, minutes: Number(e.target.value) })}>
+          {LENGTHS.map((v) => <option key={v} value={v}>{v < 60 ? `${v} minutes` : `${v / 60} ${v === 60 ? 'hour' : 'hours'}`}</option>)}
+        </select>
+      </div>
+    </>
+  )
+}
+
+// The pickers hold local date and time; the server is given one instant.
+const startsAt = ({ date, time }) => (date && time ? new Date(`${date}T${time}`).toISOString() : null)
+const split = (iso) => {
+  if (!iso) return { date: '', time: '' }
+  const d = new Date(iso)
+  const pad = (v) => String(v).padStart(2, '0')
+  return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` }
+}
+const readable = (iso) => (iso ? new Date(iso).toLocaleString('en-GB',
+  { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : null)
 
 function Row({ r, mentors, onChanged }) {
   const [mentorId, setMentorId] = useState(r.mentor?.id || '')
   const [note, setNote] = useState(r.note || '')
+  const [when, setWhen] = useState(() => ({ ...split(r.startsAt), minutes: r.minutes || 60 }))
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
 
@@ -65,11 +104,12 @@ function Row({ r, mentors, onChanged }) {
             ))}
           </select>
         </div>
-        <div className="field">
-          <label htmlFor={`n-${r.id}`}>Time agreed, and how they are paying</label>
+        <When id={`w-${r.id}`} {...when} onChange={setWhen} disabled={r.status === 'cancelled'} />
+        <div className="field adm-wide">
+          <label htmlFor={`n-${r.id}`}>How they are paying <span className="faint">Optional</span></label>
           <input id={`n-${r.id}`} className="input" value={note} maxLength={500} disabled={done}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Wed 22 Oct, 6pm IST. Paid ₹4,000 by UPI." />
+            onChange={(e) => setNote(e.target.value)} placeholder="Paid ₹4,000 by UPI." />
+          <span className="hint">The date, the time and this line all go into both emails.</span>
         </div>
       </div>
 
@@ -77,14 +117,20 @@ function Row({ r, mentors, onChanged }) {
       <div className="adm-action-row">
         {!done && (
           <Confirm label={<><UserCheck size={14} /> Assign mentor and book it</>} className="btn btn-primary btn-sm"
-            disabled={!mentorId || !!busy}
-            question={`Book this session with ${name(mentorId)}? ${r.name} and the mentor are both emailed, and their private chat opens straight away.`}
-            onConfirm={() => save('assign', { mentorId: Number(mentorId), note })} />
+            disabled={!mentorId || !when.date || !when.time || !!busy}
+            question={`Book this session with ${name(mentorId)} on ${readable(startsAt(when)) || 'the time you picked'}? ${r.name} and the mentor are both emailed, and their private chat opens straight away.`}
+            onConfirm={() => save('assign', { mentorId: Number(mentorId), note, startsAt: startsAt(when), minutes: when.minutes })} />
         )}
         {busy === 'assign' && <span className="adm-hint"><Spinner /> Emailing both of them</span>}
-        {r.status === 'confirmed' && (
-          <span className="adm-ok" role="status"><Check size={15} /> Booked {ago(r.confirmedAt)} · both told · chat open</span>
+        {r.status === 'confirmed' && !r.endedAt && (
+          <>
+            <span className="adm-ok" role="status"><Check size={15} /> Booked {ago(r.confirmedAt)} · both told · chat open</span>
+            <Confirm label={<><Square size={13} /> End the session</>}
+              question="End this session now? The clock stops for both of them, and their chat stays open."
+              onConfirm={() => save('end', { end: true })} />
+          </>
         )}
+        {r.endedAt && <span className="adm-hint">Session ended {ago(r.endedAt)} · chat still open</span>}
         <a className="btn btn-ghost btn-sm" href={`mailto:${r.email}?subject=${encodeURIComponent('Your TYM mentorship session')}`}>
           <Mail size={14} /> Email {r.name.split(' ')[0]}
         </a>
@@ -104,11 +150,12 @@ function Row({ r, mentors, onChanged }) {
 // Saving it books it exactly like assigning a mentor to a request does.
 function NewSession({ mentors, plans, onAdded }) {
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', whatsapp: '', mentorId: '', packageId: '', note: '', message: '' })
+  const blank = { name: '', email: '', whatsapp: '', mentorId: '', packageId: '', note: '', message: '', date: '', time: '', minutes: 60 }
+  const [form, setForm] = useState(blank)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const set = (k) => (e) => { setForm({ ...form, [k]: e.target.value }); setError('') }
-  const ready = form.name.trim().length > 1 && /.+@.+\..+/.test(form.email) && form.mentorId
+  const ready = form.name.trim().length > 1 && /.+@.+\..+/.test(form.email) && form.mentorId && form.date && form.time
 
   const add = async (e) => {
     e.preventDefault()
@@ -117,9 +164,12 @@ function NewSession({ mentors, plans, onAdded }) {
     try {
       await adminApi('/admin/session-requests', {
         method: 'POST',
-        body: { ...form, mentorId: Number(form.mentorId), packageId: Number(form.packageId) || undefined },
+        body: {
+          ...form, mentorId: Number(form.mentorId), packageId: Number(form.packageId) || undefined,
+          startsAt: startsAt(form), minutes: form.minutes,
+        },
       })
-      setForm({ name: '', email: '', whatsapp: '', mentorId: '', packageId: '', note: '', message: '' })
+      setForm(blank)
       setOpen(false)
       onAdded()
     } catch (err) {
@@ -164,11 +214,13 @@ function NewSession({ mentors, plans, onAdded }) {
             {plans.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
           </select>
         </div>
-        <div className="field">
-          <label htmlFor="s-note">Time agreed, and how they paid</label>
+        <When id="s" date={form.date} time={form.time} minutes={form.minutes}
+          onChange={(w) => setForm({ ...form, ...w })} />
+        <div className="field adm-wide">
+          <label htmlFor="s-note">How they paid <span className="faint">Optional</span></label>
           <input id="s-note" className="input" value={form.note} onChange={set('note')} maxLength={500}
-            placeholder="Wed 22 Oct, 6pm IST. Paid ₹4,000 by UPI." />
-          <span className="hint">This goes in both emails, word for word.</span>
+            placeholder="Paid ₹4,000 by UPI." />
+          <span className="hint">The date, the time and this line all go into both emails.</span>
         </div>
       </div>
       <div className="field">

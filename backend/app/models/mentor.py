@@ -150,6 +150,11 @@ class SessionRequest(Model):
     package_id = db.Column(db.Integer, db.ForeignKey("counseling_packages.id", ondelete="SET NULL"))
     status = db.Column(enum("new", "assigned", "confirmed", "cancelled", name="session_request_status"),
                        nullable=False, default="new", server_default="new")
+    # When the session runs, and for how long. The team agrees both with the student, so these are
+    # what the countdown in the chat is drawn from. Ending it early is what ended_at records.
+    starts_at = db.Column(db.DateTime(timezone=True))
+    minutes = db.Column(db.SmallInteger)
+    ended_at = db.Column(db.DateTime(timezone=True))
     message = db.Column(db.Text)      # what they want to cover, passed to the mentor
     answers = db.Column(db.JSON)      # the rest of the booking form, for the team
     note = db.Column(db.String(500))  # the team's own note: the time agreed, how they paid
