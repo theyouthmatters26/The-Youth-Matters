@@ -89,9 +89,14 @@ async function addresses() {
 }
 
 // A built page is complete without its scripts, so nothing should stand between the visitor and the
-// first screen. The stylesheets go into the page itself (no second trip before anything can be drawn),
-// and the app's script and its parts are fetched once the page has finished loading, so on a slow
-// phone connection they do not compete with the main picture.
+// first screen. The app's script and its parts are fetched once the page has finished loading, so on
+// a slow phone connection they do not compete with the main picture.
+//
+// The stylesheet stays a file of its own rather than being written into every page. Inlining it saved
+// one trip on a first visit and cost that trip again on every page after it: the pages are sent with
+// "no-cache" so they are fetched afresh each time, which meant 68 kilobytes of stylesheet came down
+// again with each one. As a file it is fingerprinted and kept for a year, so it is fetched once and
+// every page after that is drawn from the browser's own copy.
 // The page's main picture (the one marked fetchpriority="high"), as preload links for the top of the
 // page: the browser starts on it with the first bytes it receives. One link per <source>, each
 // limited to the screens its source is for, so only one of them is ever fetched.
@@ -107,12 +112,7 @@ function first(html) {
   }).join('')
 }
 
-const sheets = new Map()
 function quick(html) {
-  html = html.replace(/<link rel="stylesheet"[^>]*href="(\/assets\/[^"]+\.css)"[^>]*>/g, (_, href) => {
-    if (!sheets.has(href)) sheets.set(href, fs.readFileSync(path.join(DIST, href), 'utf8'))
-    return `<style data-from="${href}">${sheets.get(href)}</style>`
-  })
   // after the viewport tag: before it, a phone still measures itself as a desktop and would pick the wide picture
   html = html.replace(/(<meta name="viewport"[^>]*>)/, (tag) => tag + first(html))
   const parts = []
