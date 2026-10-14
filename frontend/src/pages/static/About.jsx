@@ -35,13 +35,13 @@ export default function About() {
         </div>
       </section>
 
-      <section className="story" aria-labelledby="story-title">
-        <figure className="story-face">
+      <section className="founders" aria-labelledby="story-title">
+        <figure className="founder-face">
           <Photo src="/images/founder/founder1.jpg" alt="Sumayya Samreen" sizes="(max-width: 900px) 40vw, 260px" />
           <figcaption>Sumayya Samreen</figcaption>
         </figure>
-        <div className="story-copy">
-          <p className="story-eyebrow">Our Story</p>
+        <div className="founder-copy">
+          <p className="founder-eyebrow">Our Story</p>
           <h2 id="story-title" className="display">Birth of<br />The Youth Matters</h2>
           <p>It all started from personal experience. We still remember how isolating it felt to decide
             to study abroad: navigating the forms, deposits, deadlines, selections and approvals without
@@ -50,7 +50,7 @@ export default function About() {
             move, mentors who give honest answers, and a community focused entirely on what you actually
             need.</p>
         </div>
-        <figure className="story-face">
+        <figure className="founder-face">
           <Photo src="/images/founder/founder2.jpg" alt="Sameera Maheen" sizes="(max-width: 900px) 40vw, 260px" />
           <figcaption>Sameera Maheen</figcaption>
         </figure>
