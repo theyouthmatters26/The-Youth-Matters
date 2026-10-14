@@ -18,9 +18,8 @@
 }
 .mcard:hover { transform: translateY(-3px); border-color: transparent; box-shadow: var(--shadow); }
 .mcard-photo { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; overflow: hidden; background: var(--sunken); }
-.mcard-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; filter: grayscale(1) contrast(1.04); transition: transform 0.9s var(--ease); }
+.mcard-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; transition: transform 0.9s var(--ease); }
 .mcard:hover .mcard-photo img { transform: scale(1.03); }
-.mcard-price { position: absolute; left: 12px; bottom: 12px; padding: 5px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.94); color: var(--ink); font-size: var(--step--1); font-weight: 600; font-variant-numeric: tabular-nums; }
 .mcard-body { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-5); }
 .mcard-body h3 { display: flex; align-items: center; gap: 6px; font-size: var(--step-1); font-weight: 600; }
 .mcard-uni { font-size: var(--step--1); color: var(--muted); }
@@ -82,9 +81,7 @@
 /* Booking panel */
 .book { grid-area: book; position: sticky; top: calc(var(--header-h) + var(--s-5)); display: grid; gap: var(--s-5); padding: var(--s-6); border-radius: var(--radius-lg); background: var(--paper); box-shadow: var(--shadow); }
 .book-head { padding-bottom: var(--s-4); border-bottom: 1px solid var(--line-soft); }
-.book-price { font-family: var(--font-display); font-size: var(--step-3); line-height: 1; letter-spacing: -0.02em; }
-.book-price span { font-family: var(--font-body); font-size: var(--step-0); letter-spacing: 0; color: var(--faint); }
-.book-sub { display: flex; align-items: center; gap: 6px; margin-top: var(--s-2); font-size: var(--step--1); color: var(--muted); }
+.book-sub { display: flex; align-items: center; gap: 6px; font-size: var(--step--1); color: var(--muted); }
 .book-loading { display: flex; justify-content: center; align-items: center; gap: var(--s-2); padding: var(--s-6) 0; color: var(--muted); }
 .book-empty { padding: var(--s-4); border-radius: var(--radius); background: var(--chalk); color: var(--muted); }
 .book-hint, .book-zone { font-size: var(--step--1); color: var(--faint); }
@@ -123,11 +120,6 @@
 .book-details .textarea { min-height: 110px; }
 .book-back { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; font-size: var(--step--1); font-weight: 500; color: var(--muted); }
 .book-back:hover { color: var(--ink); }
-.book-summary { display: grid; gap: 2px; padding: var(--s-4); border-radius: var(--radius); background: var(--chalk); }
-.book-summary strong { font-size: var(--step-1); font-weight: 600; }
-.book-summary span { font-size: var(--step--1); }
-.book-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: var(--s-3); border-top: 1px solid var(--line-soft); }
-.book-total strong { font-family: var(--font-display); font-weight: 400; font-size: var(--step-2); }
 .book-note { padding: var(--s-3) var(--s-4); border-radius: var(--radius); background: var(--chalk); font-size: var(--step--1); color: var(--slate); }
 
 .book-done { display: grid; justify-items: center; gap: var(--s-3); padding: var(--s-4) 0; text-align: center; }
@@ -197,7 +189,6 @@
 .hours-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-4); }
 .hours-balance { font-size: var(--step-3); line-height: 1.15; margin: var(--s-1) 0; }
 .hours { display: grid; gap: var(--s-5); }
-.book-balance { border-top: 0; padding-top: 0; }
 .book-buy .package { padding: var(--s-4); }
 
 /* The mentor chat: the people on the left, the conversation on the right. A paid booking asks the
@@ -305,6 +296,3 @@
 .head-cta { justify-self: start; }
 
 /* Choosing where the session ends, under the start times */
-.book-until { display: grid; gap: 6px; margin-top: var(--s-4); }
-.book-until .select { width: 100%; }
-.book-until .book-hint { margin: 0; }

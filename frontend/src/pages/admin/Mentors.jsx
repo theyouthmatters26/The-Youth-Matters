@@ -1,19 +1,17 @@
 import { useState } from 'react'
-import { ArrowUpRight, FileText, Star } from 'lucide-react'
-import { FormError, Spinner } from '../../components/auth/fields'
+import { ArrowUpRight, FileText, Plus, Star } from 'lucide-react'
+import { FormError, Spinner, SubmitButton } from '../../components/auth/fields'
+import { countries } from '../../data/sample'
 import { ALL_FIELDS, plain } from '../../data/mentorForm'
 import { adminApi, openAdminFile, useAdminApi } from '../../lib/admin'
 import { plural } from '../../lib/format'
 import { MentorHours, Packages } from './Payments'
-import { Confirm, Empty, Facts, Loading, PageHead, Person, Pill, Sheet, Tabs, ago, day } from './ui'
+import { Confirm, Empty, Facts, Loading, PageHead, PasswordBox, Person, Pill, Sheet, Tabs, ago, day, newPassword } from './ui'
 
-const DAYS = [['mon', 'Mon'], ['tue', 'Tue'], ['wed', 'Wed'], ['thu', 'Thu'], ['fri', 'Fri'], ['sat', 'Sat'], ['sun', 'Sun']]
-
-// One application, with everything needed to decide: profile, hours, and the two private documents
+// One application, with everything needed to decide: profile and the two private documents
 function Application({ a, onClose, onDone }) {
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
-  const hours = DAYS.filter(([d]) => a.weeklyHours[d]?.length).map(([d, label]) => `${label} ${a.weeklyHours[d].join(', ')}`)
 
   const decide = async (approve) => {
     setError('')
@@ -36,12 +34,11 @@ function Application({ a, onClose, onDone }) {
       <Facts items={[
         ['Studied', `${a.course}, ${a.university}`],
         ['Status', `${a.graduated ? 'Graduated' : 'Graduating'} ${a.graduationYear}`],
-        ['Sessions', `${a.sessionMinutes} minutes, paid for with counselling hours`],
         ['Helps with', a.topics.join(', ')],
         ['Languages', a.languages.join(', ')],
         ['Work', a.experience],
         ['LinkedIn', a.linkedin && <a href={a.linkedin} target="_blank" rel="noreferrer nofollow" className="link">Open profile</a>],
-        ['Weekly hours', <>{hours.map((h) => <span key={h} className="adm-hours">{h}</span>)}<span className="faint">{a.timezone.replace(/_/g, ' ')} time</span></>],
+        ['Time zone', a.timezone.replace(/_/g, ' ')],
         ['Applied', day(a.createdAt)],
         ['Decided', a.decidedAt && day(a.decidedAt)],
         ['Note to them', a.status !== 'pending' && a.note],
@@ -214,10 +211,100 @@ function MentorSheet({ mentor, onClose, onChanged }) {
   )
 }
 
+// A mentor the team adds itself, instead of waiting for an application. They set their own
+// session length and weekly hours when they first log in.
+function AddMentor({ onClose, onAdded }) {
+  const [password, setPassword] = useState(newPassword)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [added, setAdded] = useState(null)
+
+  const submit = async (e) => {
+    e.preventDefault()
+    const f = Object.fromEntries(new FormData(e.currentTarget))
+    setBusy(true)
+    setError('')
+    try {
+      await adminApi('/admin/mentors', { method: 'POST', body: { ...f, password } })
+      setAdded({ email: f.email, password })
+      onAdded()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (added) {
+    return (
+      <Sheet title="Mentor added" onClose={onClose}>
+        <p className="adm-ok" role="status">
+          They are listed in TYM Mentors now. Tell them to log in with <strong>{added.email}</strong> and the password{' '}
+          <strong className="mono">{added.password}</strong>. This is the only time the password is shown.
+        </p>
+        <p className="adm-note">Students can book them once the mentor sets their session length and weekly hours in their own settings.</p>
+        <button className="btn btn-ghost btn-block" onClick={onClose}>Done</button>
+      </Sheet>
+    )
+  }
+  return (
+    <Sheet title="Add a mentor" onClose={onClose}>
+      <form className="stack" onSubmit={submit}>
+        <div className="field">
+          <label htmlFor="ad-name">Full name</label>
+          <input id="ad-name" name="name" className="input" required minLength={2} maxLength={80} placeholder="Ananya Rao" autoComplete="off" />
+        </div>
+        <div className="field">
+          <label htmlFor="ad-email">Email</label>
+          <input id="ad-email" name="email" type="email" className="input" required placeholder="ananya@example.com" autoComplete="off" />
+          <span className="hint">They log in with this. We email them to say their profile is live.</span>
+        </div>
+        <PasswordBox id="ad-pass" label="Starting password" required value={password} onChange={setPassword}
+          hint="Give this to them yourself. We do not email passwords. They can change it after logging in." />
+        <div className="field">
+          <label htmlFor="ad-country">Country they studied in</label>
+          <select id="ad-country" name="country" className="select" defaultValue="uk">
+            {countries.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="ad-uni">University</label>
+          <input id="ad-uni" name="university" className="input" required minLength={2} maxLength={120} placeholder="Royal Holloway, University of London" />
+        </div>
+        <div className="field">
+          <label htmlFor="ad-course">Course</label>
+          <input id="ad-course" name="course" className="input" required minLength={2} maxLength={120} placeholder="MSc Artificial Intelligence" />
+        </div>
+        <div className="field">
+          <label htmlFor="ad-year">Graduation year <span className="faint">Optional</span></label>
+          <input id="ad-year" name="graduationYear" type="number" className="input" min={1970} max={2035} placeholder="2024" />
+        </div>
+        <div className="field">
+          <label htmlFor="ad-headline">Headline</label>
+          <input id="ad-headline" name="headline" className="input" required minLength={10} maxLength={160}
+            placeholder="I help students apply to UK universities on a budget." />
+        </div>
+        <div className="field">
+          <label htmlFor="ad-topics">What they help with <span className="faint">Optional</span></label>
+          <input id="ad-topics" name="topics" className="input" maxLength={400} placeholder="Applications, Scholarships, Housing" />
+          <span className="hint">Separate each one with a comma.</span>
+        </div>
+        <div className="field">
+          <label htmlFor="ad-about">About them <span className="faint">Optional</span></label>
+          <textarea id="ad-about" name="about" className="input" rows={4} maxLength={4000} placeholder="A few lines students read on their page." />
+        </div>
+        <FormError>{error}</FormError>
+        <SubmitButton busy={busy} busyText="Adding">Add mentor</SubmitButton>
+      </form>
+    </Sheet>
+  )
+}
+
 function Directory() {
   const list = useAdminApi('/admin/mentors')
   const [error, setError] = useState('')
   const [open, setOpen] = useState(null)
+  const [adding, setAdding] = useState(false)
   const toggle = async (m) => {
     setError('')
     try {
@@ -227,11 +314,22 @@ function Directory() {
       setError(err.message)
     }
   }
+  const add = <button className="btn btn-primary btn-sm" onClick={() => setAdding(true)}><Plus size={16} /> Add a mentor</button>
+  const sheet = adding && <AddMentor onClose={() => setAdding(false)} onAdded={list.reload} />
   if (list.error) return <Empty title="We could not load mentors" text={list.error.message} />
   if (!list.data) return <Loading what="mentors" />
-  if (!list.data.length) return <Empty title="No mentors yet" text="Approve an application and the mentor appears here and on the site." />
+  if (!list.data.length) {
+    return (
+      <>
+        <Empty title="No mentors yet" text="Add one here, or approve an application and the mentor appears on the site." />
+        <p className="adm-directory-add">{add}</p>
+        {sheet}
+      </>
+    )
+  }
   return (
     <>
+      <p className="adm-directory-add">{add}</p>
       <FormError>{error}</FormError>
       <ul className="adm-list">
         {list.data.map((m) => (
@@ -252,8 +350,9 @@ function Directory() {
           </li>
         ))}
       </ul>
-      <p className="adm-hint">Mentors join by filling in the mentor form on the site. Edit opens their listing, their reviews, and the way to remove them.</p>
+      <p className="adm-hint">Mentors join by filling in the mentor form on the site, or you add them here yourself. Edit opens their listing, their reviews, and the way to remove them.</p>
       {open && <MentorSheet mentor={open} onClose={() => setOpen(null)} onChanged={list.reload} />}
+      {sheet}
     </>
   )
 }

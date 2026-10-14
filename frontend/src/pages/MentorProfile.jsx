@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, BadgeCheck, Check, Clock, Globe2, Languages, Star } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, Check, Globe2, Languages, Star } from 'lucide-react'
 import Avatar from '../components/ui/Avatar'
 import BookingPanel from '../components/mentors/BookingPanel'
 import { city, formatTime } from '../components/mentors/booking'
@@ -50,7 +50,6 @@ export default function MentorProfile() {
           <p className="mp-headline">{m.headline}</p>
           <dl className="mp-facts">
             {m.rating && <div><dt><Star size={15} aria-hidden /> Rating</dt><dd>{m.rating} from {m.reviewCount} {m.reviewCount === 1 ? 'review' : 'reviews'}</dd></div>}
-            <div><dt><Clock size={15} aria-hidden /> Session</dt><dd>{m.sessionMinutes} min · counselling hours</dd></div>
             {m.languages.length > 0 && <div><dt><Languages size={15} aria-hidden /> Speaks</dt><dd>{m.languages.join(', ')}</dd></div>}
             <div><dt><Globe2 size={15} aria-hidden /> Local time</dt><dd>{formatTime(new Date().toISOString(), m.timezone)} in {city(m.timezone)}</dd></div>
           </dl>
@@ -104,7 +103,7 @@ export default function MentorProfile() {
       </div>
 
       <a href="#book" className="mp-mobile-bar">
-        <span><strong>{m.sessionMinutes} min</strong> · counselling hours</span>
+        <span><strong>Requires counselling hours</strong></span>
         <span className="btn btn-light btn-sm">See times</span>
       </a>
     </div>

@@ -186,9 +186,10 @@ class MentorApplication(Model):
     topics = db.Column(db.JSON, nullable=False)
     languages = db.Column(db.JSON, nullable=False)
     linkedin = db.Column(db.String(255))
-    session_minutes = db.Column(db.SmallInteger, nullable=False)
+    # Not asked for on the form any more: the mentor sets both in /my/mentor once they are approved
+    session_minutes = db.Column(db.SmallInteger, nullable=False, default=30)
     timezone = db.Column(db.String(64), nullable=False)
-    weekly_hours = db.Column(db.JSON, nullable=False)
+    weekly_hours = db.Column(db.JSON, nullable=False, default=dict)
     details = db.Column(db.JSON)  # the rest of the registration form's answers, for the review team only
     cv_key = db.Column(db.String(255), nullable=False)
     proof_key = db.Column(db.String(255), nullable=False)

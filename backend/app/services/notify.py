@@ -6,6 +6,9 @@ sends once the request has committed, so nothing is emailed about an answer that
 Only an answer to your own question, a direct reply and an @mention are emailed. Votes and the rest
 stay on the bell: a mail per upvote is how a community teaches people to filter it out. The switch
 in Profile settings is the way out; there is no clever guessing about who is "probably still here".
+
+One email per run, not one per event: while an emailed notification sits unread, the next one only
+reaches the bell. Reading the bell starts the next run, so a busy thread cannot fill an inbox.
 """
 from flask import g
 from markupsafe import escape
@@ -26,13 +29,20 @@ def notify(user_id, actor, kind, post=None, comment=None, message=None):
                                 post_id=post.id if post else None,
                                 comment_id=comment.id if comment else None,
                                 message=message[:255] if message else None))
-    if kind in EMAILED and post is not None:
+    if kind in EMAILED and post is not None and not _waiting(user_id):
         g.setdefault("pending_notices", []).append({
             "user_id": user_id, "kind": kind,
             "actor": actor.display_name if actor else "Someone",
             "post_id": post.id, "title": post.title,
             "excerpt": (comment.body if comment else "")[:280],
         })
+
+
+def _waiting(user_id):
+    """True if something we already emailed them about is still unread: the run has started."""
+    with db.session.no_autoflush:  # the rows this request queued must not count as waiting
+        return db.session.scalar(db.select(db.exists().where(
+            Notification.user_id == user_id, Notification.kind.in_(EMAILED), ~Notification.is_read)))
 
 
 def notify_mentions(usernames, actor, post, comment=None, already=()):

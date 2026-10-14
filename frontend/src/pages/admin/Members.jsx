@@ -1,78 +1,15 @@
 import { useState } from 'react'
-import { ArrowUpRight, Download, Plus } from 'lucide-react'
-import { FormError, Spinner, SubmitButton } from '../../components/auth/fields'
+import { ArrowUpRight, Download } from 'lucide-react'
+import { FormError, Spinner } from '../../components/auth/fields'
 import { hoursText } from '../../components/mentors/booking'
 import { adminApi, downloadAdminFile, useAdmin, useAdminApi } from '../../lib/admin'
 import { plural } from '../../lib/format'
-import { Confirm, Empty, Facts, Loading, PageHead, Pager, PasswordBox, Person, Pill, SearchBox, Sheet, StatusPill, Tabs, ago, day, newPassword, useDebounced } from './ui'
+import { Confirm, Empty, Facts, Loading, PageHead, Pager, PasswordBox, Person, Pill, SearchBox, Sheet, StatusPill, Tabs, ago, day, useDebounced } from './ui'
 
 const FILTERS = [['all', 'Everyone'], ['verified', 'Verified'], ['pending', 'Not verified'], ['suspended', 'Suspended'], ['mentors', 'Mentors'], ['team', 'Team'], ['deleted', 'Deleted']]
 const ROLE = { student: 'Student', mentor: 'Mentor', admin: 'Team' }
 const DOCUMENT = { passport: 'passport', driving_licence: 'driving licence', national_id: 'national ID' }
 const STRIKE = { warn_and_delete: 'They were sent a warning.', mute_24h: 'They are muted for 24 hours.', suspend_pending_review: 'That was strike three: the account is suspended.' }
-
-// An account the team makes for someone: a mentor you invited, or a student who could not sign up alone
-function AddMember({ onClose, onAdded }) {
-  const [password, setPassword] = useState(newPassword)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const [added, setAdded] = useState(null)
-
-  const submit = async (e) => {
-    e.preventDefault()
-    const f = Object.fromEntries(new FormData(e.currentTarget))
-    setBusy(true)
-    setError('')
-    try {
-      const res = await adminApi('/admin/members', { method: 'POST', body: { name: f.name, email: f.email, password, dateOfBirth: f.dob || undefined } })
-      setAdded({ ...res, email: f.email, password })
-      onAdded()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  if (added) {
-    return (
-      <Sheet title="Account made" onClose={onClose}>
-        <p className="adm-ok" role="status">
-          Tell them to log in on the site with <strong>{added.email}</strong> and the password <strong className="mono">{added.password}</strong>. This is the only time the password is shown.
-        </p>
-        <p className="adm-note">
-          {added.status === 'active' ? 'The account is verified, so they can take part straight away.'
-            : 'The first time they log in they are asked for a photo ID, to check they are 18 or over. Until then they can read but not post.'}
-        </p>
-        <button className="btn btn-ghost btn-block" onClick={onClose}>Done</button>
-      </Sheet>
-    )
-  }
-  return (
-    <Sheet title="Add a member" onClose={onClose}>
-      <form className="stack" onSubmit={submit}>
-        <div className="field">
-          <label htmlFor="am-name">Full name</label>
-          <input id="am-name" name="name" className="input" required minLength={2} maxLength={80} placeholder="Ananya Rao" autoComplete="off" />
-        </div>
-        <div className="field">
-          <label htmlFor="am-email">Email</label>
-          <input id="am-email" name="email" type="email" className="input" required placeholder="ananya@example.com" autoComplete="off" />
-          <span className="hint">They log in with this. We email them to say the account is ready.</span>
-        </div>
-        <PasswordBox id="am-pass" label="Starting password" required value={password} onChange={setPassword}
-          hint="Give this to them yourself. We do not email passwords. They can change it after logging in." />
-        <div className="field">
-          <label htmlFor="am-dob">Date of birth <span className="faint">Optional</span></label>
-          <input id="am-dob" name="dob" type="date" className="input" />
-          <span className="hint">Only if you have seen their ID. The account is then verified straight away. Leave it empty and they do the age check themselves.</span>
-        </div>
-        <FormError>{error}</FormError>
-        <SubmitButton busy={busy} busyText="Adding">Add member</SubmitButton>
-      </form>
-    </Sheet>
-  )
-}
 
 // Fix a name or an email, or set a new password for someone who is locked out
 function EditMember({ m, onSaved }) {
@@ -312,7 +249,6 @@ export default function Members() {
   const [term, setTerm] = useState('')
   const [page, setPage] = useState(1)
   const [open, setOpen] = useState(null)
-  const [adding, setAdding] = useState(false)
   const [error, setError] = useState('')
   const q = useDebounced(term)
   const gone = filter === 'deleted'
@@ -323,9 +259,8 @@ export default function Members() {
 
   return (
     <>
-      <PageHead eyebrow="Members" title="Everyone on TYM" text="Look someone up to see how they were verified and what they have posted. Add an account, edit it, warn, suspend or delete it.">
+      <PageHead eyebrow="Members" title="Everyone on TYM" text="Look someone up to see how they were verified and what they have posted. Edit an account, warn, suspend or delete it.">
         <button className="btn btn-ghost" onClick={download}><Download size={15} /> Download as a spreadsheet</button>
-        <button className="btn btn-primary" onClick={() => setAdding(true)}><Plus size={16} /> Add a member</button>
       </PageHead>
       <div className="adm-toolbar">
         <Tabs label="Which members" value={filter} onChange={choose(setFilter)} items={FILTERS} />
@@ -353,7 +288,6 @@ export default function Members() {
             )}
       {!gone && <Pager page={page} hasMore={list.data?.hasMore} onPage={setPage} />}
       {open && <Member id={open} onClose={() => setOpen(null)} onChanged={list.reload} />}
-      {adding && <AddMember onClose={() => setAdding(false)} onAdded={list.reload} />}
     </>
   )
 }

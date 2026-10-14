@@ -1,0 +1,61 @@
+"""A mentor the team puts on the site itself, with no application (api/admin.py).
+
+The account and the profile are made together, so the mentor is listed straight away. Session
+length and weekly hours are not asked for here: the mentor sets both in their own settings.
+"""
+import pytest
+from flask_jwt_extended import create_access_token
+
+from app import create_app
+from app.api import admin as admin_api
+from app.config import TestConfig
+from app.extensions import db
+from app.models import Community, Country, MentorProfile, Subject, User
+
+TABLES = [db.metadata.tables[t] for t in ("countries", "subjects", "communities", "users",
+                                          "identity_verifications", "mentor_profiles", "mentor_reviews", "moderation_logs")]
+
+MENTOR = {"name": "Sumayya Samreen", "email": "sumayya@example.org", "password": "a-long-password",
+          "country": "uk", "university": "Royal Holloway", "course": "MSc Artificial Intelligence",
+          "headline": "I help students apply to UK universities on a budget.", "topics": "Applications, Housing"}
+
+
+@pytest.fixture
+def site(monkeypatch):
+    app = create_app(TestConfig)
+    with app.app_context():
+        db.metadata.create_all(db.engine, tables=TABLES)
+        monkeypatch.setattr(admin_api.mailer, "send_quietly", lambda *a, **kw: None)
+        db.session.add_all([
+            Community(subject=Subject(slug="study-abroad", name="Study Abroad", is_active=True),
+                      country=Country(slug="uk", name="United Kingdom", iso_code="GB"), is_active=True),
+            User(email="boss@example.org", username="boss", display_name="Boss", role="admin",
+                 status="active", email_verified=True, admin_access=["*"])])
+        db.session.commit()
+        boss = db.session.scalar(db.select(User).where(User.username == "boss"))
+        yield app.test_client(), {"Authorization": f"Bearer {create_access_token(str(boss.id))}"}
+
+
+def test_the_team_adds_a_mentor_and_they_are_listed(site):
+    client, admin = site
+    res = client.post("/api/admin/mentors", headers=admin, json=MENTOR)
+    assert res.status_code == 201, res.get_json()
+
+    m = db.session.get(MentorProfile, res.get_json()["id"])
+    assert m.is_verified and m.topics == ["Applications", "Housing"]
+    assert m.session_minutes == 30 and m.weekly_hours == {}  # theirs to set, in /my/mentor
+    # The account can log in on the site as a mentor from the moment it is made
+    assert m.user.role == "mentor" and m.user.status == "active" and m.user.email_verified
+    assert client.get("/api/mentors").get_json()[0]["user"]["displayName"] == "Sumayya Samreen"
+
+
+def test_what_the_form_will_not_take(site):
+    client, admin = site
+    for bad in ({"name": "S"}, {"email": "not-an-email"}, {"country": "narnia"},
+                {"headline": "too short"}, {"university": ""}, {"password": "short"}):
+        res = client.post("/api/admin/mentors", headers=admin, json={**MENTOR, **bad})
+        assert res.status_code == 400, (bad, res.get_json())
+
+    assert client.post("/api/admin/mentors", headers=admin, json=MENTOR).status_code == 201
+    twice = client.post("/api/admin/mentors", headers=admin, json=MENTOR)
+    assert twice.status_code == 409  # the same email twice is one account, not two

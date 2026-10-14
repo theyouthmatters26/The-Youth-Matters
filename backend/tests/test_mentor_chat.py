@@ -1,23 +1,22 @@
-import json
-
 import pytest
 from werkzeug.exceptions import BadRequest
 
 from app.api.ai import WANTS_PERSON
 from app.api.chat import ASKS_TYMAI
-from app.api.mentor_applications import weekly_hours
 from app.api.mentor_chat import MEETING_HOST, MEETING_LINK
+from app.api.mentors import _clean_hours
 
 
+# Hours are set in the mentor's own settings now, not on the application form (api/mentors.py)
 def test_weekly_hours_keeps_valid_days_and_times():
-    raw = json.dumps({"mon": ["18:00", "18:00", "25:00", "07:30"], "sat": ["10:00"], "xyz": ["09:00"], "tue": []})
-    assert weekly_hours(raw) == {"mon": ["07:30", "18:00"], "sat": ["10:00"]}
+    raw = {"mon": ["18:00", "18:00", "25:00", "07:30"], "sat": ["10:00"], "xyz": ["09:00"], "tue": []}
+    assert _clean_hours(raw) == {"mon": ["07:30", "18:00"], "sat": ["10:00"]}
 
 
 def test_weekly_hours_needs_at_least_two_times():
-    for raw in ('{"mon": ["18:00"]}', "not json", "[]", ""):
+    for raw in ({"mon": ["18:00"]}, "not a dict", [], {}):
         with pytest.raises(BadRequest):
-            weekly_hours(raw)
+            _clean_hours(raw)
 
 
 def test_tymai_is_asked_only_by_a_real_mention():

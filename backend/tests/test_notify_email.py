@@ -69,11 +69,30 @@ def test_an_answer_to_your_question_reaches_your_inbox(site):
     assert "/settings" in html  # how to turn it off, in every one
 
 
+def read_the_bell(person):
+    db.session.execute(db.update(Notification).where(Notification.user_id == person.id).values(is_read=True))
+    db.session.commit()
+
+
 def test_a_reply_and_a_mention_are_emailed_too(site):
     _app, sent, post, who = site
     run(sent, post, who["asha"], who["ben"], "reply")
+    read_the_bell(who["asha"])
     run(sent, post, who["asha"], who["ben"], "mention")
     assert [s[1] for s in sent] == ["Ben replied to you", "Ben mentioned you"]
+
+
+def test_only_the_first_of_a_run_is_emailed(site):
+    """A busy thread must not fill an inbox: one email, then the bell until they come and read it."""
+    _app, sent, post, who = site
+    for _ in range(4):
+        run(sent, post, who["asha"], who["ben"], "reply")
+    assert [s[1] for s in sent] == ["Ben replied to you"]
+    assert db.session.scalar(db.select(db.func.count(Notification.id))) == 4  # the bell has all four
+
+    read_the_bell(who["asha"])  # reading it starts the next run
+    run(sent, post, who["asha"], who["ben"], "reply")
+    assert len(sent) == 2
 
 
 def test_votes_and_the_rest_stay_on_the_bell(site):

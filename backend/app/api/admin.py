@@ -17,7 +17,7 @@ each limited to the areas chosen for them (services/staff.py). The support inbox
     POST   /admin/members/<id>/strike         {reason}
     GET    /admin/reports?status=&page=       POST /admin/reports/<id>/resolve {action}
     DELETE /admin/content/<kind>/<id>         remove a post, answer or chat message
-    GET    /admin/mentors                     POST /admin/mentors/<id>/listed {listed}
+    GET    /admin/mentors                     POST adds a mentor, POST /admin/mentors/<id>/listed {listed}
     GET    /admin/mentors/<id>                PATCH {headline, university, course, about}, DELETE
     DELETE /admin/reviews/<id>                take a mentor review down
     GET    /admin/bookings?status=&page=      POST /admin/bookings/<id>/cancel {refund, reason}
@@ -37,9 +37,9 @@ from markupsafe import escape
 
 from ..extensions import db, limiter
 from ..models import (AccountClosure, AiConversation, AvailabilitySlot, Booking, ChatMessage, ChatRoom, Comment,
-                      CounselingPackage,
+                      Community, CounselingPackage, Country,
                       ContactMessage, Faq, IdentityVerification, MentorApplication, MentorProfile, MentorReview, SessionRequest,
-                      ModerationLog, Payment, Post, Report, Strike, User)
+                      ModerationLog, Payment, Post, Report, Strike, Subject, User)
 from ..models.base import utcnow
 from ..services import accounts, handoff, mailer, staff
 from ..services.moderation import MUTE_DURATION, strike_action
@@ -751,6 +751,59 @@ def mentors():
         "rating": round(float(ratings[m.id][0]), 1) if m.id in ratings else None,
         "reviewCount": ratings[m.id][1] if m.id in ratings else 0,
     } for m in rows])
+
+
+# What a mentor the team adds by hand has to have. Session length and weekly hours are not here:
+# the mentor sets both in their own settings once they log in.
+MENTOR_TEXT = (("university", "university", 2, 120), ("course", "course", 2, 120),
+               ("headline", "headline", 10, 160), ("about", "About text", 0, 4000))
+
+
+@bp.post("/admin/mentors")
+@jwt_required()
+def add_mentor():
+    """Put someone on the site as a mentor without an application: the team has checked them itself."""
+    me = team_member("mentors")
+    data = request.get_json(silent=True) or {}
+    name, email, password = (str(data.get(k) or "").strip() for k in ("name", "email", "password"))
+    email = email.lower()
+    if not 2 <= len(name) <= 80:
+        abort(400, "Enter their full name.")
+    if not EMAIL.match(email):
+        abort(400, "Enter a valid email address.")
+    community = db.session.scalar(db.select(Community).join(Subject).join(Country).where(
+        Subject.slug == "study-abroad", Country.slug == str(data.get("country") or ""), Community.is_active))
+    if not community:
+        abort(400, "Choose the country they studied in.")
+    fields = {}
+    for key, label, shortest, longest in MENTOR_TEXT:
+        value = str(data.get(key) or "").strip()
+        if not shortest <= len(value) <= longest:
+            abort(400, f"The {label} should be {shortest} to {longest} characters.")
+        fields[key] = value
+    year = data.get("graduationYear")
+    year = int(year) if str(year or "").isdigit() else None
+    if year and not 1970 <= year <= 2035:
+        abort(400, "Enter the year they graduated, or leave it empty.")
+    if email == current_app.config["ADMIN_EMAIL"] or _by_email(email):
+        abort(409, "There is already an account with this email.")
+
+    u = User(email=email, username=_username(name), display_name=name, password_hash=_password_hash(password),
+             role="mentor", status="active", email_verified=True)  # the team vouches for them
+    db.session.add(u)
+    db.session.flush()
+    topics = [t.strip()[:60] for t in str(data.get("topics") or "").split(",") if t.strip()][:20]
+    m = MentorProfile(user_id=u.id, community_id=community.id, graduation_year=year, topics=topics,
+                      languages=["English"], weekly_hours={}, is_verified=True, **fields)
+    db.session.add(m)
+    record("mentor_added", "user", u.id, name=name)
+    db.session.commit()
+    link = f"{handoff.site_url()}/mentors/login"
+    mailer.send_quietly(u.email, "You are now a mentor on The Youth Matters",
+                        f"<p>Hi {escape(name.split()[0])},</p><p>{escape(me.display_name)} from the TYM team put your "
+                        f"mentor profile on the site. Log in with this email and the password they give you, then set "
+                        f"your session length and weekly hours so students can book you:</p><p><a href='{link}'>{link}</a></p>")
+    return jsonify(id=m.id, userId=u.id), 201
 
 
 @bp.post("/admin/mentors/<int:mentor_id>/listed")

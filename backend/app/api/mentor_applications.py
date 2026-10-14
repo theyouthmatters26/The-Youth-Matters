@@ -26,13 +26,11 @@ from ..models import (AccountClosure, Community, Country, MentorApplication, Men
                       Subject)
 from ..models.base import utcnow
 from ..services import accounts, content, handoff, images, mailer, staff, storage
-from ..services.availability import DAYS
 from ..services.notify import notify
 
 bp = Blueprint("mentor_applications", __name__)
 
 MAX_FILE = 5 * 1024 * 1024
-HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 LINKEDIN = re.compile(r"^https://([a-z]{2,3}\.)?linkedin\.com/\S+$", re.I)
 ZONES = available_timezones()
 
@@ -104,20 +102,6 @@ def _list(form, key, label, most, longest):
     return items
 
 
-def weekly_hours(raw):
-    """{"mon": ["18:00", ...], ...} with valid days and times, at least two a week."""
-    try:
-        hours = json.loads(raw or "{}")
-        clean = {d: sorted({t for t in hours.get(d, []) if HHMM.match(t)}) for d in DAYS}
-    except (ValueError, TypeError, AttributeError):
-        abort(400, "We could not read your weekly hours. Pick them again.")
-    clean = {d: times for d, times in clean.items() if times}
-    total = sum(len(t) for t in clean.values())
-    if not 2 <= total <= 60:
-        abort(400, "Pick at least 2 weekly session times (and no more than 60).")
-    return clean
-
-
 def _file(name, label, allow_images):
     upload = request.files.get(name)
     if not upload or not upload.filename:
@@ -174,9 +158,6 @@ def apply():
     year = f.get("graduationYear", type=int)
     if not year or not 1970 <= year <= 2035:
         abort(400, "Enter your graduation year, or the year you expect to graduate.")
-    minutes = f.get("sessionMinutes", type=int)
-    if minutes not in (30, 45, 60):
-        abort(400, "Choose a session length of 30, 45 or 60 minutes.")
     tz = f.get("timezone", "")
     if tz not in ZONES:
         abort(400, "Choose your time zone.")
@@ -193,19 +174,17 @@ def apply():
         headline=_text(f, "headline", "Headline", 20, 160), about=_text(f, "about", "About you", 150, 2000),
         experience=_text(f, "experience", "Experience", 2, 255, required=False),
         topics=_list(f, "topics", "Topics", 20, 60), languages=_list(f, "languages", "Languages", 6, 30),
-        linkedin=linkedin, session_minutes=minutes, timezone=tz,
-        weekly_hours=weekly_hours(f.get("weeklyHours")), details=details,
+        linkedin=linkedin, timezone=tz, details=details,
     )
     a.cv_key = _file("cv", "CV", allow_images=False)
     a.proof_key = _file("proof", "proof of enrolment or degree", allow_images=True)
     db.session.add(a)
     db.session.commit()
 
-    slots = sum(len(t) for t in a.weekly_hours.values())
     rows = [("Member", f"{user.display_name} (@{user.username}, {user.email})"), ("Country", community.country.name),
             ("Studies", f"{a.course}, {a.university}, {'graduated' if a.graduated else 'graduating'} {a.graduation_year}"),
             ("Headline", a.headline), ("Topics", ", ".join(a.topics)), ("Languages", ", ".join(a.languages)),
-            ("Sessions", f"{a.session_minutes} min, {slots} times a week ({a.timezone})"),
+            ("Time zone", a.timezone),
             ("LinkedIn", a.linkedin or "-"),
             ("Mobile", f"{details['mobileCode']} {details['mobile']}"), ("Lives in", f"{details['city']}, {details['currentCountry']}"),
             ("Work", f"{details['jobTitle']}, {details['organisation']} ({details['totalExperience']})"),

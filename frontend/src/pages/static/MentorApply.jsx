@@ -6,7 +6,7 @@ import MentorCard from '../../components/mentors/MentorCard'
 import Avatar from '../../components/ui/Avatar'
 import { countries } from '../../data/sample'
 import { AGREEMENTS, ALL_FIELDS, AVAILABILITY, CATCH_ALL, CODE_OF_CONDUCT, DECLARATION, EDUCATION, EXPERTISE, KEY_AREAS, MENTORING, MOTIVATION, PERSONAL, PROFESSIONAL, follows, plain, required } from '../../data/mentorForm'
-import { LANGUAGES, TOPIC_MAX, TagInput, WeekGrid, ZONES, myZone, slotCount } from '../../components/mentors/scheduler'
+import { LANGUAGES, TOPIC_MAX, TagInput, ZONES, myZone } from '../../components/mentors/scheduler'
 import { api, useApi } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { fullDate } from '../../lib/format'
@@ -35,7 +35,7 @@ const MAX_FILE = 5 * 1024 * 1024
 const DRAFT = 'tym.mentorDraft'
 const EMPTY = {
   country: 'uk', university: '', course: '', graduated: false, graduationYear: '', headline: '', about: '', experience: '',
-  topics: [], languages: ['English'], linkedin: '', sessionMinutes: 30, timezone: myZone(), weeklyHours: {},
+  topics: [], languages: ['English'], linkedin: '', timezone: myZone(),
   details: {},
 }
 // Between the columns of one "rows" answer. Written and read in Questions() and nowhere else.
@@ -243,8 +243,7 @@ export default function MentorApply() {
           : about.length < 150 ? `Your introduction needs at least 150 characters. ${150 - about.length} to go.`
             : !form.topics.length ? 'Choose at least one key area of expertise.'
             : !form.languages.length ? 'Add the languages you can mentor in.'
-              : slotCount(form.weeklyHours) < 2 ? 'Pick at least 2 weekly session times.'
-                : !cv || !proof ? 'Add your CV and your qualification document.'
+              : !cv || !proof ? 'Add your CV and your qualification document.'
                   : agreed.includes(false) ? 'Please tick the Mentor Code of Conduct and each declaration.' : ''
     if (problem) return setError(problem)
     const body = new FormData()
@@ -277,7 +276,6 @@ export default function MentorApply() {
     user: me || account || { displayName: 'You' }, community: { country: { name: country?.name } },
     course: form.course || 'Your course', university: form.university || 'your university',
     headline: form.headline || 'Your one-line headline shows here. Make it specific.',
-    sessionMinutes: Number(form.sessionMinutes),
   }
 
   let panel
@@ -311,7 +309,7 @@ export default function MentorApply() {
     panel = (
       <StatusCard icon={Clock3} title="Application received">
         <p className="muted">Sent on {fullDate(current.createdAt)}. Our team will check your documents and email {me.email} within a week, sometimes to set up a short call. Your profile goes live on TYM Mentors as soon as it is approved.</p>
-        <MentorCard preview m={{ ...preview, course: current.course, university: current.university, headline: current.headline, sessionMinutes: current.sessionMinutes, community: { country: { name: countries.find((c) => c.slug === current.country)?.name } } }} />
+        <MentorCard preview m={{ ...preview, course: current.course, university: current.university, headline: current.headline, community: { country: { name: countries.find((c) => c.slug === current.country)?.name } } }} />
         <p className="muted dash-small">This is how students will see you once you are approved.</p>
       </StatusCard>
     )
@@ -434,16 +432,6 @@ export default function MentorApply() {
 
         <Section n={8} title="Availability and mentoring format" text="Bookings on TYM are one-to-one video calls. Students pay with counselling hours bought from TYM, so there is no price for you to set.">
           <Questions fields={AVAILABILITY} details={form.details} set={setDetail} />
-          <div className="grid-2">
-            <fieldset className="segmented" aria-label="Session length">
-              {[30, 45, 60].map((m) => (
-                <label key={m}>
-                  <input type="radio" name="minutes" checked={Number(form.sessionMinutes) === m} onChange={() => setValue('sessionMinutes')(m)} />
-                  <span>{m} min</span>
-                </label>
-              ))}
-            </fieldset>
-          </div>
           <div className="field">
             <label htmlFor="a-tz">Your time zone</label>
             <select id="a-tz" className="select" value={form.timezone} onChange={set('timezone')}>
@@ -452,11 +440,7 @@ export default function MentorApply() {
           </div>
         </Section>
 
-        <Section n={9} title="Weekly hours" text={`Add the hours you are free in one go, then change any single one in the grid below. Times are in ${form.timezone.replace(/_/g, ' ')}; students see them in their own time zone. They are set when the team approves your application; to change them afterwards, write to support@theyouthmatters.com.`}>
-          <WeekGrid value={form.weeklyHours} update={(fn) => setForm((f) => ({ ...f, weeklyHours: fn(f.weeklyHours) }))} />
-        </Section>
-
-        <Section n={10} title="Documents and verification" text="Only the TYM review team can open these. They are never shown on your profile.">
+        <Section n={9} title="Documents and verification" text="Only the TYM review team can open these. They are never shown on your profile.">
           <div className="grid-2">
             <FileField id="a-cv" label="Resume / CV *" hint="PDF, up to 5 MB" accept="application/pdf" file={cv} onChange={pickFile(setCv, true)} />
             <FileField id="a-proof" label="Educational qualification document *" hint="Degree certificate, transcript or enrolment letter. PDF, JPG or PNG, up to 5 MB"
@@ -464,7 +448,7 @@ export default function MentorApply() {
           </div>
         </Section>
 
-        <Section n={11} title="Mentoring standards and declarations" text="As a Study Abroad Mentor, I agree to:">
+        <Section n={10} title="Mentoring standards and declarations" text="As a Study Abroad Mentor, I agree to:">
           <ul className="apply-list">{CODE_OF_CONDUCT.map((t) => <li key={t}><Check size={16} aria-hidden /> {t}</li>)}</ul>
           {AGREEMENTS.map((text, i) => (
             <label key={text} className="check">
