@@ -1,5 +1,6 @@
 """Turning down a mentor application: the email goes, then the account does.
 
+Whoever they are, the team's note reaches them: it is the only thing that says what to change.
 The account exists only to carry the application, so it is closed with it. What this must never do
 is close an account that had a life here before the form: a student who also applied, or somebody
 on the team.
@@ -97,8 +98,24 @@ def test_an_account_that_is_more_than_an_application_is_left_alone(site):
 
     assert db.session.get(User, student.id) is not None
     assert db.session.get(User, teammate.id) is not None
-    assert sent == []                                          # nothing closed, so nothing to say
-    assert db.session.scalar(db.select(AccountClosure)) is None
+    assert db.session.scalar(db.select(AccountClosure)) is None  # nothing was closed
+
+    # They are still told why, and told to send the form again: the account they keep is not the point
+    assert [to for to, _subject, _html in sent] == ["asha@example.org", "sam@example.org"]
+    for _to, subject, html in sent:
+        assert subject == "Your TYM mentor application" and NOTE in html
+        assert "https://theyouthmatters.com/mentors/register" in html
+        assert "closed" not in html
+
+
+def test_the_note_is_what_the_email_is_for(site):
+    """No note, no email worth sending: the form refuses the decision before it reaches them."""
+    client, sent, applicant, head = site
+    _user, application = applicant("nina")
+
+    too_short = reject(client, head, application.id, note="no")
+    assert too_short.status_code == 400 and sent == []
+    assert db.session.get(MentorApplication, application.id).status == "pending"
 
 
 def test_approving_still_opens_the_account(site):

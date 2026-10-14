@@ -65,12 +65,13 @@ function Application({ a, onClose, onDone }) {
         <section className="adm-actions">
           <h3 className="adm-h2">Decide</h3>
           <div className="adm-action">
-            <label htmlFor="app-note">A note for them. Needed if you turn it down, so they know what to change.</label>
+            <label htmlFor="app-note">Why you are turning it down. We email this to them word for word, so write what they should change.</label>
             <textarea id="app-note" className="textarea adm-textarea" rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="For example: your proof of enrolment is out of date, please upload this term's letter." />
+            <p className="adm-hint">At least 10 characters. It is kept on the application, and they read it in the email that tells them.</p>
             <div className="adm-action-row">
               <Confirm label="Approve and go live" question="Approve? Their profile goes live now." className="btn btn-primary btn-sm" onConfirm={() => decide(true)} />
-              <Confirm label="Turn down" question="Turn this down?" danger disabled={note.trim().length < 10} onConfirm={() => decide(false)} />
+              <Confirm label="Turn down" question="Turn this down? We email them your note." danger disabled={note.trim().length < 10} onConfirm={() => decide(false)} />
             </div>
           </div>
         </section>
@@ -101,7 +102,7 @@ function Applications({ status, onChanged }) {
             <button className="adm-row adm-apps" onClick={() => setOpen(a)}>
               <Person user={a.user} sub={a.user.email} />
               <span className="adm-cell adm-cell-wide">{a.course}, {a.university}</span>
-              <span className="adm-cell">{a.sessionMinutes} min sessions</span>
+              <span className="adm-cell">{countries.find((c) => c.slug === a.country)?.name || a.country}</span>
               <time className="adm-cell adm-cell-time" dateTime={a.createdAt}>Applied {ago(a.createdAt)}</time>
             </button>
           </li>
