@@ -49,7 +49,8 @@ class User(Model):
     counseling_minutes = db.Column(db.Integer, nullable=False, default=0, server_default="0")
 
     # An answer, a reply or an @mention also reaches their inbox (services/notify.py)
-    notify_email = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
+    # Off until the member turns it on. Nobody is emailed because they never found the switch.
+    notify_email = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
 
     last_seen_at = db.Column(db.DateTime(timezone=True), default=utcnow)
 

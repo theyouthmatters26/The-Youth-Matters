@@ -22,7 +22,9 @@ from .posts import member, viewer
 bp = Blueprint("chat", __name__)
 
 HISTORY = 50
-ASKS_TYMAI = re.compile(r"(?<![\w@])@tymai\b", re.I)
+# The space is optional: the website tells people to type "@TYM AI", and "@TYMAi" has been the
+# handle since the rooms opened. Both reach the assistant.
+ASKS_TYMAI = re.compile(r"(?<![\w@])@tym ?ai\b", re.I)
 
 
 def _room(slug):

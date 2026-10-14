@@ -6,7 +6,7 @@ const FEATURES = [
   { Icon: Users, title: 'Questions and answers', text: 'Ask anything, answer what you know, and vote the most useful replies to the top.', to: '/ask', cta: 'Ask a question' },
   { Icon: Globe2, title: 'Destination hubs', text: 'Join the UK, US, Canada and more to fill your feed with the countries you care about.', to: '/community', cta: 'See every country' },
   { Icon: MessagesSquare, title: 'Live chatrooms', text: 'Free public rooms by country. Find flatmates, compare CAS timelines, ask quick questions.', to: '/chat', cta: 'Open chatrooms' },
-  { Icon: Bot, title: 'AI Counsellor', text: 'Private help with SOPs, visa steps and shortlists. Type @TYMAi in any chatroom for a quick answer.', to: '/ai', cta: 'Try the AI Lounge' },
+  { Icon: Bot, title: 'AI Counsellor', text: 'Private help with SOPs, visa steps and shortlists. Type @TYM AI in any chatroom for a quick answer.', to: '/ai', cta: 'Try the AI Lounge' },
   { Icon: Vote, title: 'Verified mentors', text: 'Buy counselling hours once, then book a one-to-one with any mentor at a time that suits you.', to: '/mentors', cta: 'Browse mentors' },
   { Icon: ShieldCheck, title: 'A safer community', text: 'Every member is 18+ and checked with a photo ID, abuse is filtered automatically, and there is a three-strike policy and one-click reporting.', to: '/faq', cta: 'How moderation works' },
 ]

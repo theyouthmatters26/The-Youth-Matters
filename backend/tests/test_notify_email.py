@@ -29,6 +29,9 @@ def site(monkeypatch):
 
         def person(name, **kw):
             kw.setdefault("status", "active")
+            # Reply email is off until a member asks for it, so everyone here has asked except
+            # "quiet", who is the one testing that the switch is honoured.
+            kw.setdefault("notify_email", True)
             u = User(email=f"{name}@example.org", username=name, display_name=name.title(),
                      email_verified=True, **kw)
             db.session.add(u)

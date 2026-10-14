@@ -189,7 +189,7 @@ function MentorsBand() {
         <header className="section-head section-head-row" data-reveal>
           <div>
             <h2 id="mentors-title" className="display">Talk to someone who went, or a Study Abroad consultant</h2>
-            <p className="muted">Verified students and alumni, and Study Abroad consultants. Book a one-to-one when you want guidance on your plans.</p>
+            <p className="muted">Verified students &amp; alumni and Study Abroad Consultants. Book a one-to-one Session; when you want guidance on your plans</p>
           </div>
           <Link to={user ? '/mentors' : '/register'} state={{ from: '/mentors' }} className="btn btn-light">
             {user ? 'View all mentors' : 'Sign up to view all mentors'}
