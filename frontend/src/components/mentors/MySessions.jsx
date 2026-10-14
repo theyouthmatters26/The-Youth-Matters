@@ -178,11 +178,12 @@ function Hours() {
         <div>
           <p className="eyebrow">Counselling hours</p>
           <p className="hours-balance display">{hoursText(minutes)}</p>
-          <p className="faint">{minutes ? 'Ready to book with any TYM mentor.' : 'Buy hours, then book any TYM mentor with them.'}</p>
+          <p className="faint">{minutes ? 'Ready to book with any TYM mentor.' : 'Pick your hours and tell us what you need, and our team arranges the rest.'}</p>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => setBuying(!buying)}>{buying ? 'Close' : 'Buy hours'}</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => setBuying(!buying)}>{buying ? 'Close' : 'See the hours'}</button>
       </div>
-      {buying && <Packages />}
+      {/* No checkout yet, so the cards lead to the booking form and our team arranges payment */}
+      {buying && <Packages book />}
     </section>
   )
 }
