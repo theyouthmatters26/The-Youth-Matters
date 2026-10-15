@@ -26,7 +26,7 @@ from markupsafe import escape
 from ..extensions import db, limiter
 from ..models import CounselingPackage, MentorMessage, MentorProfile, SessionRequest, User
 from ..models.base import utcnow
-from ..services import mailer
+from ..services import handoff, mailer
 from ..services.notify import notify
 from .admin import paged, team_member
 from .auth import EMAIL
@@ -204,7 +204,7 @@ def _tell_the_mentor(row, mentor, asked_for=False):
         + _para("They want to cover", row.message)
         + "<p>Our team is agreeing a time and payment with them. You will hear from us again when "
           "it is confirmed, and your chat with them opens at the same time.</p>"
-        + f"<p><a href='{_site()}/my/sessions'>Open your TYM dashboard</a></p>",
+        + f"<p><a href='{_site()}/my'>Open your TYM dashboard</a></p>",
         reply_to=current_app.config["CONTACT_EMAIL"])
 
 
@@ -336,7 +336,6 @@ def _confirm(row):
     """Both sides hear it is on, and their chat opens. The chat needs the student to have an
     account: without one there is nothing to open, so they are asked to sign up with this email."""
     mentor = row.mentor
-    chat = f"{_site()}/my/sessions"
     if row.student_id:
         thread, _new = open_thread(mentor.id, row.student_id, row.message)
         thread.status = "accepted"   # the team arranged it, so there is nothing left to accept
@@ -345,7 +344,9 @@ def _confirm(row):
                message=f"Your session with {_mentor_name(mentor)} is confirmed. Your chat is open.")
 
     first = escape(row.name.split()[0])
-    joining = (f"<p><a href='{chat}'>Open your chat with {escape(_mentor_name(mentor))}</a></p>"
+    # Each of them gets the link to their own Messages tab: the chat lives on the reader's profile
+    theirs_url = handoff.chat_link(mentor.id, row.student_id, row.student.username) if row.student_id else None
+    joining = (f"<p><a href='{theirs_url}'>Open your chat with {escape(_mentor_name(mentor))}</a></p>"
                if row.student_id else
                "<p>Create a free TYM account with this email address and your chat with your mentor "
                f"will be waiting: <a href='{_site()}/register'>{escape(_site())}/register</a></p>")
@@ -361,7 +362,8 @@ def _confirm(row):
 
     if mentor.user:
         who = escape(mentor.user.display_name.split()[0]) if mentor.user.display_name else "there"
-        theirs = (f"<p><a href='{chat}'>Open your chat with them</a></p>" if row.student_id else
+        mentor_url = handoff.chat_link(mentor.id, row.student_id, mentor.user.username) if row.student_id else None
+        theirs = (f"<p><a href='{mentor_url}'>Open your chat with them</a></p>" if row.student_id else
                   "<p>They do not have a TYM account yet, so our team will put you in touch directly.</p>")
         mailer.send_quietly(
             mentor.user.email, f"Your session with {row.name} is confirmed",

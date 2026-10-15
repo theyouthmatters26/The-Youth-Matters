@@ -186,10 +186,6 @@ def _tell(other, subject, html):
                         f"<p>Hi {escape(other.display_name.split()[0])},</p>{html}")
 
 
-def _chat_link(mentor_id, student_id, username):
-    return f"{handoff.site_url()}/u/{username}?tab=Messages&with={mentor_id}-{student_id}"
-
-
 @bp.post("/mentor-chats/<int:mentor_id>/<int:student_id>/messages")
 @jwt_required()
 @limiter.limit("60 per hour", key_func=member_key)
@@ -224,7 +220,7 @@ def send(mentor_id, student_id):
         notify(other.id, current_user, "message", message=f"sent you a message: {body[:120]}")
     db.session.commit()
     if not waiting:
-        url = _chat_link(mentor_id, student_id, other.username)
+        url = handoff.chat_link(mentor_id, student_id, other.username)
         _tell(other, f"New message from {current_user.display_name}",
               f"<p>{escape(current_user.display_name)} sent you a message on The Youth Matters:</p>"
               f"<blockquote>{escape(body)}</blockquote><p>Reply here: <a href='{url}'>{url}</a></p>")
@@ -250,7 +246,7 @@ def decide(mentor_id, student_id, decision):
     notify(student_id, current_user, "message",
            message="opened your chat" if decision == "accept" else "could not take your chat request")
     db.session.commit()
-    url = _chat_link(mentor_id, student_id, student.username)
+    url = handoff.chat_link(mentor_id, student_id, student.username)
     _tell(student, f"{current_user.display_name} {'opened your chat' if decision == 'accept' else 'could not open a chat'}",
           f"<p>{escape(current_user.display_name)} accepted your chat request. Message them here: "
           f"<a href='{url}'>{url}</a></p>" if decision == "accept" else

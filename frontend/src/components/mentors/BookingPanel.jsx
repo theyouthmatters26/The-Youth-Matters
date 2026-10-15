@@ -69,7 +69,7 @@ function Booked({ booking }) {
       </div>
       <p className="book-fine">{hoursText(booking.minutes)} came off your counselling hours. We have asked
         {' '}{booking.mentor.user.displayName.split(' ')[0]} to open a chat with you: you will get an email
-        when they do. We emailed you the details, and your sessions are always in <Link to="/my?tab=Sessions" className="link">TYM Community</Link>.</p>
+        when they do. We emailed you the details, and your sessions are always in <Link to="/my?tab=Messages" className="link">TYM Community</Link>.</p>
     </div>
   )
 }

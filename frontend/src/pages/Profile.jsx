@@ -4,7 +4,6 @@ import { CalendarDays, CheckCircle2, GraduationCap, MapPin, Pencil, School } fro
 import PostList from '../components/feed/PostList'
 import { MoreMenu } from '../components/feed/PostActions'
 import MentorChat from '../components/mentors/MentorChat'
-import MySessions from '../components/mentors/MySessions'
 import Avatar from '../components/ui/Avatar'
 import RoleBadge from '../components/ui/RoleBadge'
 import { FormError, Spinner } from '../components/auth/fields'
@@ -64,13 +63,17 @@ function Answers({ username }) {
   )
 }
 
+// The session happens in the private chat, so that tab is the sessions. The URL key stays
+// "Messages": it is in emails that have already gone out (services/handoff.py chat_link).
+const TAB_LABEL = { Messages: 'Your sessions' }
+
 export default function Profile() {
   const { username } = useParams()
   const { account } = useAuth()
   const [params, setParams] = useSearchParams()
   const { data: u, error, loading } = useApi(`/users/${username}`)
   const own = account?.username === username
-  const tabs = own ? ['Questions', 'Answers', 'Saved', 'Sessions', 'Messages'] : ['Questions', 'Answers']
+  const tabs = own ? ['Questions', 'Answers', 'Saved', 'Messages'] : ['Questions', 'Answers']
   const tab = tabs.includes(params.get('tab')) ? params.get('tab') : 'Questions'
   useMeta(u ? { title: `${u.displayName} (@${u.username})`, description: u.bio || `${u.displayName} on The Youth Matters.`, path: `/u/${u.username}` } : {})
 
@@ -111,7 +114,7 @@ export default function Profile() {
           <dl className="profile-stats">
             <div><dt>Questions</dt><dd>{u.stats.posts}</dd></div>
             <div><dt>Answers</dt><dd>{u.stats.answers}</dd></div>
-            <div><dt>Karma</dt><dd>{u.stats.karma}</dd></div>
+            <div><dt>Points</dt><dd>{u.stats.karma}</dd></div>
             <div><dt>Helped someone</dt><dd>{u.stats.helpful}</dd></div>
           </dl>
         </div>
@@ -119,7 +122,7 @@ export default function Profile() {
 
       <div className="tabs profile-tabs" role="tablist" aria-label="Profile sections">
         {tabs.map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setParams(t === 'Questions' ? {} : { tab: t }, { replace: true })}>{t}</button>
+          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setParams(t === 'Questions' ? {} : { tab: t }, { replace: true })}>{TAB_LABEL[t] || t}</button>
         ))}
       </div>
 
@@ -135,7 +138,6 @@ export default function Profile() {
           <PostList query="saved=1&sort=new"
             empty={<div className="card empty"><h2 className="display">Nothing saved yet</h2><p className="muted">Tap the bookmark on any question to keep it here. Only you can see this list.</p></div>} />
         )}
-        {tab === 'Sessions' && own && <MySessions />}
         {tab === 'Messages' && own && <MentorChat />}
       </div>
     </div>

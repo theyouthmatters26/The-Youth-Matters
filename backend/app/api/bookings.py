@@ -74,8 +74,8 @@ def _email_confirmation(b):
     m = b.mentor
     student, mentor = escape(b.student.display_name), escape(m.user.display_name)
     topic = f"<p>What {student} wants to cover:<br>{escape(b.topic)}</p>" if b.topic else ""
-    student_chat = f"{handoff.site_url()}/u/{b.student.username}?tab=Messages&with={m.id}-{b.student_id}"
-    mentor_chat = f"{handoff.site_url()}/u/{m.user.username}?tab=Messages&with={m.id}-{b.student_id}"
+    student_chat = handoff.chat_link(m.id, b.student_id, b.student.username)
+    mentor_chat = handoff.chat_link(m.id, b.student_id, m.user.username)
     mailer.send_quietly(b.student.email, f"Booked: your session with {m.user.display_name}",
                         f"<p>You are booked with {mentor} on {_when(b, b.student_timezone)}.</p>"
                         f"<p>Your session happens in your private chat on The Youth Matters, in Messages on your "

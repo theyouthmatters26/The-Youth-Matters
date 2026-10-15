@@ -300,7 +300,7 @@ export default function MentorApply() {
     panel = (
       <StatusCard icon={BadgeCheck} title="You are a TYM mentor">
         <p className="muted">Students can find and book you in TYM Mentors. Your upcoming sessions are on your profile.</p>
-        <Link to={`/u/${me.username}?tab=Sessions`} className="btn btn-primary btn-sm apply-status-btn">Your sessions</Link>
+        <Link to={`/u/${me.username}?tab=Messages`} className="btn btn-primary btn-sm apply-status-btn">Your sessions</Link>
       </StatusCard>
     )
   } else if (existing.loading) {

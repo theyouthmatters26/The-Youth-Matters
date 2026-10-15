@@ -131,6 +131,25 @@ def test_assigning_a_mentor_books_it_tells_both_and_opens_the_chat(site):
     assert thread.request_note == FORM["message"]
 
 
+def test_each_of_them_is_sent_their_own_working_chat_link(site):
+    """The link used to be /my/sessions, which is not a route: both of them landed on the
+    not-found page. The chat lives in Messages on the reader's own profile."""
+    client, sent, mentors, head, _asha = site
+    client.post("/api/session-requests", json=FORM)
+    row = db.session.scalar(db.select(SessionRequest))
+    sent.clear()
+
+    client.patch(f"/api/admin/session-requests/{row.id}", headers=head, json={"mentorId": mentors[0].id})
+    with_pair = f"with={mentors[0].id}-"
+    student = next(r for r in sent if r[0] == "asha@example.org")[2]
+    mentor = next(r for r in sent if r[0] == "priya@example.org")[2]
+
+    assert "https://theyouthmatters.com/u/asha?tab=Messages&" + with_pair in student
+    assert "https://theyouthmatters.com/u/priya?tab=Messages&" + with_pair in mentor
+    for html in (student, mentor):
+        assert "/my/sessions" not in html
+
+
 def test_a_student_with_no_account_is_booked_but_told_to_sign_up(site):
     client, sent, mentors, head, _asha = site
     client.post("/api/session-requests", json={**FORM, "email": "nobody@example.org"})

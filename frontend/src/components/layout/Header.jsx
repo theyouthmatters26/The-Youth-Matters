@@ -140,7 +140,7 @@ function accountLinks(user) {
     ['/my', LayoutDashboard, 'TYM Community'],
     [profile, User, 'Your profile'],
     [`${profile}?tab=Saved`, Bookmark, 'Saved questions'],
-    [`${profile}?tab=Sessions`, CalendarCheck, 'Your sessions'],
+    [`${profile}?tab=Messages`, CalendarCheck, 'Your sessions'],
     ['/settings', Settings, 'Profile settings'],
     user.role === 'mentor' && ['/my/mentor', GraduationCap, 'Your mentor profile'],
   ].filter(Boolean)

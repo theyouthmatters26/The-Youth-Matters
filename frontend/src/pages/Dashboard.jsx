@@ -77,7 +77,7 @@ function MentorWallet({ username }) {
       </dl>
       <p className="faint dash-small">We pay out by bank transfer at the end of each month. Questions about a
         payment? Write to support@theyouthmatters.com.</p>
-      <Link to={`/u/${username}?tab=Sessions`} className="text-link rail-more">Your sessions <ArrowUpRight size={14} /></Link>
+      <Link to={`/u/${username}?tab=Messages`} className="text-link rail-more">Your sessions <ArrowUpRight size={14} /></Link>
     </div>
   )
 }
@@ -94,7 +94,7 @@ export default function Dashboard() {
   const [joined, setJoined] = useState(true)
   const [fresh, setFresh] = useState([])
 
-  // Old links like /my?tab=Sessions open that tab on your profile
+  // Old links like /my?tab=Messages open that tab on your profile
   const tab = new URLSearchParams(location.search).get('tab')
   if (tab) return <Navigate to={`/u/${user.username}?tab=${tab}`} replace />
 
@@ -150,7 +150,7 @@ export default function Dashboard() {
               <dl>
                 <div><dt>Questions</dt><dd>{p.stats.posts}</dd></div>
                 <div><dt>Answers</dt><dd>{p.stats.answers}</dd></div>
-                <div><dt>Karma</dt><dd>{p.stats.karma}</dd></div>
+                <div><dt>Points</dt><dd>{p.stats.karma}</dd></div>
               </dl>
               {missing.length > 0 && (
                 <div className="dash-complete">
@@ -185,7 +185,7 @@ export default function Dashboard() {
             ) : (
               <p className="muted dash-small">No sessions booked. A 30 minute call with someone who went can save weeks.</p>
             )}
-            <Link to={next ? `/u/${user.username}?tab=Sessions` : '/mentors'} className="text-link rail-more">
+            <Link to={next ? `/u/${user.username}?tab=Messages` : '/mentors'} className="text-link rail-more">
               {next ? 'All your sessions' : 'Find a mentor'} <ArrowUpRight size={14} />
             </Link>
           </div>

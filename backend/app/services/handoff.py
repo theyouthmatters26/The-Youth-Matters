@@ -55,6 +55,13 @@ def site_url():
     return cfg["CORS_ORIGINS"][0].rstrip("/")
 
 
+def chat_link(mentor_id, student_id, username):
+    """Where a mentor and a student talk, for the person whose username this is. The one place this
+    URL is built: an email that points anywhere else lands on the site's not-found page.
+    Matches chatLink() in frontend/src/components/mentors/MentorChat.jsx."""
+    return f"{site_url()}/u/{username}?tab=Messages&with={mentor_id}-{student_id}"
+
+
 def support_team():
     admins = db.session.scalars(db.select(User).where(User.role == "admin", User.status == "active"))
     return [u for u in admins if staff.can(u, "support")]
