@@ -20,7 +20,7 @@ export default function CaseStudies() {
             <p className="mono faint">{c.route}</p>
             <blockquote className="display">“{c.quote}”</blockquote>
             <figcaption className="mini-row">
-              <div><strong>{c.course}</strong><br><span>An example journey</span></div>
+              <div><strong>{c.course}</strong><span>An example journey</span></div>
             </figcaption>
           </figure>
         ))}
