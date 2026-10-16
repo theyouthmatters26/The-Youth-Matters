@@ -113,6 +113,24 @@ function Applications({ status, onChanged }) {
   )
 }
 
+// What a mentor who applied wrote about themselves, read only: the team approved those words,
+// it does not rewrite them. Hiding them and removing them are still there, further down.
+function TheirListing({ start }) {
+  return (
+    <section>
+      <h3 className="adm-h2">Their listing</h3>
+      <Facts items={[
+        ['Headline', start.headline],
+        ['Studied', `${start.course}, ${start.university}`],
+      ]} />
+      <p className="adm-prose">{start.about || 'They wrote nothing about themselves.'}</p>
+      <p className="adm-hint">This mentor applied through the form on the site and the team approved it, so their
+        own words stay as they wrote them. If something here is wrong, hide them from the directory or remove them
+        as a mentor below.</p>
+    </section>
+  )
+}
+
 // What students read on a mentor's page. Session length and weekly hours stay the mentor's own.
 function Listing({ id, start, onSaved }) {
   const [f, setF] = useState({ headline: start.headline, university: start.university, course: start.course, about: start.about })
@@ -182,7 +200,8 @@ function MentorSheet({ mentor, onClose, onChanged }) {
       </div>
       {failed ? <p className="adm-note">{failed.message}</p> : !data ? <Loading what="this mentor" /> : (
         <>
-          <Listing id={mentor.id} start={data} onSaved={onChanged} />
+          {data.ours ? <Listing id={mentor.id} start={data} onSaved={onChanged} />
+            : <TheirListing start={data} />}
           <section>
             <h3 className="adm-h2">Reviews from students</h3>
             {data.reviews.length === 0 ? <p className="adm-note">No student has reviewed this mentor yet.</p> : (
@@ -336,7 +355,7 @@ function Directory() {
         {list.data.map((m) => (
           <li key={m.id} className="adm-row adm-directory">
             <Person user={m.user} sub={`${m.course}, ${m.university}`} />
-            <span className="adm-cell adm-cell-drop">{m.country}</span>
+            <span className="adm-cell adm-cell-drop">{m.country}{m.ours ? ' · Added by the team' : ''}</span>
             <span className="adm-cell">{m.sessionMinutes} min sessions</span>
             <span className="adm-cell">
               {m.rating ? <><Star size={13} aria-hidden /> {m.rating} ({m.reviewCount})</> : 'No reviews yet'} · {m.sessions} sessions

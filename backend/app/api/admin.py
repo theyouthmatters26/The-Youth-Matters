@@ -18,6 +18,7 @@ each limited to the areas chosen for them (services/staff.py). The support inbox
     GET    /admin/reports?status=&page=       POST /admin/reports/<id>/resolve {action}
     DELETE /admin/content/<kind>/<id>         remove a post, answer or chat message
     GET    /admin/mentors                     POST adds a mentor, POST /admin/mentors/<id>/listed {listed}
+                                              only a mentor the team added itself can have its listing edited
     GET    /admin/mentors/<id>                PATCH {headline, university, course, about}, DELETE
     DELETE /admin/reviews/<id>                take a mentor review down
     GET    /admin/bookings?status=&page=      POST /admin/bookings/<id>/cancel {refund, reason}
@@ -739,6 +740,7 @@ def remove_content(kind, target_id):
 def mentors():
     team_member("mentors")
     rows = db.session.scalars(db.select(MentorProfile).order_by(MentorProfile.id.desc())).all()
+    applied = _applied({m.user_id for m in rows})
     ratings = {mid: (avg, n) for mid, avg, n in db.session.execute(
         db.select(MentorReview.mentor_id, db.func.avg(MentorReview.rating), db.func.count(MentorReview.id))
         .group_by(MentorReview.mentor_id))}
@@ -748,6 +750,7 @@ def mentors():
         "id": m.id, "user": {**s.user_brief(m.user), "email": m.user.email}, "university": m.university, "course": m.course,
         "country": m.community.country.name,
         "sessionMinutes": m.session_minutes, "listed": m.is_verified, "sessions": sessions.get(m.id, 0),
+        "ours": m.user_id not in applied,
         "rating": round(float(ratings[m.id][0]), 1) if m.id in ratings else None,
         "reviewCount": ratings[m.id][1] if m.id in ratings else 0,
     } for m in rows])
@@ -806,6 +809,21 @@ def add_mentor():
     return jsonify(id=m.id, userId=u.id), 201
 
 
+def _applied(user_ids):
+    """Of these people, who came in through the mentor form. What they wrote about themselves on
+    that form is theirs: the team reads it and approves or refuses it, but does not rewrite it.
+    A mentor the team added itself has no application, and its words are the team's to manage."""
+    if not user_ids:
+        return set()
+    return set(db.session.scalars(db.select(MentorApplication.user_id)
+                                  .where(MentorApplication.user_id.in_(user_ids))))
+
+
+def _ours(m):
+    """The team wrote this profile itself, so the team may edit it."""
+    return not _applied({m.user_id})
+
+
 @bp.post("/admin/mentors/<int:mentor_id>/listed")
 @jwt_required()
 def set_listed(mentor_id):
@@ -828,7 +846,7 @@ def mentor_detail(mentor_id):
     m = _mentor(mentor_id)
     reviews = db.session.scalars(db.select(MentorReview).where(MentorReview.mentor_id == m.id).order_by(MentorReview.id.desc()))
     return jsonify(id=m.id, headline=m.headline, about=m.about or "", university=m.university, course=m.course,
-                   sessionMinutes=m.session_minutes, bookings=count(Booking.mentor_id == m.id),
+                   sessionMinutes=m.session_minutes, bookings=count(Booking.mentor_id == m.id), ours=_ours(m),
                    reviews=[{"id": r.id, "rating": r.rating, "body": r.body, "by": r.author.display_name,
                              "at": r.created_at.isoformat()} for r in reviews])
 
@@ -836,9 +854,13 @@ def mentor_detail(mentor_id):
 @bp.patch("/admin/mentors/<int:mentor_id>")
 @jwt_required()
 def edit_mentor(mentor_id):
-    """Fix what students read on a mentor's page. Session length and hours stay the mentor's own."""
+    """Fix what students read on a mentor's page, for a mentor the team added itself. Session
+    length and hours stay the mentor's own, and so does everything a mentor wrote on the form."""
     team_member("mentors")
     m = _mentor(mentor_id)
+    if not _ours(m):
+        abort(403, "This mentor wrote their own profile when they applied, so it is not ours to edit. "
+                   "Hide them from the directory or remove them as a mentor instead.")
     data = request.get_json(silent=True) or {}
     for field, label, shortest, longest in (("headline", "headline", 1, 160), ("university", "university", 2, 120),
                                             ("course", "course", 2, 120), ("about", "About text", 0, 4000)):

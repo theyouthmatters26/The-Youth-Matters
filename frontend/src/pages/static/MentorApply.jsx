@@ -444,7 +444,7 @@ export default function MentorApply() {
           <Questions fields={MOTIVATION} details={form.details} set={setDetail} />
         </Section>
 
-        <Section n={8} title="Availability and mentoring format" text="Bookings on TYM are one-to-one video calls. Students pay with counselling hours bought from TYM, so there is no price for you to set.">
+        <Section n={8} title="Availability and mentoring format" text="Bookings on TYM are one-to-one calls. Students pay with counselling hours bought from TYM, so there is no price for you to set.">
           <Questions fields={AVAILABILITY} details={form.details} set={setDetail} />
           <div className="field">
             <label htmlFor="a-tz">Your time zone</label>

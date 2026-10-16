@@ -10,10 +10,12 @@ from app import create_app
 from app.api import admin as admin_api
 from app.config import TestConfig
 from app.extensions import db
-from app.models import Community, Country, MentorProfile, Subject, User
+from app.models import Community, Country, MentorApplication, MentorProfile, Subject, User
 
 TABLES = [db.metadata.tables[t] for t in ("countries", "subjects", "communities", "users",
-                                          "identity_verifications", "mentor_profiles", "mentor_reviews", "moderation_logs")]
+                                          "identity_verifications", "mentor_profiles", "mentor_reviews",
+                                          "mentor_applications", "availability_slots", "bookings",
+                                          "moderation_logs")]
 
 MENTOR = {"name": "Sumayya Samreen", "email": "sumayya@example.org", "password": "a-long-password",
           "country": "uk", "university": "Royal Holloway", "course": "MSc Artificial Intelligence",
@@ -59,3 +61,32 @@ def test_what_the_form_will_not_take(site):
     assert client.post("/api/admin/mentors", headers=admin, json=MENTOR).status_code == 201
     twice = client.post("/api/admin/mentors", headers=admin, json=MENTOR)
     assert twice.status_code == 409  # the same email twice is one account, not two
+
+
+def test_only_a_mentor_the_team_added_may_have_its_listing_edited(site):
+    """A mentor who applied wrote their own profile and the team approved those words. Editing them
+    afterwards would put the team's words under someone else's name and photo."""
+    client, admin = site
+    ours = client.post("/api/admin/mentors", headers=admin, json=MENTOR).get_json()["id"]
+    assert client.get(f"/api/admin/mentors/{ours}", headers=admin).get_json()["ours"] is True
+    fix = client.patch(f"/api/admin/mentors/{ours}", headers=admin, json={"headline": "A better headline for them"})
+    assert fix.status_code == 200, fix.get_json()
+
+    # the same profile, once an application sits behind it, is theirs and not the team's
+    m = db.session.get(MentorProfile, ours)
+    db.session.add(MentorApplication(
+        user_id=m.user_id, community_id=m.community_id, university="Leeds", course="MSc",
+        graduation_year=2024, headline="Their own headline", about="x" * 200, topics=["Visas"],
+        languages=["English"], timezone="Europe/London", details={}, cv_key="cv.pdf",
+        proof_key="proof.pdf", status="approved"))
+    db.session.commit()
+
+    assert client.get(f"/api/admin/mentors/{ours}", headers=admin).get_json()["ours"] is False
+    refused = client.patch(f"/api/admin/mentors/{ours}", headers=admin, json={"headline": "Rewriting their words"})
+    assert refused.status_code == 403
+    assert db.session.get(MentorProfile, ours).headline == "A better headline for them"
+
+    listed = client.get("/api/admin/mentors", headers=admin).get_json()
+    assert [row["ours"] for row in listed] == [False]
+    # hiding them is still the team's call either way
+    assert client.post(f"/api/admin/mentors/{ours}/listed", headers=admin, json={"listed": False}).status_code == 200
