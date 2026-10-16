@@ -34,7 +34,7 @@ const STEPS = [
 const MAX_FILE = 5 * 1024 * 1024
 const DRAFT = 'tym.mentorDraft'
 const EMPTY = {
-  country: 'uk', university: '', course: '', graduated: false, graduationYear: '', headline: '', about: '', experience: '',
+  countries: ['uk'], university: '', course: '', graduated: false, graduationYear: '', headline: '', about: '', experience: '',
   topics: [], languages: ['English'], linkedin: '', timezone: myZone(),
   details: {},
 }
@@ -198,6 +198,30 @@ function FileField({ id, label, hint, accept, file, onChange }) {
   )
 }
 
+// Students browse mentors by country. A mentor who studied in the UK and can also advise on the
+// USA ticks both and appears under each. The first one ticked is the home country on their card.
+export function CountryPicker({ value, onChange }) {
+  const toggle = (slug) => () => onChange(value.includes(slug) ? value.filter((s) => s !== slug) : [...value, slug])
+  const home = countries.find((c) => c.slug === value[0])
+  return (
+    <fieldset className="field apply-countries">
+      <legend>Countries you will mentor for</legend>
+      <div className="apply-country-grid">
+        {countries.map((c) => (
+          <label key={c.slug} className="check">
+            <input type="checkbox" checked={value.includes(c.slug)} onChange={toggle(c.slug)} />
+            <span>{c.name}</span>
+          </label>
+        ))}
+      </div>
+      <span className="hint">
+        {value.length === 0 ? 'Pick at least one. Students find you under every country you tick.'
+          : `Students find you under ${value.length === 1 ? 'this country' : `all ${value.length}`}. Your profile sits in ${home?.name}, the first one you ticked.`}
+      </span>
+    </fieldset>
+  )
+}
+
 // While the team decides, and after they say no, this page is the whole account: leaving has to
 // be possible from here, because there is nowhere else to go.
 function AccountWayOut({ account, onLeave }) {
@@ -251,7 +275,8 @@ export default function MentorApply() {
     // insists on is checked here as well
     const about = form.about.trim()
     const problem = !me.avatar ? 'Add a profile photo in step 1.'
-      : missing ? `Please answer: ${plain(missing[1])}`
+      : !form.countries.length ? 'Pick at least one country you will mentor for.'
+        : missing ? `Please answer: ${plain(missing[1])}`
           : about.length < 150 ? `Your introduction needs at least 150 characters. ${150 - about.length} to go.`
             : !form.topics.length ? 'Choose at least one key area of expertise.'
             : !form.languages.length ? 'Add the languages you can mentor in.'
@@ -283,7 +308,7 @@ export default function MentorApply() {
   }
 
   const current = sent || existing.data
-  const country = countries.find((c) => c.slug === form.country)
+  const country = countries.find((c) => c.slug === form.countries[0])
   const preview = {
     user: me || account || { displayName: 'You' }, community: { country: { name: country?.name } },
     course: form.course || 'Your course', university: form.university || 'your university',
@@ -321,7 +346,7 @@ export default function MentorApply() {
     panel = (
       <StatusCard icon={Clock3} title="Application received">
         <p className="muted">Sent on {fullDate(current.createdAt)}. Our team will check your documents and email {me.email} within a week, sometimes to set up a short call. Your profile goes live on TYM Mentors as soon as it is approved.</p>
-        <MentorCard preview m={{ ...preview, course: current.course, university: current.university, headline: current.headline, community: { country: { name: countries.find((c) => c.slug === current.country)?.name } } }} />
+        <MentorCard preview m={{ ...preview, course: current.course, university: current.university, headline: current.headline, community: { country: { name: countries.find((c) => c.slug === (current.countries?.[0] || current.country))?.name } } }} />
         <p className="muted dash-small">This is how students will see you once you are approved.</p>
         <AccountWayOut account={account} onLeave={leave} />
       </StatusCard>
@@ -388,13 +413,7 @@ export default function MentorApply() {
             details={form.details} set={setDetail} />
 
           <p className="apply-sub">Where your profile is listed</p>
-          <div className="field">
-            <label htmlFor="a-country">Main country you will mentor for</label>
-            <select id="a-country" className="select" value={form.country} onChange={set('country')}>
-              {countries.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-            </select>
-            <span className="hint">Your profile sits in this country&apos;s community. You can still list more countries further down.</span>
-          </div>
+          <CountryPicker value={form.countries} onChange={setValue('countries')} />
         </Section>
 
         <Section n={4} title="Professional experience">

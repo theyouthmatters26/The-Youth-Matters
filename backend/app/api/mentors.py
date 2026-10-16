@@ -12,9 +12,10 @@ from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy import func
 
 from ..extensions import db, limiter
-from ..models import AvailabilitySlot, Booking, Community, CounselingPackage, Country, MentorProfile, MentorReview, Subject, User
+from ..models import (AvailabilitySlot, Booking, Community, CounselingPackage, Country, MentorCountry,
+                      MentorProfile, MentorReview, Subject, User)
 from ..models.base import utcnow
-from ..services import availability, content
+from ..services import availability, content, mentor_countries
 from ..services.availability import DAYS
 from . import serializers as s
 
@@ -47,7 +48,10 @@ def list_mentors():
     if slug := request.args.get("subject"):
         q = q.join(Subject).where(Subject.slug == slug)
     if slug := request.args.get("country"):
-        q = q.join(Country).where(Country.slug == slug)
+        # Their home country or any other they are listed in (services/mentor_countries.py)
+        listed = (db.select(MentorCountry.mentor_id).join(Community, MentorCountry.community_id == Community.id)
+                  .join(Country).where(Country.slug == slug))
+        q = q.where(MentorProfile.id.in_(listed))
     if uni := request.args.get("university"):
         q = q.where(MentorProfile.university.ilike(f"%{uni}%"))
     if course := request.args.get("course"):
@@ -94,7 +98,8 @@ def _me():
 
 def _mine(m):
     """Everything the mentor edits, including the weekly hours the public view leaves out."""
-    return {**s.mentor(m), "weeklyHours": m.weekly_hours or {}, "country": m.community.country.slug}
+    return {**s.mentor(m), "weeklyHours": m.weekly_hours or {}, "country": m.community.country.slug,
+            "countries": [c.community.country.slug for c in m.countries]}
 
 
 def _clean_text(data, key, label, lo, hi, current):
@@ -152,6 +157,11 @@ def edit_my_profile():
     if "experience" in data:
         value, _ = content.clean(data.get("experience"), 256)
         m.experience = value[:255] or None
+    if "countries" in data:
+        picked = mentor_countries.communities(data["countries"])
+        if not picked:
+            abort(400, "Choose at least one country you mentor for.")
+        mentor_countries.set_for(m, [c.id for c in picked])
     m.topics = _clean_list(data, "topics", "Topics", 20, 60, m.topics)
     m.languages = _clean_list(data, "languages", "Languages", 6, 30, m.languages)
     if "linkedin" in data:

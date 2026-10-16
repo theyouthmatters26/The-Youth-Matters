@@ -235,6 +235,7 @@ function MentorSheet({ mentor, onClose, onChanged }) {
 // session length and weekly hours when they first log in.
 function AddMentor({ onClose, onAdded }) {
   const [password, setPassword] = useState(newPassword)
+  const [picked, setPicked] = useState(['uk'])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [added, setAdded] = useState(null)
@@ -245,7 +246,7 @@ function AddMentor({ onClose, onAdded }) {
     setBusy(true)
     setError('')
     try {
-      await adminApi('/admin/mentors', { method: 'POST', body: { ...f, password } })
+      await adminApi('/admin/mentors', { method: 'POST', body: { ...f, password, countries: picked } })
       setAdded({ email: f.email, password })
       onAdded()
     } catch (err) {
@@ -281,12 +282,19 @@ function AddMentor({ onClose, onAdded }) {
         </div>
         <PasswordBox id="ad-pass" label="Starting password" required value={password} onChange={setPassword}
           hint="Give this to them yourself. We do not email passwords. They can change it after logging in." />
-        <div className="field">
-          <label htmlFor="ad-country">Country they studied in</label>
-          <select id="ad-country" name="country" className="select" defaultValue="uk">
-            {countries.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-          </select>
-        </div>
+        <fieldset className="field apply-countries">
+          <legend>Countries they mentor for</legend>
+          <div className="apply-country-grid">
+            {countries.map((c) => (
+              <label key={c.slug} className="check">
+                <input type="checkbox" checked={picked.includes(c.slug)}
+                  onChange={() => setPicked(picked.includes(c.slug) ? picked.filter((x) => x !== c.slug) : [...picked, c.slug])} />
+                <span>{c.name}</span>
+              </label>
+            ))}
+          </div>
+          <span className="hint">Students find them under every country ticked. Their profile sits in the first one.</span>
+        </fieldset>
         <div className="field">
           <label htmlFor="ad-uni">University</label>
           <input id="ad-uni" name="university" className="input" required minLength={2} maxLength={120} placeholder="Royal Holloway, University of London" />

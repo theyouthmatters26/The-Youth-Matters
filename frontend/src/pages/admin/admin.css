@@ -157,7 +157,8 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
 
 /* ---------------------------------------------------------------- support inbox */
 .adm-inbox {
-  display: grid; grid-template-columns: 348px minmax(0, 1fr); height: calc(100dvh - 260px); min-height: 520px; overflow: hidden;
+  display: grid; grid-template-columns: 348px minmax(0, 1fr); height: calc(100dvh - 260px - var(--s-9));
+  min-height: 420px; overflow: hidden;
   border: 1px solid var(--line-soft); border-radius: var(--radius-lg); background: var(--paper);
 }
 .adm-inbox-list { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; border-right: 1px solid var(--line-soft); }
@@ -189,7 +190,7 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
 .adm-thread-who { display: grid; flex: 1 1 260px; min-width: 0; line-height: 1.4; }
 .adm-thread-who span { font-size: var(--step--1); color: var(--muted); overflow-wrap: anywhere; }
 .adm-thread-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
-.adm-msgs { display: grid; gap: var(--s-4); align-content: start; margin: 0; padding: var(--s-5); overflow-y: auto; overscroll-behavior: contain; list-style: none; background: var(--chalk); }
+.adm-msgs { display: grid; gap: var(--s-4); align-content: start; margin: 0; padding: var(--s-5); overflow-y: auto; list-style: none; background: var(--chalk); }
 .adm-msgs-title { justify-self: center; max-width: 60ch; padding-bottom: var(--s-2); text-align: center; font-family: var(--font-display); font-size: var(--step-1); color: var(--slate); }
 .adm-msg { display: grid; gap: 4px; justify-items: start; max-width: min(82%, 620px); }
 .adm-msg.is-human { justify-self: end; justify-items: end; }
@@ -383,7 +384,7 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
   .adm-main { margin-left: 0; padding-top: var(--s-6); }
 
   /* Inbox: the list, or the open conversation, never both */
-  .adm-inbox { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - 232px); }
+  .adm-inbox { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - 232px - var(--s-9)); }
   .adm-inbox.has-open .adm-inbox-list, .adm-inbox:not(.has-open) .adm-thread { display: none; }
   .adm-inbox-list { border-right: 0; }
   .adm-back { display: grid; }

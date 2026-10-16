@@ -5,22 +5,24 @@ import { FormError, Spinner, SubmitButton } from '../components/auth/fields'
 import MentorCard from '../components/mentors/MentorCard'
 import { LANGUAGES, TOPIC_MAX, TagInput, WeekGrid, ZONES, slotCount } from '../components/mentors/scheduler'
 import { KEY_AREAS } from '../data/mentorForm'
+import { CountryPicker } from './static/MentorApply'
 import { api, useApi } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useMeta } from '../lib/meta'
 import '../components/auth/auth.css'
 import '../components/mentors/mentors.css'
 
-// What a mentor may change about themselves after they are approved. Their country, their
-// documents and their verified badge are not here: those were checked by the team, and changing
-// them is a conversation, not a form.
-const MINE = ['headline', 'about', 'experience', 'topics', 'languages', 'linkedin',
+// What a mentor may change about themselves after they are approved. Their documents and their
+// verified badge are not here: those were checked by the team, and changing them is a
+// conversation, not a form. The countries they mentor for are theirs to widen as they go.
+const MINE = ['headline', 'about', 'experience', 'topics', 'languages', 'linkedin', 'countries',
   'university', 'course', 'graduationYear', 'sessionMinutes', 'timezone', 'weeklyHours']
 
 const shape = (m) => ({
   headline: m.headline || '', about: m.about || '', experience: m.experience || '',
   topics: m.topics || [], languages: m.languages || [], linkedin: m.links?.linkedin || '',
   university: m.university || '', course: m.course || '', graduationYear: m.graduationYear || '',
+  countries: m.countries?.length ? m.countries : [m.country].filter(Boolean),
   sessionMinutes: m.sessionMinutes || 30, timezone: m.timezone || 'Europe/London',
   weeklyHours: m.weeklyHours || {},
 })
@@ -67,11 +69,12 @@ export default function MentorSettings() {
   const save = async (e) => {
     e.preventDefault()
     setError('')
-    const problem = form.headline.trim().length < 20 ? 'Your headline needs at least 20 characters.'
+    const problem = !form.headline.trim() ? 'Write a headline for your profile.'
       : form.about.trim().length < 150 ? `Your introduction needs at least 150 characters. ${150 - form.about.trim().length} to go.`
         : !form.topics.length ? 'Choose at least one key area of expertise.'
-          : !form.languages.length ? 'Add the languages you can mentor in.'
-            : times < 2 ? 'Pick at least 2 weekly session times.' : ''
+          : !form.countries.length ? 'Pick at least one country you mentor for.'
+            : !form.languages.length ? 'Add the languages you can mentor in.'
+              : times < 2 ? 'Pick at least 2 weekly session times.' : ''
     if (problem) return setError(problem)
     setBusy(true)
     try {
@@ -138,6 +141,7 @@ export default function MentorSettings() {
               <TagInput id="m-langs" value={form.languages} onChange={put('languages')} suggestions={LANGUAGES}
                 max={6} placeholder="Type a language" />
             </div>
+            <CountryPicker value={form.countries} onChange={put('countries')} />
             <div className="field">
               <label htmlFor="m-link">LinkedIn <span className="faint">Optional</span></label>
               <input id="m-link" className="input" value={form.linkedin} onChange={set('linkedin')}

@@ -347,6 +347,9 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
 .apply-status h2 { font-size: var(--step-3); }
 .apply-status-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
 .apply-status-btn { justify-self: start; }
+.apply-countries { border: 0; padding: 0; margin: 0; }
+.apply-countries legend { margin-bottom: var(--s-2); font-size: var(--step--1); font-weight: 500; }
+.apply-country-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--s-2) var(--s-4); margin-bottom: var(--s-2); }
 .apply-way-out { margin-top: var(--s-5); padding-top: var(--s-5); border-top: 1px solid var(--line-soft); }
 .apply-way-out > .btn { justify-self: start; width: auto; }
 .apply-note { margin: 0; padding: var(--s-4); border-left: 3px solid var(--ink); background: var(--chalk); border-radius: 0 var(--radius) var(--radius) 0; }

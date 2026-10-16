@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
 from app.models import (BlogPost, Category, ChatMessage, ChatRoom, Comment, Community, Country,  # noqa: E402
-                        Faq, Follow, MentorProfile, MentorReview, Post, Subject, User)
+                        Faq, Follow, MentorCountry, MentorProfile, MentorReview, Post, Subject, User)
 from demo_blog import seed_blog  # noqa: E402
 from demo_chat import seed_chat  # noqa: E402
 from demo_posts import seed_posts  # noqa: E402
@@ -232,6 +232,9 @@ def seed_people():
         m.timezone, m.weekly_hours, m.is_verified = spec["timezone"], spec["hours"], True
         db.session.add(m)
         db.session.flush()
+        # Every country they are listed in, so a country filter finds them (services/mentor_countries.py)
+        m.countries = [MentorCountry(community_id=communities[c].id)
+                       for c in dict.fromkeys([spec["country"], *spec.get("alsoCountries", [])])]
         if not db.session.scalar(db.select(MentorReview.id).where(MentorReview.mentor_id == m.id).limit(1)):
             for author, rating, body, days in spec["reviews"]:
                 reviewer = db.session.scalar(db.select(User).where(User.username == author))

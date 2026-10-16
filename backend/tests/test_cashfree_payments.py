@@ -17,7 +17,7 @@ from app.models import CounselingPackage, Payment, User
 from app.services import payments
 
 TABLES = [db.metadata.tables[t] for t in ("countries", "users", "identity_verifications",
-                                          "counseling_packages", "payments", "mentor_profiles",
+                                          "counseling_packages", "payments", "mentor_profiles", "mentor_countries",
                                           "communities", "subjects", "bookings", "availability_slots")]
 SECRET = "test-secret"
 

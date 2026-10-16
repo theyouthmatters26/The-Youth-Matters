@@ -16,7 +16,7 @@ from app.models.base import utcnow
 from app.services import availability
 
 TABLES = [db.metadata.tables[t] for t in ("countries", "subjects", "communities", "users",
-                                          "identity_verifications", "mentor_profiles",
+                                          "identity_verifications", "mentor_profiles", "mentor_countries",
                                           "availability_slots", "bookings", "payments",
                                           "mentor_reviews", "mentor_threads", "mentor_messages",
                                           "notifications", "counseling_packages")]

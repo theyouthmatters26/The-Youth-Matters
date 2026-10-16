@@ -3,8 +3,8 @@ from .chat import AiConversation, AiMessage, ChatMessage, ChatRoom, MentorMessag
 from .comment import Comment
 from .content import BlogPost, CaseStudy, ContactMessage, Faq
 from .community import Category, Community, Country, Follow, Subject
-from .mentor import (AvailabilitySlot, Booking, CounselingPackage, MentorApplication, MentorProfile, MentorReview,
-                     Payment, SessionRequest)
+from .mentor import (AvailabilitySlot, Booking, CounselingPackage, MentorApplication, MentorCountry,
+                     MentorProfile, MentorReview, Payment, SessionRequest)
 from .moderation import ModerationLog, Report, Strike
 from .notification import Notification
 from .post import Post, PostImage, SavedPost
@@ -15,7 +15,7 @@ __all__ = [
     "AccountClosure", "AiConversation", "AiMessage", "AvailabilitySlot", "Block", "BlogPost", "Booking", "CaseStudy", "Category", "CounselingPackage",
     "ChatMessage", "ChatRoom", "Comment", "Community", "ContactMessage", "Country", "Faq", "Follow",
     "IdentityVerification",
-    "MentorApplication", "MentorMessage", "MentorProfile", "MentorReview", "MentorThread", "ModerationLog",
+    "MentorApplication", "MentorCountry", "MentorMessage", "MentorProfile", "MentorReview", "MentorThread", "ModerationLog",
     "Notification", "Payment", "Post", "PostImage", "Report",
     "SavedPost", "SessionRequest", "Strike", "Subject", "User", "Vote",
 ]

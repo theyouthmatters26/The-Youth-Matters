@@ -14,7 +14,7 @@ from app.models import (AvailabilitySlot, Booking, Community, CounselingPackage,
 from app.models.base import utcnow
 
 TABLES = [db.metadata.tables[t] for t in ("countries", "subjects", "communities", "users", "identity_verifications",
-                                         "mentor_profiles", "availability_slots", "counseling_packages", "bookings",
+                                         "mentor_profiles", "mentor_countries", "availability_slots", "counseling_packages", "bookings",
                                          "payments", "mentor_reviews", "mentor_messages", "mentor_threads",
                                          "notifications")]
 

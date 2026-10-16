@@ -25,7 +25,7 @@ from ..extensions import db, limiter
 from ..models import (AccountClosure, Community, Country, MentorApplication, MentorProfile, ModerationLog,
                       Subject)
 from ..models.base import utcnow
-from ..services import accounts, content, handoff, images, mailer, staff, storage
+from ..services import accounts, content, handoff, images, mailer, mentor_countries, staff, storage
 from ..services.notify import notify
 
 bp = Blueprint("mentor_applications", __name__)
@@ -39,7 +39,8 @@ def _summary(a):
     return {
         "id": a.id, "status": a.status, "note": a.note, "createdAt": a.created_at.isoformat(),
         "decidedAt": a.decided_at.isoformat() if a.decided_at else None,
-        "country": a.community.country.slug, "university": a.university, "course": a.course,
+        "country": a.community.country.slug, "countries": a.country_slugs or [a.community.country.slug],
+        "university": a.university, "course": a.course,
         "graduationYear": a.graduation_year, "graduated": a.graduated, "headline": a.headline, "about": a.about,
         "experience": a.experience, "topics": a.topics, "languages": a.languages, "linkedin": a.linkedin,
         "sessionMinutes": a.session_minutes, "timezone": a.timezone,
@@ -151,10 +152,11 @@ def apply():
         abort(400, "Add a profile photo first. Students book mentors they can see.")
 
     f = request.form
-    community = db.session.scalar(db.select(Community).join(Subject).join(Country).where(
-        Subject.slug == "study-abroad", Country.slug == f.get("country", ""), Community.is_active))
-    if not community:
-        abort(400, "Choose the country you studied in.")
+    asked = json.loads(f.get("countries") or "[]") if f.get("countries") else [f.get("country", "")]
+    picked = mentor_countries.communities(asked if isinstance(asked, list) else [])
+    if not picked:
+        abort(400, "Choose at least one country you will mentor for.")
+    community = picked[0]
     year = f.get("graduationYear", type=int)
     if not year or not 1970 <= year <= 2035:
         abort(400, "Enter your graduation year, or the year you expect to graduate.")
@@ -175,13 +177,15 @@ def apply():
         experience=_text(f, "experience", "Experience", 2, 255, required=False),
         topics=_list(f, "topics", "Topics", 20, 60), languages=_list(f, "languages", "Languages", 6, 30),
         linkedin=linkedin, timezone=tz, details=details,
+        country_slugs=[c.country.slug for c in picked],
     )
     a.cv_key = _file("cv", "CV", allow_images=False)
     a.proof_key = _file("proof", "proof of enrolment or degree", allow_images=True)
     db.session.add(a)
     db.session.commit()
 
-    rows = [("Member", f"{user.display_name} (@{user.username}, {user.email})"), ("Country", community.country.name),
+    rows = [("Member", f"{user.display_name} (@{user.username}, {user.email})"),
+            ("Countries", ", ".join(c.country.name for c in picked)),
             ("Studies", f"{a.course}, {a.university}, {'graduated' if a.graduated else 'graduating'} {a.graduation_year}"),
             ("Headline", a.headline), ("Topics", ", ".join(a.topics)), ("Languages", ", ".join(a.languages)),
             ("Time zone", a.timezone),
@@ -217,7 +221,7 @@ def _rejection_email(user, note):
                         f"chatrooms, and TYM AI for free.</li>"
                         f"</ul>"
                         f"<p>We really appreciate your interest in TYM.</p>"
-                        f"<p>Regards,<br>The Youth Matters</p>")
+                        f"<p>Thank You,<br>The Youth Matters</p>")
 
 
 def _turned_down(user, note):
@@ -284,6 +288,8 @@ def decide(application_id):
         m = db.session.scalar(db.select(MentorProfile).where(MentorProfile.user_id == a.user_id)) \
             or MentorProfile(user_id=a.user_id)
         m.community_id, m.university, m.course, m.graduation_year = a.community_id, a.university, a.course, a.graduation_year
+        chosen = mentor_countries.communities(a.country_slugs or [])
+        mentor_countries.set_for(m, [c.id for c in chosen] or [a.community_id])
         m.headline, m.about, m.experience = a.headline, a.about, a.experience
         m.topics, m.languages, m.links = a.topics, a.languages, {"linkedin": a.linkedin} if a.linkedin else None
         m.session_minutes = a.session_minutes

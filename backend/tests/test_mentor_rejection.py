@@ -16,7 +16,7 @@ from app.models import AccountClosure, Community, Country, MentorApplication, Su
 
 TABLES = [db.metadata.tables[t] for t in ("countries", "subjects", "communities", "users",
                                           "identity_verifications", "mentor_applications",
-                                          "mentor_profiles", "moderation_logs", "notifications",
+                                          "mentor_profiles", "mentor_countries", "moderation_logs", "notifications",
                                           "account_closures", "availability_slots")]
 NOTE = "Please add proof of your degree and a clearer CV."
 

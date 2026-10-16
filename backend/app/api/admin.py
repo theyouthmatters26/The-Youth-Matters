@@ -42,7 +42,7 @@ from ..models import (AccountClosure, AiConversation, AvailabilitySlot, Booking,
                       ContactMessage, Faq, IdentityVerification, MentorApplication, MentorProfile, MentorReview, SessionRequest,
                       ModerationLog, Payment, Post, Report, Strike, Subject, User)
 from ..models.base import utcnow
-from ..services import accounts, handoff, mailer, staff
+from ..services import accounts, handoff, mailer, mentor_countries, staff
 from ..services.moderation import MUTE_DURATION, strike_action
 from ..services.notify import notify
 from . import serializers as s
@@ -774,10 +774,9 @@ def add_mentor():
         abort(400, "Enter their full name.")
     if not EMAIL.match(email):
         abort(400, "Enter a valid email address.")
-    community = db.session.scalar(db.select(Community).join(Subject).join(Country).where(
-        Subject.slug == "study-abroad", Country.slug == str(data.get("country") or ""), Community.is_active))
-    if not community:
-        abort(400, "Choose the country they studied in.")
+    picked = mentor_countries.communities(data.get("countries") or [data.get("country")])
+    if not picked:
+        abort(400, "Choose at least one country they mentor for.")
     fields = {}
     for key, label, shortest, longest in MENTOR_TEXT:
         value = str(data.get(key) or "").strip()
@@ -796,8 +795,9 @@ def add_mentor():
     db.session.add(u)
     db.session.flush()
     topics = [t.strip()[:60] for t in str(data.get("topics") or "").split(",") if t.strip()][:20]
-    m = MentorProfile(user_id=u.id, community_id=community.id, graduation_year=year, topics=topics,
+    m = MentorProfile(user_id=u.id, community_id=picked[0].id, graduation_year=year, topics=topics,
                       languages=["English"], weekly_hours={}, is_verified=True, **fields)
+    mentor_countries.set_for(m, [c.id for c in picked])
     db.session.add(m)
     record("mentor_added", "user", u.id, name=name)
     db.session.commit()

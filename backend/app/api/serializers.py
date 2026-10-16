@@ -137,6 +137,7 @@ def mentor(m, stats=(None, 0), reviews=None):
         "id": m.id,
         "user": user_brief(m.user),
         "community": community(m.community),
+        "countries": [{"slug": c.community.country.slug, "name": c.community.country.name} for c in m.countries],
         "university": m.university,
         "course": m.course,
         "graduationYear": m.graduation_year,

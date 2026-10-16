@@ -14,7 +14,7 @@ from app.models import Community, Country, MentorApplication, MentorProfile, Sub
 from app.models.base import utcnow
 
 TABLES = [db.metadata.tables[t] for t in ("countries", "subjects", "communities", "users", "identity_verifications",
-                                          "mentor_profiles", "mentor_applications", "moderation_logs",
+                                          "mentor_profiles", "mentor_countries", "mentor_applications", "moderation_logs",
                                           "notifications", "availability_slots")]
 
 MENTOR = {"displayName": "Riya Mehta", "email": "riya@example.org", "password": "a-long-password", "as": "mentor"}

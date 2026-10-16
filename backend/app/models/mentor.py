@@ -6,11 +6,27 @@ from .base import Model, enum
 ACTIVE_BOOKING = "status IN ('pending_payment', 'confirmed')"
 
 
+class MentorCountry(Model):
+    """One country a mentor is listed under. A mentor who studied in the UK and can also advise on
+    the USA appears in both, so the directory is a join through here rather than one column.
+
+    MentorProfile.community_id stays the home country: the one on their profile and their card.
+    It always has a row here too, so a country filter never has to look in two places."""
+    __tablename__ = "mentor_countries"
+    __table_args__ = (db.UniqueConstraint("mentor_id", "community_id"),)
+
+    mentor_id = db.Column(db.Integer, db.ForeignKey("mentor_profiles.id", ondelete="CASCADE"), nullable=False)
+    community_id = db.Column(db.Integer, db.ForeignKey("communities.id"), nullable=False)
+
+    community = db.relationship("Community")
+
+
 class MentorProfile(Model):
     __tablename__ = "mentor_profiles"
 
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
                         unique=True, nullable=False)
+    # The home country, shown on their profile. Every country they are listed in is in mentor_countries.
     community_id = db.Column(db.Integer, db.ForeignKey("communities.id"), nullable=False)
     university = db.Column(db.String(120), nullable=False)
     course = db.Column(db.String(120), nullable=False)  # major
@@ -30,6 +46,8 @@ class MentorProfile(Model):
 
     user = db.relationship("User")
     community = db.relationship("Community")
+    countries = db.relationship("MentorCountry", cascade="all, delete-orphan", lazy="selectin",
+                                order_by="MentorCountry.id")  # home country first, as they picked them
 
 
 class AvailabilitySlot(Model):
@@ -190,6 +208,7 @@ class MentorApplication(Model):
     session_minutes = db.Column(db.SmallInteger, nullable=False, default=30)
     timezone = db.Column(db.String(64), nullable=False)
     weekly_hours = db.Column(db.JSON, nullable=False, default=dict)
+    country_slugs = db.Column(db.JSON)  # every country they asked to be listed in, the home one first
     details = db.Column(db.JSON)  # the rest of the registration form's answers, for the review team only
     cv_key = db.Column(db.String(255), nullable=False)
     proof_key = db.Column(db.String(255), nullable=False)

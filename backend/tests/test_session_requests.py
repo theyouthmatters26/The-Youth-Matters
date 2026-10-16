@@ -16,7 +16,7 @@ from app.models import (Community, Country, MentorProfile, MentorThread, Notific
                         Subject, User)
 
 TABLES = [db.metadata.tables[t] for t in (
-    "countries", "subjects", "communities", "users", "identity_verifications", "mentor_profiles",
+    "countries", "subjects", "communities", "users", "identity_verifications", "mentor_profiles", "mentor_countries",
     "availability_slots", "bookings", "counseling_packages", "payments", "mentor_threads",
     "mentor_messages", "notifications", "moderation_logs", "session_requests")]
 
