@@ -282,7 +282,7 @@ function AddMentor({ onClose, onAdded }) {
         </div>
         <div className="field">
           <label htmlFor="ad-headline">Headline</label>
-          <input id="ad-headline" name="headline" className="input" required minLength={10} maxLength={160}
+          <input id="ad-headline" name="headline" className="input" required maxLength={160}
             placeholder="I help students apply to UK universities on a budget." />
         </div>
         <div className="field">

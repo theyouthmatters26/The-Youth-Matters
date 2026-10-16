@@ -145,7 +145,7 @@ def edit_my_profile():
     m = _me()
     data = request.get_json(silent=True) or {}
 
-    m.headline = _clean_text(data, "headline", "Headline", 20, 160, m.headline)
+    m.headline = _clean_text(data, "headline", "Headline", 1, 160, m.headline)
     m.about = _clean_text(data, "about", "About you", 150, 2000, m.about)
     m.university = _clean_text(data, "university", "University", 2, 120, m.university)
     m.course = _clean_text(data, "course", "Course", 2, 120, m.course)

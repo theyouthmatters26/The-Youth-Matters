@@ -219,9 +219,14 @@ export default function Header() {
             {user ? (
               <AccountMenu user={user} />
             ) : account ? (
-              <Link to={resumePath(account)} className="account-link account-auth"><UserPlus size={15} strokeWidth={1.7} />
-                {account.verification === 'mentor' ? ' Your application' : ' Finish sign-up'}
-              </Link>
+              <>
+                <Link to={resumePath(account)} className="account-link account-auth"><UserPlus size={15} strokeWidth={1.7} />
+                  {account.verification === 'mentor' ? ' Your application' : ' Finish sign-up'}
+                </Link>
+                <button className="account-link account-auth" onClick={() => { logout(); navigate('/') }}>
+                  <LogOut size={15} strokeWidth={1.7} /> Sign out
+                </button>
+              </>
             ) : (
               <>
                 <Link to="/login" className="account-link account-auth"><KeyRound size={15} strokeWidth={1.7} /> Log in</Link>
@@ -285,6 +290,7 @@ export default function Header() {
                 <Link to={resumePath(account)} className="btn btn-light">
                   {account.verification === 'mentor' ? 'Your application' : 'Finish sign-up'}
                 </Link>
+                <button className="btn btn-glass" onClick={() => { logout(); navigate('/') }}>Sign out</button>
               </div>
             )}
             {!account && (

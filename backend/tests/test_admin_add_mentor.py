@@ -52,7 +52,7 @@ def test_the_team_adds_a_mentor_and_they_are_listed(site):
 def test_what_the_form_will_not_take(site):
     client, admin = site
     for bad in ({"name": "S"}, {"email": "not-an-email"}, {"country": "narnia"},
-                {"headline": "too short"}, {"university": ""}, {"password": "short"}):
+                {"headline": ""}, {"university": ""}, {"password": "short"}):
         res = client.post("/api/admin/mentors", headers=admin, json={**MENTOR, **bad})
         assert res.status_code == 400, (bad, res.get_json())
 

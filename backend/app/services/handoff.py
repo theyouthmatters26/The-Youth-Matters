@@ -29,11 +29,15 @@ def add_message(conversation, role, content, author=None, sources=None):
     return m
 
 
+# What a student sees above a reply from the team: the organisation, not the person behind it
+TEAM_NAME = "The Youth Matters"
+
+
 def message_json(m):
     data = {"id": m.id, "role": m.role, "content": m.content, "sources": m.sources or [],
             "createdAt": m.created_at.isoformat()}
     if m.role == "human":
-        data["author"] = {"name": m.author.display_name if m.author else "TYM team"}
+        data["author"] = {"name": TEAM_NAME}
     return data
 
 

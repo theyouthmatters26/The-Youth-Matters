@@ -53,7 +53,7 @@ export function PictureField({ kind, current, onChange }) {
 
 // Closing your own account. We ask for the word DELETE and, when the account has a password, for
 // that too: neither a stray click nor a borrowed phone can close somebody's account.
-function DeleteAccount({ account, onDone }) {
+export function DeleteAccount({ account, onDone }) {
   const [open, setOpen] = useState(false)
   const [word, setWord] = useState('')
   const [reason, setReason] = useState('')

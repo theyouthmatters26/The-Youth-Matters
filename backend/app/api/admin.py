@@ -756,7 +756,7 @@ def mentors():
 # What a mentor the team adds by hand has to have. Session length and weekly hours are not here:
 # the mentor sets both in their own settings once they log in.
 MENTOR_TEXT = (("university", "university", 2, 120), ("course", "course", 2, 120),
-               ("headline", "headline", 10, 160), ("about", "About text", 0, 4000))
+               ("headline", "headline", 1, 160), ("about", "About text", 0, 4000))
 
 
 @bp.post("/admin/mentors")
@@ -840,7 +840,7 @@ def edit_mentor(mentor_id):
     team_member("mentors")
     m = _mentor(mentor_id)
     data = request.get_json(silent=True) or {}
-    for field, label, shortest, longest in (("headline", "headline", 10, 160), ("university", "university", 2, 120),
+    for field, label, shortest, longest in (("headline", "headline", 1, 160), ("university", "university", 2, 120),
                                             ("course", "course", 2, 120), ("about", "About text", 0, 4000)):
         if field in data:
             value = str(data[field] or "").strip()

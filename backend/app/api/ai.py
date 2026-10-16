@@ -66,9 +66,11 @@ def _messages(c, after=None):
 
 
 def _summary(c):
-    """status: ai, waiting (asked for a person) or human (a person is here, named in `person`)."""
+    """status: ai, waiting (asked for a person) or human (someone from the team is here).
+
+    Who that someone is stays inside the team: the student is talking to The Youth Matters."""
     return {"id": c.id, "title": c.title, "createdAt": c.created_at.isoformat(), "status": c.status,
-            "unread": c.user_unread, "person": c.assigned_to.display_name.split()[0] if c.assigned_to else None}
+            "unread": c.user_unread, "person": handoff.TEAM_NAME if c.assigned_to else None}
 
 
 @bp.get("/ai/conversations")

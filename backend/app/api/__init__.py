@@ -58,6 +58,10 @@ def visitors_until_verified():
         return
     if user.status in ("suspended", "banned"):
         abort(403, "This account is suspended.")
+    # Closing an account the team never opened needs no approval and no age check. It stays shut to
+    # a suspended account, above: leaving must not be a way out of moderation.
+    if request.method == "DELETE" and request.path == "/api/users/me":
+        return
     if user.role == "mentor":
         if request.path.startswith(MENTOR_SIGN_UP):
             return

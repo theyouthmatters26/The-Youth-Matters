@@ -121,7 +121,7 @@ def test_a_booked_hour_survives_the_mentor_dropping_it(site):
 
 def test_what_the_page_will_not_accept(site):
     client, _m, _student, head = site
-    for body in ({"headline": "too short"}, {"about": "x" * 20},
+    for body in ({"headline": ""}, {"about": "x" * 20},
                  {"sessionMinutes": 25}, {"timezone": "Mars/Olympus"},
                  {"weeklyHours": {"mon": ["25:00"]}}, {"topics": []}):
         assert client.patch("/api/mentors/me", headers=head, json=body).status_code == 400, body

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { BadgeCheck, CalendarClock, Check, Clock3, FileText, HeartHandshake, KeyRound, Upload, Wallet, X } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { BadgeCheck, CalendarClock, Check, Clock3, FileText, HeartHandshake, KeyRound, LogOut, Upload, Wallet, X } from 'lucide-react'
 import { FormError, Spinner, SubmitButton } from '../../components/auth/fields'
 import MentorCard from '../../components/mentors/MentorCard'
 import Avatar from '../../components/ui/Avatar'
@@ -11,7 +11,7 @@ import { api, useApi } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { fullDate } from '../../lib/format'
 import { useMeta } from '../../lib/meta'
-import { PictureField } from '../Settings'
+import { DeleteAccount, PictureField } from '../Settings'
 import '../../components/auth/auth.css'
 
 const BENEFITS = [
@@ -198,9 +198,22 @@ function FileField({ id, label, hint, accept, file, onChange }) {
   )
 }
 
+// While the team decides, and after they say no, this page is the whole account: leaving has to
+// be possible from here, because there is nowhere else to go.
+function AccountWayOut({ account, onLeave }) {
+  return (
+    <div className="apply-way-out stack">
+      <button className="btn btn-ghost btn-sm" onClick={onLeave}><LogOut size={15} /> Sign out</button>
+      <DeleteAccount account={account} onDone={onLeave} />
+    </div>
+  )
+}
+
 export default function MentorApply() {
   useMeta({ title: 'Become a TYM mentor', description: 'Become a Study Abroad Mentor with The Youth Matters: for experienced professionals, educators, international graduates and study-abroad experts who can guide young people through their journey.', path: '/mentors/register' })
-  const { account, setAccount } = useAuth()
+  const { account, setAccount, logout } = useAuth()
+  const navigate = useNavigate()
+  const leave = () => { logout(); navigate('/', { replace: true }) }
   // A mentor account is its own account: "mentor" while our team decides, "verified" once approved
   // (api/serializers.py). Students never apply from here, they need a mentor account of their own.
   const me = account && (account.verification === 'mentor' || account.role === 'mentor') ? account : null
@@ -234,12 +247,11 @@ export default function MentorApply() {
     setError('')
     const asked = ALL_FIELDS.filter((f) => !follows(f) || form.details[follows(f)] === 'Yes')
     const missing = asked.find((f) => required(f) && !(form.details[f[0]] || '').length)
-    // minLength on the fields does not fire for a draft restored from this device, so the two
-    // lengths the server insists on are checked here as well
+    // minLength does not fire for a draft restored from this device, so the length the server
+    // insists on is checked here as well
     const about = form.about.trim()
     const problem = !me.avatar ? 'Add a profile photo in step 1.'
       : missing ? `Please answer: ${plain(missing[1])}`
-        : form.headline.trim().length < 20 ? 'Your headline needs at least 20 characters.'
           : about.length < 150 ? `Your introduction needs at least 150 characters. ${150 - about.length} to go.`
             : !form.topics.length ? 'Choose at least one key area of expertise.'
             : !form.languages.length ? 'Add the languages you can mentor in.'
@@ -311,6 +323,7 @@ export default function MentorApply() {
         <p className="muted">Sent on {fullDate(current.createdAt)}. Our team will check your documents and email {me.email} within a week, sometimes to set up a short call. Your profile goes live on TYM Mentors as soon as it is approved.</p>
         <MentorCard preview m={{ ...preview, course: current.course, university: current.university, headline: current.headline, community: { country: { name: countries.find((c) => c.slug === current.country)?.name } } }} />
         <p className="muted dash-small">This is how students will see you once you are approved.</p>
+        <AccountWayOut account={account} onLeave={leave} />
       </StatusCard>
     )
   } else if (current?.status === 'rejected' && !retry) {
@@ -319,6 +332,7 @@ export default function MentorApply() {
         {current.note ? <blockquote className="apply-note">{current.note}</blockquote> : <p className="muted">Our team could not approve it this time.</p>}
         <p className="muted">You can update your details and send it again.</p>
         <button className="btn btn-primary btn-sm apply-status-btn" onClick={() => startAgain(current)}>Update and apply again</button>
+        <AccountWayOut account={account} onLeave={leave} />
       </StatusCard>
     )
   } else {
@@ -402,8 +416,8 @@ export default function MentorApply() {
 
         <Section n={7} title="Your mentor profile" text="Students see your headline and introduction on your mentor profile.">
           <div className="field">
-            <div className="field-row"><label htmlFor="a-headline">Headline</label><span className="hint">{160 - form.headline.length} left</span></div>
-            <input id="a-headline" className="input" value={form.headline} onChange={set('headline')} required minLength={20} maxLength={160}
+            <label htmlFor="a-headline">Headline</label>
+            <input id="a-headline" className="input" value={form.headline} onChange={set('headline')} required maxLength={160}
               placeholder="International Education Professional | UK & Canada Study Abroad Mentor" />
           </div>
           <div className="field">

@@ -347,6 +347,8 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
 .apply-status h2 { font-size: var(--step-3); }
 .apply-status-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
 .apply-status-btn { justify-self: start; }
+.apply-way-out { margin-top: var(--s-5); padding-top: var(--s-5); border-top: 1px solid var(--line-soft); }
+.apply-way-out > .btn { justify-self: start; width: auto; }
 .apply-note { margin: 0; padding: var(--s-4); border-left: 3px solid var(--ink); background: var(--chalk); border-radius: 0 var(--radius) var(--radius) 0; }
 .apply-status .mcard { max-width: 320px; }
 .apply-preview .col-title { margin-bottom: var(--s-2); }

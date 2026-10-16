@@ -202,13 +202,12 @@ export default function MentorSettings() {
               user, community: { country: { name: data.community?.country?.name } },
               course: form.course, university: form.university,
               headline: form.headline || 'Your one-line headline shows here.',
-              sessionMinutes: Number(form.sessionMinutes),
             }} />
           </div>
           <div className="card card-pad">
             <h2 className="section-title">Your week</h2>
             <p className="muted dash-small">
-              <strong className="mono">{times}</strong> {times === 1 ? 'time' : 'times'} a week, {form.sessionMinutes} minutes each.
+              <strong className="mono">{times}</strong> {times === 1 ? 'time' : 'times'} a week.
             </p>
             <p className="muted dash-small">Students can book the next three weeks of these.</p>
           </div>

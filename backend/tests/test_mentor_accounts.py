@@ -40,6 +40,26 @@ def test_a_waiting_mentor_reaches_its_application_and_nothing_else(monkeypatch):
     assert gate("/api/posts", account(status="active")) is None
 
 
+def test_anyone_waiting_can_still_close_their_own_account(monkeypatch):
+    """A mentor waiting on the team, or turned down, has only the application page. Leaving has to
+    work from there; a suspended account must not be able to leave its moderation behind."""
+    import app.api as api
+
+    def gate(user, method="DELETE", path="/api/users/me"):
+        monkeypatch.setattr(api, "request", SimpleNamespace(
+            headers={"Authorization": "Bearer x"}, method=method, path=path))
+        monkeypatch.setattr(api, "verify_jwt_in_request", lambda **_: None)
+        monkeypatch.setattr(api, "current_user", user)
+        return api.visitors_until_verified()
+
+    assert gate(account()) is None                              # mentor, waiting on the team
+    assert gate(account(role="student")) is None                # student, photo ID not done
+    with pytest.raises(Forbidden):
+        gate(account(status="suspended"))
+    with pytest.raises(Forbidden):                              # and it opens nothing else on /users/me
+        gate(account(), method="PATCH")
+
+
 def test_only_a_mentor_account_may_send_an_application(monkeypatch):
     import app.api.mentor_applications as ma
 

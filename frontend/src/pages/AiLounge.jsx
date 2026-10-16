@@ -22,7 +22,7 @@ const STARTERS = [
 // Who is answering right now, and the way to ask for a person
 function Handoff({ convo, onAsk, onCancel, busy }) {
   if (convo.status === 'human') {
-    return <p className="handoff is-person"><UserRound size={15} aria-hidden /> <span><strong>{convo.person || 'Someone'} from the TYM team</strong> is with you. TYM AI is paused while they help.</span></p>
+    return <p className="handoff is-person"><UserRound size={15} aria-hidden /> <span><strong>{convo.person || 'The TYM team'}</strong> is with you. TYM AI is paused while they help.</span></p>
   }
   if (convo.status === 'waiting') {
     return (

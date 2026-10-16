@@ -171,7 +171,7 @@ def apply():
     a = MentorApplication(
         user_id=user.id, community=community, graduation_year=year, graduated=f.get("graduated") == "true",
         university=_text(f, "university", "University", 2, 120), course=_text(f, "course", "Course", 2, 120),
-        headline=_text(f, "headline", "Headline", 20, 160), about=_text(f, "about", "About you", 150, 2000),
+        headline=_text(f, "headline", "Headline", 1, 160), about=_text(f, "about", "About you", 150, 2000),
         experience=_text(f, "experience", "Experience", 2, 255, required=False),
         topics=_list(f, "topics", "Topics", 20, 60), languages=_list(f, "languages", "Languages", 6, 30),
         linkedin=linkedin, timezone=tz, details=details,
@@ -196,37 +196,34 @@ def apply():
     return jsonify(_summary(a)), 201
 
 
-def _rejection_email(user, note, closed):
-    """Why it was turned down, in their inbox. The team's note is the point of the email: without it
-    they are left guessing, and they come back with the same application.
-
-    `closed` is for an account that only ever existed to carry the application: there is nothing left
-    to sign in to, so everything they need to come back has to be in the email itself."""
+def _rejection_email(user, note):
+    """Why it was turned down, in their inbox. The team's note fills in the reasons; the wording
+    around it is the client's own, and is the same for everyone who is turned down."""
     site = handoff.site_url()
-    after = (f"<p>Your mentor account has been closed, so there is nothing left to sign in to. "
-             f"You are welcome to:</p><ul>"
-             f"<li><a href='{site}/mentors/signup'>Apply again as a mentor</a> once you can meet "
-             f"the points above</li>"
-             f"<li><a href='{site}/register'>Join as a student</a> instead, which is free and "
-             f"opens the community, the chatrooms and TYM AI</li></ul>") if closed else (
-        f"<p>Your account is untouched. Put the points above right and "
-        f"<a href='{site}/mentors/register'>send the form again</a>: there is no limit on how many "
-        f"times you may apply.</p>")
     mailer.send_quietly(user.email, "Your TYM mentor application",
                         f"<p>Hi {escape(user.display_name.split()[0])},</p>"
-                        f"<p>Thank you for applying to mentor with The Youth Matters. We are not able to "
-                        f"approve your application this time. This is what our team asked us to pass on:</p>"
+                        f"<p>Thanks so much for applying to mentor with us at The Youth Matters. We are "
+                        f"unable to move forward with your application right now due to the reasons "
+                        f"listed below:</p>"
                         f"<blockquote style='margin:16px 0;padding:0 0 0 14px;border-left:3px solid #e5e5e5;"
                         f"color:#444'>{escape(note or 'Our team could not approve it on this occasion.')}"
                         f"</blockquote>"
-                        f"{after}"
-                        f"<p>Thank you for your interest in TYM.</p>")
+                        f"<p>Since your mentor account is deactivated, you will not be able to sign back in. "
+                        f"However, you're welcome to:</p>"
+                        f"<ul>"
+                        f"<li><a href='{site}/mentors/signup'>Apply again as a mentor</a> once you make the "
+                        f"changes mentioned.</li>"
+                        f"<li><a href='{site}/register'>Join as a student</a> to access the community, "
+                        f"chatrooms, and TYM AI for free.</li>"
+                        f"</ul>"
+                        f"<p>We really appreciate your interest in TYM.</p>"
+                        f"<p>Regards,<br>The Youth Matters</p>")
 
 
 def _turned_down(user, note):
     """Turned down, and the account goes with the application it was made for. A row in
     account_closures keeps the record of who was turned down and why."""
-    _rejection_email(user, note, closed=True)
+    _rejection_email(user, note)
     db.session.add(AccountClosure(display_name=user.display_name, username=user.username, email=user.email,
                                   reason=f"Mentor application rejected: {note or 'no note'}"[:1000],
                                   kept=False, joined_at=user.created_at))
@@ -313,7 +310,7 @@ def decide(application_id):
             # They keep the account they had before this form, so they keep the note in it as well
             notify(a.user_id, current_user, "system",
                    message="reviewed your mentor application. Open TYM Mentors to see the note.")
-            _rejection_email(user, a.note, closed=False)
+            _rejection_email(user, a.note)
     db.session.commit()
     accounts.remove_files(files)
     return jsonify(summary)

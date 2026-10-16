@@ -100,12 +100,11 @@ def test_an_account_that_is_more_than_an_application_is_left_alone(site):
     assert db.session.get(User, teammate.id) is not None
     assert db.session.scalar(db.select(AccountClosure)) is None  # nothing was closed
 
-    # They are still told why, and told to send the form again: the account they keep is not the point
+    # They are still told why: whoever they are, the same email goes with the team's reasons in it
     assert [to for to, _subject, _html in sent] == ["asha@example.org", "sam@example.org"]
     for _to, subject, html in sent:
         assert subject == "Your TYM mentor application" and NOTE in html
-        assert "https://theyouthmatters.com/mentors/register" in html
-        assert "closed" not in html
+        assert "https://theyouthmatters.com/mentors/signup" in html
 
 
 def test_the_note_is_what_the_email_is_for(site):
