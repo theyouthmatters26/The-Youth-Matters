@@ -12,7 +12,7 @@ export default function CaseStudies() {
     <div className="container page">
       <header className="page-head">
         <h1>The journeys TYM is built for</h1>
-        <p>Three examples of how students use the community on their way abroad. Stories from our own members will take their place as they share them.</p>
+        <p>Examples of how students use the community on their way to study abroad. Stories from our own members will take their place as they share them.</p>
       </header>
       <div className="case-grid">
         {stories.map((c) => (
