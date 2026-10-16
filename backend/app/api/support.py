@@ -92,7 +92,7 @@ def reply(conversation_id):
     text, _ = content.clean((request.get_json(silent=True) or {}).get("body", ""), 4000)
     if not text:
         abort(400, "Write a reply first.")
-    handoff.tell_student(c, me, text)  # before the message is added: it looks at when a person last wrote
+    handoff.tell_student(c, text)  # before the message is added: it looks at when a person last wrote
     m = handoff.add_message(c, "human", text, author=me)
     c.status, c.assigned_to_id = "human", me.id
     db.session.commit()

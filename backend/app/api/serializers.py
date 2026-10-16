@@ -130,6 +130,12 @@ def notification(n):
     }
 
 
+def _countries(m):
+    """Every country the mentor is listed in, their home one first (services/mentor_countries.py)."""
+    rows = sorted(m.countries, key=lambda c: c.community_id != m.community_id)
+    return [{"slug": c.community.country.slug, "name": c.community.country.name} for c in rows]
+
+
 def mentor(m, stats=(None, 0), reviews=None):
     """stats: (average rating, review count). reviews: include the latest reviews (profile page)."""
     rating, count = stats
@@ -137,7 +143,7 @@ def mentor(m, stats=(None, 0), reviews=None):
         "id": m.id,
         "user": user_brief(m.user),
         "community": community(m.community),
-        "countries": [{"slug": c.community.country.slug, "name": c.community.country.name} for c in m.countries],
+        "countries": _countries(m),
         "university": m.university,
         "course": m.course,
         "graduationYear": m.graduation_year,

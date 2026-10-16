@@ -279,7 +279,7 @@ def handle(request_id):
         row.minutes = data["minutes"]
 
     if data.get("end"):
-        _end(row, me.display_name)
+        _end(row, handoff.TEAM_NAME)
     elif data.get("status") == "cancelled":
         row.status = "cancelled"
     elif data.get("status") == "assigned" and row.status == "cancelled":
@@ -300,7 +300,10 @@ def handle(request_id):
 
 def _end(row, who):
     """Close the session. The chat stays open afterwards: the point is the clock stopping, not
-    cutting two people off mid sentence."""
+    cutting two people off mid sentence.
+
+    `who` is the name the student reads, already in the form to show. When the team closes a session
+    that is The Youth Matters, never the account name of whoever happened to click it."""
     if row.status != "confirmed":
         abort(409, "This session is not running.")
     if row.ended_at:
@@ -310,7 +313,7 @@ def _end(row, who):
         db.session.add(MentorMessage(
             mentor_id=row.mentor_id, student_id=row.student_id, author_id=row.mentor.user_id,
             kind="system",
-            body=f"{who.split()[0]} ended the session. You can still message each other here."))
+            body=f"{who} ended the session. You can still message each other here."))
         notify(row.student_id, None, "booking",
                message=f"Your session with {_mentor_name(row.mentor)} has ended.")
 
@@ -327,7 +330,7 @@ def end_my_session(request_id):
     now = utcnow()
     if row.starts_at and row.starts_at > (now.replace(tzinfo=None) if row.starts_at.tzinfo is None else now):
         abort(409, "This session has not started yet.")
-    _end(row, current_user.display_name)
+    _end(row, current_user.display_name.split()[0])
     db.session.commit()
     return jsonify(_public(row))
 

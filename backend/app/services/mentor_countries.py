@@ -23,9 +23,26 @@ def communities(slugs, subject="study-abroad"):
 
 
 def set_for(mentor, community_ids):
-    """Replace the mentor's countries. The first is the home one, kept on the profile itself."""
+    """Set the mentor's countries. The first is the home one, kept on the profile itself.
+
+    The rows they already have are left alone rather than replaced. Handing the relationship a
+    whole new list instead inserts a country they already had before deleting the old row, and the
+    unique pair on the table rejects it: adding a second country would fail for every mentor."""
     ids = list(dict.fromkeys(community_ids))
     if not ids:
         return
     mentor.community_id = ids[0]
-    mentor.countries = [MentorCountry(community_id=cid) for cid in ids]
+    have = {row.community_id: row for row in mentor.countries}
+    for community_id, row in have.items():
+        if community_id not in ids:
+            mentor.countries.remove(row)
+    for community_id in ids:
+        if community_id not in have:
+            mentor.countries.append(MentorCountry(community_id=community_id))
+
+
+def slugs_for(mentor):
+    """Their countries as slugs, home first, whatever order the rows were written in."""
+    home = mentor.community_id
+    rows = sorted(mentor.countries, key=lambda c: c.community_id != home)
+    return [c.community.country.slug for c in rows]

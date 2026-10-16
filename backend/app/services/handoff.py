@@ -90,7 +90,7 @@ def alert_team(conversation, heading):
         mailer.send_quietly(address, f"A student is waiting: {conversation.title}", html, reply_to=student.email)
 
 
-def tell_student(conversation, member, text):
+def tell_student(conversation, text):
     """Email the student that a person replied, unless one went out in the last ALERT_EVERY."""
     student = conversation.user
     earlier = db.session.scalar(
@@ -99,12 +99,12 @@ def tell_student(conversation, member, text):
     conversation.user_unread = True
     if earlier and utcnow() - earlier < ALERT_EVERY:
         return
-    first = member.display_name.split()[0]
     excerpt = text if len(text) <= 400 else text[:400].rsplit(" ", 1)[0] + "..."
     link = f"{site_url()}/ai?c={conversation.id}"
+    # Signed by the organisation, not by whoever on the team picked the conversation up
     mailer.send_quietly(
-        student.email, f"{first} from The Youth Matters replied to you",
+        student.email, f"{TEAM_NAME} replied to you",
         f"<p>Hi {escape(student.display_name.split()[0])},</p>"
-        f"<p>{escape(first)} from our team replied in your conversation \"{escape(conversation.title)}\":</p>"
+        f"<p>Our team replied in your conversation \"{escape(conversation.title)}\":</p>"
         f"<blockquote>{escape(excerpt)}</blockquote>"
         f"<p><a href='{link}'>Read and reply</a></p>")

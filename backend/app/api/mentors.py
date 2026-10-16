@@ -99,7 +99,7 @@ def _me():
 def _mine(m):
     """Everything the mentor edits, including the weekly hours the public view leaves out."""
     return {**s.mentor(m), "weeklyHours": m.weekly_hours or {}, "country": m.community.country.slug,
-            "countries": [c.community.country.slug for c in m.countries]}
+            "countries": mentor_countries.slugs_for(m)}
 
 
 def _clean_text(data, key, label, lo, hi, current):

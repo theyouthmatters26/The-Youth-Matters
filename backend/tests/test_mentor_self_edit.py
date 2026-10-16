@@ -10,7 +10,7 @@ from flask_jwt_extended import create_access_token
 from app import create_app
 from app.config import TestConfig
 from app.extensions import db
-from app.models import AvailabilitySlot, Booking, Community, Country, MentorProfile, Subject, User
+from app.models import AvailabilitySlot, Booking, Community, Country, MentorCountry, MentorProfile, Subject, User
 from app.models.base import utcnow
 from app.services import availability
 
@@ -38,10 +38,15 @@ def site(monkeypatch):
                        email_verified=True)
         db.session.add_all([community, who, student])
         db.session.flush()
+        usa = Community(subject_id=community.subject_id,
+                        country=Country(slug="usa", name="United States", iso_code="US"), is_active=True)
+        db.session.add(usa)
+        db.session.flush()
         m = MentorProfile(user_id=who.id, community_id=community.id, university="Leeds", course="MSc",
                           graduation_year=2024, headline="Helps with UK visas and SOPs", about="x" * 200,
                           topics=["Visas"], languages=["English"], session_minutes=60,
                           timezone="Europe/London", weekly_hours=HOURS, is_verified=True)
+        m.countries = [MentorCountry(community_id=community.id)]
         db.session.add(m)
         db.session.commit()
         _make(m)
@@ -132,3 +137,19 @@ def test_only_a_mentor_has_a_mentor_page(site):
     theirs = {"Authorization": f"Bearer {create_access_token(str(student.id))}"}
     assert client.get("/api/mentors/me", headers=theirs).status_code == 404
     assert client.patch("/api/mentors/me", headers=theirs, json={"headline": "x" * 30}).status_code == 404
+
+
+def test_a_mentor_adds_a_second_country_to_the_one_they_already_have(site):
+    """Keeping a country they already have must not try to insert it twice: the pair is unique."""
+    client, mentor, _student, head = site
+
+    added = client.patch("/api/mentors/me", headers=head, json={"countries": ["uk", "usa"]})
+    assert added.status_code == 200, added.get_json()
+    assert added.get_json()["countries"] == ["uk", "usa"]
+
+    # dropping back to one leaves exactly one row behind
+    client.patch("/api/mentors/me", headers=head, json={"countries": ["usa"]})
+    db.session.expire_all()
+    assert [c.community.country.slug for c in db.session.get(MentorProfile, mentor.id).countries] == ["usa"]
+    assert client.get("/api/mentors?country=uk").get_json() == []
+    assert len(client.get("/api/mentors?country=usa").get_json()) == 1
