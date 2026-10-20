@@ -281,7 +281,7 @@ function Thread({ c, onBack, onChanged }) {
         <div className="mchat-head-actions">
           <button className="btn btn-ghost btn-sm" onClick={save} disabled={!messages?.length}
             title={messages?.length ? 'Save this conversation' : 'Nothing to save yet'}>
-            <Download size={15} /> Save as PDF
+            <Download size={15} /> Download Chat Transcript
           </button>
           {c.meetingUrl && !c.canShareMeeting && (
             <a className="btn btn-primary btn-sm" href={c.meetingUrl} target="_blank" rel="noopener noreferrer">

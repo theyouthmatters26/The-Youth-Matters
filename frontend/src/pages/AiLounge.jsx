@@ -195,7 +195,7 @@ export default function AiLounge() {
         <section className="chat-main is-lounge" aria-label="Ask TYM AI">
           {messages.length > 0 && (
             <div className="lounge-save">
-              <button className="btn btn-ghost btn-sm" onClick={save}><Download size={15} /> Save as PDF</button>
+              <button className="btn btn-ghost btn-sm" onClick={save}><Download size={15} /> Download Chat Transcript</button>
             </div>
           )}
           {messages.length === 0 && !loading ? (

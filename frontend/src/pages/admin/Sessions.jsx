@@ -258,7 +258,7 @@ function Chat({ c, onBack }) {
       <div className="adm-toolbar">
         <button className="btn btn-ghost btn-sm" onClick={onBack}><ArrowLeft size={15} /> All conversations</button>
         <button className="btn btn-ghost btn-sm" onClick={save} disabled={!data.messages.length}>
-          <Download size={15} /> Save as PDF
+          <Download size={15} /> Download Chat Transcript
         </button>
       </div>
       <div className="adm-account">
