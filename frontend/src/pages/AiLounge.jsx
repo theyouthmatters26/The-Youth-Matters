@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { MessageSquare, Plus, Send, Trash2, UserRound } from 'lucide-react'
+import { Download, MessageSquare, Plus, Send, Trash2, UserRound } from 'lucide-react'
 import RichText from '../components/feed/RichText'
 import Avatar from '../components/ui/Avatar'
 import { FormError } from '../components/auth/fields'
 import { api, useApi } from '../lib/api'
+import { saveTranscript } from '../lib/transcript'
 import { useAuth } from '../lib/auth'
 import { timeAgo } from '../lib/format'
 import { useMeta } from '../lib/meta'
@@ -143,6 +144,19 @@ export default function AiLounge() {
   }
 
   const startNew = () => { created.current = null; setParams({}); input.current?.focus() }
+  const save = () => {
+    const open = list.data?.find((c) => c.id === id)
+    const ok = saveTranscript({
+      title: open?.title || 'Your TYM AI conversation',
+      subtitle: `${user?.displayName || 'You'} and TYM AI on The Youth Matters`,
+      messages: messages.map((m) => ({
+        who: m.role === 'assistant' ? 'TYM AI' : m.role === 'human' ? (m.author?.name || 'The Youth Matters') : (user?.displayName || 'You'),
+        at: m.createdAt, body: m.content, note: m.role === 'human',
+      })),
+    })
+    if (!ok) setError('Your browser blocked the new window. Allow pop-ups for this site and try again.')
+  }
+
   const remove = async (c) => {
     if (!window.confirm(`Delete "${c.title}"?`)) return
     setError('')
@@ -179,6 +193,11 @@ export default function AiLounge() {
         </aside>
 
         <section className="chat-main is-lounge" aria-label="Ask TYM AI">
+          {messages.length > 0 && (
+            <div className="lounge-save">
+              <button className="btn btn-ghost btn-sm" onClick={save}><Download size={15} /> Save as PDF</button>
+            </div>
+          )}
           {messages.length === 0 && !loading ? (
             <div className="lounge-empty">
               <Avatar user={TYMAI} size={48} />

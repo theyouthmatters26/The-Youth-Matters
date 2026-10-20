@@ -21,6 +21,8 @@ each limited to the areas chosen for them (services/staff.py). The support inbox
                                               only a mentor the team added itself can have its listing edited
     GET    /admin/mentors/<id>                PATCH {headline, university, course, about}, DELETE
     DELETE /admin/reviews/<id>                take a mentor review down
+    GET    /admin/mentor-chats                every mentor and student conversation, newest first
+    GET    /admin/mentor-chats/<m>/<s>         the messages in one of them, to read or save
     GET    /admin/bookings?status=&page=      POST /admin/bookings/<id>/cancel {refund, reason}
     GET    /admin/payments?status=&page=      GET /admin/earnings (the counselling time each mentor gave)
     GET    /admin/packages                    POST {title, hours, price}, PATCH /<id> {title, hours, price, isActive}
@@ -38,7 +40,7 @@ from markupsafe import escape
 
 from ..extensions import db, limiter
 from ..models import (AccountClosure, AiConversation, AvailabilitySlot, Booking, ChatMessage, ChatRoom, Comment,
-                      Community, CounselingPackage, Country,
+                      Community, CounselingPackage, Country, MentorMessage, MentorThread,
                       ContactMessage, Faq, IdentityVerification, MentorApplication, MentorProfile, MentorReview, SessionRequest,
                       ModerationLog, Payment, Post, Report, Strike, Subject, User)
 from ..models.base import utcnow
@@ -392,8 +394,8 @@ def members():
     q = db.select(User).where(User.role != "bot")
     chosen = request.args.get("filter", "all")
     q = {"verified": q.where(PEOPLE, User.status == "active"), "pending": q.where(User.status == "pending"),
-         "suspended": q.where(User.status.in_(("suspended", "banned"))), "mentors": q.where(User.role == "mentor"),
-         "team": q.where(User.role == "admin")}.get(chosen, q)
+         "suspended": q.where(User.status.in_(("suspended", "banned"))), "students": q.where(User.role == "student"),
+         "mentors": q.where(User.role == "mentor"), "team": q.where(User.role == "admin")}.get(chosen, q)
     term = request.args.get("q", "").strip()
     if term:
         like = f"%{term}%"
@@ -734,6 +736,50 @@ def remove_content(kind, target_id):
 
 
 # ---------------------------------------------------------------- mentors and bookings
+
+@bp.get("/admin/mentor-chats")
+@jwt_required()
+def mentor_chats():
+    """Every conversation between a mentor and a student, so the team can read one when it has to:
+    a complaint, a refund, or a safeguarding worry. Reading is all this does; the team never writes
+    into somebody else's private chat."""
+    team_member("bookings")
+    threads = db.session.scalars(db.select(MentorThread).order_by(MentorThread.id.desc())).all()
+    out = []
+    for t in threads:
+        last = db.session.scalar(db.select(MentorMessage).where(
+            MentorMessage.mentor_id == t.mentor_id, MentorMessage.student_id == t.student_id)
+            .order_by(MentorMessage.id.desc()).limit(1))
+        total = db.session.scalar(db.select(db.func.count(MentorMessage.id)).where(
+            MentorMessage.mentor_id == t.mentor_id, MentorMessage.student_id == t.student_id)) or 0
+        student = db.session.get(User, t.student_id)
+        if not (t.mentor and t.mentor.user and student):
+            continue   # one of them closed their account; the messages went with it
+        out.append({"mentorId": t.mentor_id, "studentId": t.student_id, "status": t.status,
+                    "mentor": s.user_brief(t.mentor.user), "student": s.user_brief(student),
+                    "messages": total, "lastAt": last.created_at.isoformat() if last else None,
+                    "preview": (last.body[:120] if last else "")})
+    out.sort(key=lambda c: c["lastAt"] or "", reverse=True)
+    return jsonify(out)
+
+
+@bp.get("/admin/mentor-chats/<int:mentor_id>/<int:student_id>")
+@jwt_required()
+def mentor_chat_messages(mentor_id, student_id):
+    team_member("bookings")
+    rows = db.session.scalars(db.select(MentorMessage).where(
+        MentorMessage.mentor_id == mentor_id, MentorMessage.student_id == student_id)
+        .order_by(MentorMessage.id)).all()
+    thread = db.session.scalar(db.select(MentorThread).filter_by(mentor_id=mentor_id, student_id=student_id))
+    if not thread:
+        abort(404, "We could not find that conversation.")
+    student = db.session.get(User, student_id) or abort(404, "We could not find that conversation.")
+    return jsonify(mentor=s.user_brief(thread.mentor.user), student=s.user_brief(student),
+                   messages=[{"id": m.id, "authorId": m.author_id, "body": m.body, "kind": m.kind,
+                              "createdAt": m.created_at.isoformat()} for m in rows])
+
+
+
 
 @bp.get("/admin/mentors")
 @jwt_required()

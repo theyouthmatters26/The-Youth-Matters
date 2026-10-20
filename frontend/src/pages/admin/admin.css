@@ -122,6 +122,10 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
 .adm-directory { grid-template-columns: minmax(0, 1.7fr) minmax(0, 0.8fr) minmax(0, 0.9fr) minmax(0, 1.2fr) auto; }
 .adm-teammate { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr) 110px auto; }
 .adm-directory-add { display: flex; justify-content: flex-end; margin-bottom: var(--s-4); }
+/* The read-only mentor and student chat under Sessions: a page, not a fixed-height panel */
+.adm-msgs-flat { padding: var(--s-5) 0; background: none; overflow: visible; }
+.adm-msgs-flat .adm-msg.is-user { justify-self: start; justify-items: start; }
+.adm-msgs-flat .adm-bubble { background: var(--paper); box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,.06)); }
 .adm-cell { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--step--1); color: var(--muted); }
 .adm-cell svg { vertical-align: -2px; }
 .adm-cell-time { text-align: right; color: var(--faint); }

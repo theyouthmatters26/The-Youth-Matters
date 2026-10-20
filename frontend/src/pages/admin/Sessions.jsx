@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Check, Mail, MessageSquare, Plus, Square, UserCheck } from 'lucide-react'
+import { ArrowLeft, Check, Download, Mail, MessageSquare, Plus, Square, UserCheck } from 'lucide-react'
 import { FormError, Spinner } from '../../components/auth/fields'
 import { adminApi, useAdminApi } from '../../lib/admin'
 import { useApi } from '../../lib/api'
-import { Confirm, Empty, Loading, PageHead, Pager, Pill, Tabs, ago } from './ui'
+import { saveTranscript } from '../../lib/transcript'
+import { Confirm, Empty, Loading, Person, PageHead, Pager, Pill, Tabs, ago } from './ui'
 
 // Sessions people asked for through the booking form, while payment is arranged by hand.
 // The team picks the mentor, agrees a time and payment, then confirms: that sends both of them an
@@ -238,10 +239,79 @@ function NewSession({ mentors, plans, onAdded }) {
   )
 }
 
+// One mentor and student conversation, read only. The team opens these for a complaint, a refund
+// or a safeguarding worry, and can keep a copy. Nobody on the team can write into it.
+function Chat({ c, onBack }) {
+  const { data, error } = useAdminApi(`/admin/mentor-chats/${c.mentorId}/${c.studentId}`)
+  if (error) return <Empty title="We could not open this conversation" text={error.message} />
+  if (!data) return <Loading what="the conversation" />
+  const nameOf = (m) => (m.kind === 'system' ? 'The Youth Matters'
+    : m.authorId === data.student.id ? data.student.displayName : data.mentor.displayName)
+  const save = () => saveTranscript({
+    title: `${data.mentor.displayName} and ${data.student.displayName}`,
+    subtitle: 'A mentor and student conversation on The Youth Matters',
+    messages: data.messages.map((m) => ({ who: nameOf(m), at: m.createdAt, body: m.body, note: m.kind === 'system' })),
+  })
+
+  return (
+    <>
+      <div className="adm-toolbar">
+        <button className="btn btn-ghost btn-sm" onClick={onBack}><ArrowLeft size={15} /> All conversations</button>
+        <button className="btn btn-ghost btn-sm" onClick={save} disabled={!data.messages.length}>
+          <Download size={15} /> Save as PDF
+        </button>
+      </div>
+      <div className="adm-account">
+        <Person user={data.mentor} sub="Mentor" size={44} />
+        <Person user={data.student} sub="Student" size={44} />
+      </div>
+      {data.messages.length === 0 ? <Empty title="Nothing said yet" text="This conversation is open but empty." /> : (
+        <ol className="adm-msgs adm-msgs-flat">
+          {data.messages.map((m) => (
+            <li key={m.id} className={`adm-msg is-${m.authorId === data.student.id ? 'user' : 'human'}`}>
+              <p className="adm-msg-who">{nameOf(m)}<time dateTime={m.createdAt}>{ago(m.createdAt)}</time></p>
+              <p className="adm-bubble">{m.body}</p>
+            </li>
+          ))}
+        </ol>
+      )}
+    </>
+  )
+}
+
+// Every mentor and student conversation, newest first
+function Chats() {
+  const list = useAdminApi('/admin/mentor-chats')
+  const [open, setOpen] = useState(null)
+  if (open) return <Chat c={open} onBack={() => setOpen(null)} />
+  if (list.error) return <Empty title="We could not load the conversations" text={list.error.message} />
+  if (!list.data) return <Loading what="conversations" />
+  if (!list.data.length) {
+    return <Empty title="No conversations yet" text="When you confirm a session, the mentor and the student get a private chat and it appears here." />
+  }
+  return (
+    <>
+      <ul className="adm-list">
+        {list.data.map((c) => (
+          <li key={`${c.mentorId}-${c.studentId}`}>
+            <button className="adm-row adm-member" onClick={() => setOpen(c)}>
+              <Person user={c.student} sub={`with ${c.mentor.displayName}`} />
+              <span className="adm-cell adm-cell-wide">{c.preview || 'No messages yet'}</span>
+              <span className="adm-cell">{c.messages} message{c.messages === 1 ? '' : 's'}</span>
+              <time className="adm-cell adm-cell-time" dateTime={c.lastAt || ''}>{c.lastAt ? ago(c.lastAt) : 'Never used'}</time>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="adm-hint">Read only. Open one to read it or save it as a PDF; the team cannot write into someone else&apos;s chat.</p>
+    </>
+  )
+}
+
 export default function Sessions({ onChanged }) {
   const [status, setStatus] = useState('open')
   const [page, setPage] = useState(1)
-  const list = useAdminApi(`/admin/session-requests?status=${status}&page=${page}`)
+  const list = useAdminApi(status === 'chats' ? null : `/admin/session-requests?status=${status}&page=${page}`)
   const { data: mentors } = useApi('/mentors')
   const { data: plans } = useApi('/packages')
   const rows = list.data?.items || []
@@ -253,10 +323,12 @@ export default function Sessions({ onChanged }) {
         text="Every session asked for through the booking form. Agree a time and payment with the student first, then assign the mentor: that books it, emails both of them and opens their private chat on the site." />
       <div className="adm-toolbar">
         <Tabs label="Which requests" value={status} onChange={(s) => { setStatus(s); setPage(1) }}
-          items={[['open', 'To arrange', list.data?.waiting], ['confirmed', 'Confirmed'], ['cancelled', 'Closed']]} />
-        <NewSession mentors={mentors || []} plans={plans || []} onAdded={done} />
+          items={[['open', 'To arrange', list.data?.waiting], ['confirmed', 'Confirmed'], ['cancelled', 'Closed'],
+            ['chats', 'Mentor and student chats']]} />
+        {status !== 'chats' && <NewSession mentors={mentors || []} plans={plans || []} onAdded={done} />}
       </div>
-      {list.error ? <Empty title="We could not load the sessions" text={list.error.message} />
+      {status === 'chats' ? <Chats />
+        : list.error ? <Empty title="We could not load the sessions" text={list.error.message} />
         : !list.data ? <Loading what="session requests" />
           : rows.length === 0 ? (
             <Empty title={status === 'open' ? 'Nothing to arrange' : 'Nothing here yet'}
@@ -274,7 +346,7 @@ export default function Sessions({ onChanged }) {
               {rows.map((r) => <Row key={r.id} r={r} mentors={mentors || []} onChanged={done} />)}
             </ul>
           )}
-      <Pager page={page} hasMore={list.data?.hasMore} onPage={setPage} />
+      {status !== 'chats' && <Pager page={page} hasMore={list.data?.hasMore} onPage={setPage} />}
     </>
   )
 }

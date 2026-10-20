@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Check, CheckCheck, Clock, Info, Send, ShieldCheck, Video, X } from 'lucide-react'
+import { ArrowLeft, Check, CheckCheck, Clock, Download, Info, Send, ShieldCheck, Video, X } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import { FormError, Spinner } from '../auth/fields'
 import { api, useApi } from '../../lib/api'
+import { saveTranscript } from '../../lib/transcript'
 import { useAuth } from '../../lib/auth'
 import { timeAgo } from '../../lib/format'
 import './mentors.css'
@@ -254,6 +255,17 @@ function Thread({ c, onBack, onChanged }) {
 
   const first = c.with.displayName.split(' ')[0]
   const lastMine = [...(messages || [])].reverse().find((m) => m.authorId === account.id && !m.pending)
+  const save = () => {
+    const ok = saveTranscript({
+      title: `Your chat with ${c.with.displayName}`,
+      subtitle: `${account.displayName} and ${c.with.displayName} on The Youth Matters`,
+      messages: (messages || []).filter((m) => !m.pending).map((m) => ({
+        who: m.kind === 'system' ? 'The Youth Matters' : (m.authorId === account.id ? account.displayName : c.with.displayName),
+        at: m.createdAt, body: m.body, note: m.kind === 'system',
+      })),
+    })
+    if (!ok) setError('Your browser blocked the new window. Allow pop-ups for this site and try again.')
+  }
   let shownDay = null
 
   return (
@@ -267,6 +279,10 @@ function Thread({ c, onBack, onChanged }) {
             {c.status === 'accepted' && ' · chat open'}</span>
         </div>
         <div className="mchat-head-actions">
+          <button className="btn btn-ghost btn-sm" onClick={save} disabled={!messages?.length}
+            title={messages?.length ? 'Save this conversation' : 'Nothing to save yet'}>
+            <Download size={15} /> Save as PDF
+          </button>
           {c.meetingUrl && !c.canShareMeeting && (
             <a className="btn btn-primary btn-sm" href={c.meetingUrl} target="_blank" rel="noopener noreferrer">
               <Video size={15} /> Join call

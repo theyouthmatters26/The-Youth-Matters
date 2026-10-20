@@ -172,7 +172,6 @@ function MentorCard({ m, featured = false }) {
       <p>{m.headline}</p>
       <footer>
         <span>{m.rating ? <><Star size={13} /> {m.rating} · {m.reviewCount} reviews</> : 'New mentor'}</span>
-        <span>{m.sessionMinutes} min · counselling hours</span>
       </footer>
     </Link>
   )

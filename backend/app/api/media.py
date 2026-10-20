@@ -10,7 +10,9 @@ from flask import Blueprint, abort, current_app, redirect, send_from_directory
 from ..services import storage
 
 bp = Blueprint("media", __name__)
-PUBLIC = ("posts/", "avatars/", "covers/", "blog/")
+# Every folder whose pictures the website shows. A folder left out of this list uploads fine
+# and then 404s when the page asks for it, which looks like a broken photo.
+PUBLIC = ("posts/", "avatars/", "covers/", "blog/", "countries/")
 
 
 @bp.get("/media/<path:key>")

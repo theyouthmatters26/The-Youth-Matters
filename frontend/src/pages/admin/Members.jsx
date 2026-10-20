@@ -6,7 +6,8 @@ import { adminApi, downloadAdminFile, useAdmin, useAdminApi } from '../../lib/ad
 import { plural } from '../../lib/format'
 import { Confirm, Empty, Facts, Loading, PageHead, Pager, PasswordBox, Person, Pill, SearchBox, Sheet, StatusPill, Tabs, ago, day, useDebounced } from './ui'
 
-const FILTERS = [['all', 'Everyone'], ['verified', 'Verified'], ['pending', 'Not verified'], ['suspended', 'Suspended'], ['mentors', 'Mentors'], ['team', 'Team'], ['deleted', 'Deleted']]
+const FILTERS = [['all', 'Everyone'], ['verified', 'Verified'], ['pending', 'Not verified'], ['suspended', 'Suspended'],
+  ['students', 'Students'], ['mentors', 'Mentors'], ['team', 'Team'], ['deleted', 'Deleted']]
 const ROLE = { student: 'Student', mentor: 'Mentor', admin: 'Team' }
 const DOCUMENT = { passport: 'passport', driving_licence: 'driving licence', national_id: 'national ID' }
 const STRIKE = { warn_and_delete: 'They were sent a warning.', mute_24h: 'They are muted for 24 hours.', suspend_pending_review: 'That was strike three: the account is suspended.' }
