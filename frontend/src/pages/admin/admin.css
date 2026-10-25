@@ -479,3 +479,14 @@ button.adm-row:hover, a.adm-row:hover { background: var(--chalk); }
 .adm-answers dt { color: var(--muted); }
 .adm-answers dd { margin: 0; }
 @media (max-width: 720px) { .adm-answers > div { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+
+/* The photographs on a case study, with a corner button to take one off */
+.adm-pics { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0 0 var(--s-2); padding: 0; list-style: none; }
+.adm-pics li { position: relative; width: 84px; height: 84px; }
+.adm-pics img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-sm); background: var(--sunken); }
+.adm-pic-off {
+  position: absolute; top: 3px; right: 3px; display: grid; place-items: center; width: 22px; height: 22px;
+  border: 0; border-radius: 50%; background: rgba(9, 9, 10, 0.72); color: #fff; cursor: pointer;
+}
+.adm-pic-off:hover { background: rgba(9, 9, 10, 0.9); }
+.adm-pic-off:disabled { opacity: 0.5; cursor: default; }

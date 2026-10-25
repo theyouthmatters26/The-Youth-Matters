@@ -171,7 +171,7 @@ function MentorCard({ m, featured = false }) {
       </div>
       <p>{m.headline}</p>
       <footer>
-        <span>{m.rating ? <><Star size={13} /> {m.rating} · {m.reviewCount} reviews</> : 'New mentor'}</span>
+        <span>{m.rating ? <><Star size={13} /> {m.rating} · {m.reviewCount} reviews</> : 'TYM Mentor'}</span>
       </footer>
     </Link>
   )

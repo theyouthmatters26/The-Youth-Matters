@@ -12,7 +12,7 @@ from ..services import storage
 bp = Blueprint("media", __name__)
 # Every folder whose pictures the website shows. A folder left out of this list uploads fine
 # and then 404s when the page asks for it, which looks like a broken photo.
-PUBLIC = ("posts/", "avatars/", "covers/", "blog/", "countries/")
+PUBLIC = ("posts/", "avatars/", "covers/", "blog/", "countries/", "case-studies/")
 
 
 @bp.get("/media/<path:key>")

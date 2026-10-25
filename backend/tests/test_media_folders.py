@@ -8,7 +8,7 @@ from app.api.media import PUBLIC
 
 def test_every_folder_the_site_shows_pictures_from_is_public():
     # The folders storage.upload() is called with for pictures that appear on the website
-    for folder in ("posts", "avatars", "covers", "blog", "countries"):
+    for folder in ("posts", "avatars", "covers", "blog", "countries", "case-studies"):
         assert f"{folder}/" in PUBLIC, folder
 
 

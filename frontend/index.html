@@ -13,7 +13,9 @@
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
-    <link rel="apple-touch-icon" href="/favicon-192.png" />
+    <!-- iOS reads this one and nothing else, and it fills transparency with black, so it is drawn
+         on the background colour at the size iOS asks for (frontend/scripts/icons.py) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
     <meta name="theme-color" content="#404043" />

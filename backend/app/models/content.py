@@ -48,6 +48,8 @@ class CaseStudy(Model):
     route = db.Column(db.String(120), nullable=False)        # "Hyderabad to Leeds"
     course = db.Column(db.String(120), nullable=False)
     quote = db.Column(db.Text, nullable=False)
+    story = db.Column(db.Text)                               # the longer read, shown when one is opened
+    images = db.Column(db.JSON, nullable=False, default=list, server_default="[]")  # storage keys, in order
     status = db.Column(enum("published", "hidden", name="case_study_status"), nullable=False,
                        default="published", server_default="published")
     sort_order = db.Column(db.Integer, nullable=False, default=0, server_default="0")

@@ -17,7 +17,7 @@ export default function MentorCard({ m, preview = false }) {
         <p className="mcard-uni">{m.course} · {m.university}</p>
         <p className="mcard-headline">{m.headline}</p>
         <footer>
-          {m.rating ? <span><Star size={14} aria-hidden /> {m.rating} <span className="faint">({m.reviewCount})</span></span> : <span className="faint">New mentor</span>}
+          {m.rating ? <span><Star size={14} aria-hidden /> {m.rating} <span className="faint">({m.reviewCount})</span></span> : <span className="faint">TYM Mentor</span>}
           <span className="faint">{m.community.country.name}</span>
         </footer>
       </div>

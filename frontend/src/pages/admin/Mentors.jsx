@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { ArrowUpRight, FileText, Plus, Star } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowUpRight, Camera, FileText, Plus, Star, Trash2 } from 'lucide-react'
+import Avatar from '../../components/ui/Avatar'
 import { FormError, Spinner, SubmitButton } from '../../components/auth/fields'
 import { countries } from '../../data/sample'
 import { ALL_FIELDS, plain } from '../../data/mentorForm'
@@ -177,10 +178,59 @@ function Listing({ id, start, onSaved }) {
   )
 }
 
+// A mentor's profile photo. Mentors change their own in their settings; the team sets one here
+// for the mentors who send the picture over instead, and for the ones who never added one.
+// The server squares it, strips the location data off it and keeps it small, as it does for members.
+function MentorPhoto({ mentorId, photo, onChange }) {
+  const input = useRef(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const run = async (call) => {
+    setBusy(true)
+    setError('')
+    try {
+      onChange((await call()).avatar)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const upload = (e) => {
+    const file = e.target.files[0]
+    e.target.value = ''  // picking the same file again still counts as a change
+    if (!file) return
+    const body = new FormData()
+    body.append('image', file)
+    run(() => adminApi(`/admin/mentors/${mentorId}/photo`, { method: 'POST', body }))
+  }
+
+  return (
+    <div className="field">
+      <div className="adm-action-row">
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => input.current.click()} disabled={busy}>
+          {busy ? <Spinner /> : <Camera size={15} />} {photo ? 'Change photo' : 'Add a photo'}
+        </button>
+        {photo && (
+          <button type="button" className="btn-text" disabled={busy}
+            onClick={() => run(() => adminApi(`/admin/mentors/${mentorId}/photo`, { method: 'DELETE' }))}>
+            <Trash2 size={14} /> Remove photo
+          </button>
+        )}
+      </div>
+      <span className="hint">A JPG, PNG or WebP under 6 MB, square if you have one. Students see it in TYM Mentors straight away.</span>
+      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={upload} />
+      <FormError>{error}</FormError>
+    </div>
+  )
+}
+
 // One mentor: fix their listing, take down a review, or stop them being a mentor
 function MentorSheet({ mentor, onClose, onChanged }) {
   const { data, error: failed, reload } = useAdminApi(`/admin/mentors/${mentor.id}`)
   const [error, setError] = useState('')
+  const [photo, setPhoto] = useState(mentor.user.avatar)  // shown straight away, before the list behind catches up
   const run = async (fn) => {
     setError('')
     try {
@@ -195,11 +245,12 @@ function MentorSheet({ mentor, onClose, onChanged }) {
   return (
     <Sheet title={mentor.user.displayName} onClose={onClose} wide>
       <div className="adm-account">
-        <Person user={mentor.user} sub={mentor.user.email} size={56} />
+        <Person user={{ ...mentor.user, avatar: photo }} sub={mentor.user.email} size={56} />
         <div className="adm-account-pills">{mentor.listed ? <Pill>Listed</Pill> : <Pill tone="warn">Hidden</Pill>}</div>
       </div>
       {failed ? <p className="adm-note">{failed.message}</p> : !data ? <Loading what="this mentor" /> : (
         <>
+          <MentorPhoto mentorId={mentor.id} photo={photo} onChange={(url) => { setPhoto(url); onChanged() }} />
           {data.ours ? <Listing id={mentor.id} start={data} onSaved={onChanged} />
             : <TheirListing start={data} />}
           <section>
@@ -236,9 +287,20 @@ function MentorSheet({ mentor, onClose, onChanged }) {
 function AddMentor({ onClose, onAdded }) {
   const [password, setPassword] = useState(newPassword)
   const [picked, setPicked] = useState(['uk'])
+  const [photo, setPhoto] = useState(null)  // {file, preview} until the mentor exists to hang it on
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [added, setAdded] = useState(null)
+  const input = useRef(null)
+
+  // The preview holds the picture in memory until it is let go of
+  useEffect(() => () => { if (photo) URL.revokeObjectURL(photo.preview) }, [photo])
+
+  const pick = (e) => {
+    const file = e.target.files[0]
+    e.target.value = ''  // picking the same file again still counts as a change
+    if (file) setPhoto({ file, preview: URL.createObjectURL(file) })
+  }
 
   const submit = async (e) => {
     e.preventDefault()
@@ -246,8 +308,19 @@ function AddMentor({ onClose, onAdded }) {
     setBusy(true)
     setError('')
     try {
-      await adminApi('/admin/mentors', { method: 'POST', body: { ...f, password, countries: picked } })
-      setAdded({ email: f.email, password })
+      const made = await adminApi('/admin/mentors', { method: 'POST', body: { ...f, password, countries: picked } })
+      let photoFailed = ''
+      if (photo) {
+        const body = new FormData()
+        body.append('image', photo.file)
+        // The mentor exists by now, so a picture the server will not take must not lose the rest
+        try {
+          await adminApi(`/admin/mentors/${made.id}/photo`, { method: 'POST', body })
+        } catch (err) {
+          photoFailed = err.message
+        }
+      }
+      setAdded({ email: f.email, password, photoFailed })
       onAdded()
     } catch (err) {
       setError(err.message)
@@ -263,6 +336,8 @@ function AddMentor({ onClose, onAdded }) {
           They are listed in TYM Mentors now. Tell them to log in with <strong>{added.email}</strong> and the password{' '}
           <strong className="mono">{added.password}</strong>. This is the only time the password is shown.
         </p>
+        {added.photoFailed && <p className="adm-note">Their photo did not go up: {added.photoFailed} Open them in the
+          list below and add it there.</p>}
         <p className="adm-note">Students can book them once the mentor sets their session length and weekly hours in their own settings.</p>
         <button className="btn btn-ghost btn-block" onClick={onClose}>Done</button>
       </Sheet>
@@ -271,6 +346,18 @@ function AddMentor({ onClose, onAdded }) {
   return (
     <Sheet title="Add a mentor" onClose={onClose}>
       <form className="stack" onSubmit={submit}>
+        <div className="field">
+          <label htmlFor="ad-photo">Photo <span className="faint">Optional</span></label>
+          <div className="adm-action-row">
+            {photo && <Avatar user={{ displayName: '', role: 'mentor', avatar: photo.preview }} size={48} />}
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => input.current.click()}>
+              <Camera size={15} /> {photo ? 'Change photo' : 'Choose a photo'}
+            </button>
+            {photo && <button type="button" className="btn-text" onClick={() => setPhoto(null)}><Trash2 size={14} /> Remove</button>}
+          </div>
+          <span className="hint">A JPG, PNG or WebP under 6 MB. You can add or change it later from their page here.</span>
+          <input ref={input} id="ad-photo" type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={pick} />
+        </div>
         <div className="field">
           <label htmlFor="ad-name">Full name</label>
           <input id="ad-name" name="name" className="input" required minLength={2} maxLength={80} placeholder="Ananya Rao" autoComplete="off" />

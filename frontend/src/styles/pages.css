@@ -389,6 +389,43 @@ input[type='file'].visually-hidden:focus-visible + .dropzone, .dropzone:focus-wi
 .case { display: grid; gap: var(--s-6); margin: 0; align-content: space-between; padding: var(--s-6); }
 .case blockquote { margin: 0; font-size: var(--step-2); line-height: 1.35; font-style: italic; }
 
+/* The foot of a case study card. .mini-row stacks these two in home.css, which this page does
+   not load, so the course and the line under it would otherwise run together. */
+.case figcaption > div { display: grid; }
+
+/* A journey with pictures and a story behind it opens; the button covers the card so the whole
+   card is the target, and the text above it stays selectable where it overlaps. */
+.case-open { position: relative; transition: border-color 0.2s, box-shadow 0.2s; }
+.case-open:hover, .case-open:focus-within { border-color: var(--ink); box-shadow: var(--shadow-lg); }
+.case-button { position: absolute; inset: 0; z-index: 1; border: 0; border-radius: inherit; background: none; cursor: pointer; }
+.case-button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.case-open figcaption span { text-decoration: underline; text-underline-offset: 3px; }
+
+.case-sheet {
+  width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 0;
+  border-radius: var(--radius-lg); background: var(--paper); color: var(--ink); box-shadow: var(--shadow-lg);
+}
+.case-sheet::backdrop { background: rgba(9, 9, 10, 0.45); }
+.case-sheet-body { display: grid; gap: var(--s-4); padding: var(--s-7); }
+.case-sheet-close {
+  justify-self: end; display: grid; place-items: center; width: 34px; height: 34px; margin: calc(var(--s-3) * -1) calc(var(--s-3) * -1) 0 0;
+  border: 0; border-radius: 50%; background: var(--sunken); color: var(--muted); cursor: pointer;
+}
+.case-sheet-close:hover { color: var(--ink); }
+.case-sheet blockquote { margin: 0; font-size: var(--step-2); line-height: 1.35; font-style: italic; }
+.case-shots { display: grid; gap: 6px; overflow: hidden; border-radius: var(--radius); }
+.case-shots.n-2 { grid-template-columns: 1fr 1fr; }
+.case-shots.n-3 { grid-template-columns: repeat(3, 1fr); }
+.case-shots img { width: 100%; height: 100%; max-height: 420px; object-fit: cover; background: var(--sunken); }
+.case-story { display: grid; gap: var(--s-3); color: var(--muted); }
+.case-story p { margin: 0; }
+.case-sheet-who { display: grid; margin: 0; font-size: var(--step--1); color: var(--muted); }
+.case-sheet-who strong { font-weight: 500; color: var(--ink); }
+@media (max-width: 620px) {
+  .case-sheet-body { padding: var(--s-5); }
+  .case-shots.n-2, .case-shots.n-3 { grid-template-columns: 1fr; }
+}
+
 /* Responsive */
 @media (max-width: 880px) {
   .chat-shell { grid-template-columns: 1fr; height: auto; min-height: 0; }

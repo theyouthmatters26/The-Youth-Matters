@@ -3,7 +3,10 @@
 They used to be hard-coded in the website bundle. What matters now is that only the team can write
 one, that hiding one takes it off the public page, and that the page keeps the team's order.
 """
+from io import BytesIO
+
 import pytest
+from PIL import Image
 from flask_jwt_extended import create_access_token
 
 from app import create_app
@@ -44,6 +47,19 @@ STORY = {"name": "Aisha Khan", "route": "Hyderabad to Leeds", "course": "MSc Mar
 
 def add(client, heads, **over):
     return client.post("/api/admin/case-studies", headers=heads["owner"], json={**STORY, **over})
+
+
+def picture(colour="navy"):
+    out = BytesIO()
+    Image.new("RGB", (900, 700), colour).save(out, "JPEG")
+    out.seek(0)
+    return out
+
+
+def send_pictures(client, heads, case_id, how_many=1):
+    files = [(picture(), f"shot{i}.jpg") for i in range(how_many)]
+    return client.post(f"/api/admin/case-studies/{case_id}/images", headers=heads["owner"],
+                       data={"images": files}, content_type="multipart/form-data")
 
 
 def test_the_team_writes_one_and_the_page_shows_it(site):
@@ -101,3 +117,104 @@ def test_deleting_one_removes_it(site):
     made = add(client, heads).get_json()
     assert client.delete(f"/api/admin/case-studies/{made['id']}", headers=heads["owner"]).status_code == 200
     assert client.get("/api/case-studies").get_json() == []
+
+
+# --- the longer read and the photographs, shown when a student opens a journey -------------------
+
+def test_a_journey_can_be_written_without_a_story_or_pictures(site):
+    """Every case study on the page was written before either existed. They still read."""
+    client, heads = site
+    add(client, heads)
+    shown = client.get("/api/case-studies").get_json()[0]
+    assert shown["story"] == ""
+    assert shown["images"] == []
+
+
+def test_the_story_is_saved_and_can_be_emptied_again(site):
+    client, heads = site
+    made = add(client, heads, story="Two months of paperwork, then Leeds.").get_json()
+    assert made["story"] == "Two months of paperwork, then Leeds."
+    assert client.get("/api/case-studies").get_json()[0]["story"] == "Two months of paperwork, then Leeds."
+
+    # the one field the team may clear: the four on the card stay required
+    cleared = client.patch(f"/api/admin/case-studies/{made['id']}", headers=heads["owner"], json={"story": "  "})
+    assert cleared.get_json()["story"] == ""
+    assert client.patch(f"/api/admin/case-studies/{made['id']}", headers=heads["owner"],
+                        json={"quote": " "}).status_code == 400
+
+
+def test_pictures_go_on_in_order_and_the_page_shows_them(site):
+    client, heads = site
+    made = add(client, heads).get_json()
+    first = send_pictures(client, heads, made["id"], 2)
+    assert first.status_code == 201, first.get_json()
+    assert len(first.get_json()["images"]) == 2
+
+    added = send_pictures(client, heads, made["id"], 1).get_json()["images"]
+    assert added[:2] == first.get_json()["images"]  # the new one goes on the end
+    assert client.get("/api/case-studies").get_json()[0]["images"] == added
+    assert all(u.startswith("/api/media/case-studies/") for u in added)
+
+
+def test_only_the_team_adds_pictures(site):
+    client, heads = site
+    made = add(client, heads).get_json()
+    assert send_pictures(client, heads, made["id"]).status_code == 201
+    mine = [(picture(), "mine.jpg")]
+    assert client.post(f"/api/admin/case-studies/{made['id']}/images", headers=heads["student"],
+                       data={"images": mine}, content_type="multipart/form-data").status_code == 403
+
+
+def test_taking_a_picture_off_leaves_the_others_and_deletes_the_file(site, tmp_path):
+    client, heads = site
+    made = add(client, heads).get_json()
+    on = send_pictures(client, heads, made["id"], 3).get_json()["images"]
+    gone, kept = on[1], [on[0], on[2]]
+
+    from app.services import storage
+    assert storage._local_path(gone.removeprefix("/api/media/")).exists()
+    left = client.patch(f"/api/admin/case-studies/{made['id']}", headers=heads["owner"], json={"images": kept})
+    assert left.get_json()["images"] == kept
+    assert not storage._local_path(gone.removeprefix("/api/media/")).exists()
+
+
+def test_a_picture_cannot_be_smuggled_in_through_the_list(site):
+    """The list says which of this journey's pictures to keep. Anything else in it is ignored."""
+    client, heads = site
+    made = add(client, heads).get_json()
+    on = send_pictures(client, heads, made["id"], 1).get_json()["images"]
+    sneaked = client.patch(f"/api/admin/case-studies/{made['id']}", headers=heads["owner"],
+                           json={"images": [*on, "/api/media/identity/secret.jpg"]})
+    assert sneaked.get_json()["images"] == on
+
+
+def test_a_malformed_picture_list_is_refused_rather_than_clearing_them(site):
+    """A string here would be read letter by letter and every picture would count as dropped."""
+    client, heads = site
+    made = add(client, heads).get_json()
+    on = send_pictures(client, heads, made["id"], 2).get_json()["images"]
+    for bad in ("/api/media/case-studies/one.jpeg", {"keep": on}, 3):
+        assert client.patch(f"/api/admin/case-studies/{made['id']}", headers=heads["owner"],
+                            json={"images": bad}).status_code == 400
+    assert client.get("/api/case-studies").get_json()[0]["images"] == on
+
+
+def test_there_is_a_limit_on_how_many_pictures_one_journey_holds(site):
+    client, heads = site
+    made = add(client, heads).get_json()
+    assert send_pictures(client, heads, made["id"], 8).status_code == 201
+    too_many = send_pictures(client, heads, made["id"], 1)
+    assert too_many.status_code == 400
+    assert len(client.get("/api/case-studies").get_json()[0]["images"]) == 8
+
+
+def test_deleting_a_journey_takes_its_pictures_with_it(site):
+    client, heads = site
+    made = add(client, heads).get_json()
+    on = send_pictures(client, heads, made["id"], 2).get_json()["images"]
+
+    from app.services import storage
+    paths = [storage._local_path(u.removeprefix("/api/media/")) for u in on]
+    assert all(p.exists() for p in paths)
+    assert client.delete(f"/api/admin/case-studies/{made['id']}", headers=heads["owner"]).status_code == 200
+    assert not any(p.exists() for p in paths)

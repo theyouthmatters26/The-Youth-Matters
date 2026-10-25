@@ -20,6 +20,7 @@ each limited to the areas chosen for them (services/staff.py). The support inbox
     GET    /admin/mentors                     POST adds a mentor, POST /admin/mentors/<id>/listed {listed}
                                               only a mentor the team added itself can have its listing edited
     GET    /admin/mentors/<id>                PATCH {headline, university, course, about}, DELETE
+    POST   /admin/mentors/<id>/photo          profile photo for any mentor, DELETE takes it off
     DELETE /admin/reviews/<id>                take a mentor review down
     GET    /admin/mentor-chats                every mentor and student conversation, newest first
     GET    /admin/mentor-chats/<m>/<s>         the messages in one of them, to read or save
@@ -44,13 +45,14 @@ from ..models import (AccountClosure, AiConversation, AvailabilitySlot, Booking,
                       ContactMessage, Faq, IdentityVerification, MentorApplication, MentorProfile, MentorReview, SessionRequest,
                       ModerationLog, Payment, Post, Report, Strike, Subject, User)
 from ..models.base import utcnow
-from ..services import accounts, handoff, mailer, mentor_countries, staff
+from ..services import accounts, handoff, images, mailer, mentor_countries, staff, storage
 from ..services.moderation import MUTE_DURATION, strike_action
 from ..services.notify import notify
 from . import serializers as s
 from .bookings import give_back
 from .packages import add_minutes, hours_text, take_minutes
 from .auth import EMAIL, _body, _by_email, _password_hash, _username
+from .users import AVATAR_BYTES, MEDIA
 
 bp = Blueprint("admin", __name__)
 
@@ -892,6 +894,7 @@ def mentor_detail(mentor_id):
     m = _mentor(mentor_id)
     reviews = db.session.scalars(db.select(MentorReview).where(MentorReview.mentor_id == m.id).order_by(MentorReview.id.desc()))
     return jsonify(id=m.id, headline=m.headline, about=m.about or "", university=m.university, course=m.course,
+                   avatar=m.user.avatar_url,
                    sessionMinutes=m.session_minutes, bookings=count(Booking.mentor_id == m.id), ours=_ours(m),
                    reviews=[{"id": r.id, "rating": r.rating, "body": r.body, "by": r.author.display_name,
                              "at": r.created_at.isoformat()} for r in reviews])
@@ -918,6 +921,48 @@ def edit_mentor(mentor_id):
     record("mentor_edited", "user", m.user_id, name=m.user.display_name)
     db.session.commit()
     return jsonify(saved=True)
+
+
+def _drop_photo(user):
+    """Take the picture that is there out of storage. A photo kept elsewhere (a seeded site
+    picture) is only unlinked: nothing outside /api/media/ is ours to delete."""
+    old = user.avatar_url
+    if old and old.startswith(MEDIA):
+        storage.delete(old.removeprefix(MEDIA))
+    user.avatar_url = None
+
+
+@bp.post("/admin/mentors/<int:mentor_id>/photo")
+@jwt_required()
+def set_mentor_photo(mentor_id):
+    """Put a photo on a mentor's profile, or change the one there. Mentors upload their own in
+    settings; the team does it here for the ones who send the picture over instead. Unlike the
+    words on a listing, a photo is the team's to set for any mentor, applied or added by hand."""
+    team_member("mentors")
+    m = _mentor(mentor_id)
+    upload = request.files.get("image") or abort(400, "Choose a picture.")
+    try:
+        picture = images.prepare(upload, max_side=480, square=True, max_bytes=AVATAR_BYTES)
+    except images.ImageError as e:
+        abort(400, str(e))
+    key = storage.upload(picture, "avatars", "image/jpeg")
+    _drop_photo(m.user)  # only once the new one is safely stored
+    m.user.avatar_url = s.media_url(key)
+    record("mentor_photo_set", "user", m.user_id, name=m.user.display_name)
+    db.session.commit()
+    return jsonify(avatar=m.user.avatar_url)
+
+
+@bp.delete("/admin/mentors/<int:mentor_id>/photo")
+@jwt_required()
+def remove_mentor_photo(mentor_id):
+    """Back to their initials, which is what a mentor with no photo has always shown."""
+    team_member("mentors")
+    m = _mentor(mentor_id)
+    _drop_photo(m.user)
+    record("mentor_photo_removed", "user", m.user_id, name=m.user.display_name)
+    db.session.commit()
+    return jsonify(avatar=None)
 
 
 @bp.delete("/admin/mentors/<int:mentor_id>")

@@ -3,7 +3,10 @@
 The account and the profile are made together, so the mentor is listed straight away. Session
 length and weekly hours are not asked for here: the mentor sets both in their own settings.
 """
+from io import BytesIO
+
 import pytest
+from PIL import Image
 from flask_jwt_extended import create_access_token
 
 from app import create_app
@@ -110,3 +113,77 @@ def test_a_mentor_is_found_under_every_country_they_mentor_for(site):
     only = client.get("/api/mentors").get_json()[0]
     assert [c["slug"] for c in only["countries"]] == ["uk", "usa"]
     assert only["community"]["country"]["slug"] == "uk"  # the first one ticked is the home country
+
+
+# --- the photograph on a mentor's profile, set by the team (api/admin.py) ------------------------
+
+def picture(size=(900, 700)):
+    out = BytesIO()
+    Image.new("RGB", size, "navy").save(out, "JPEG")
+    out.seek(0)
+    return out
+
+
+def send_photo(client, admin, mentor_id, data=None):
+    return client.post(f"/api/admin/mentors/{mentor_id}/photo", headers=admin,
+                       data={"image": (data or picture(), "face.jpg")}, content_type="multipart/form-data")
+
+
+def test_the_team_puts_a_photo_on_a_mentor_and_the_site_shows_it(site):
+    client, admin = site
+    made = client.post("/api/admin/mentors", headers=admin, json=MENTOR).get_json()
+    assert db.session.get(MentorProfile, made["id"]).user.avatar_url is None  # initials until now
+
+    res = send_photo(client, admin, made["id"])
+    assert res.status_code == 200, res.get_json()
+    url = res.get_json()["avatar"]
+    assert url.startswith("/api/media/avatars/")
+    assert client.get("/api/mentors").get_json()[0]["user"]["avatar"] == url
+
+
+def test_changing_the_photo_clears_the_old_file_away(site):
+    client, admin = site
+    made = client.post("/api/admin/mentors", headers=admin, json=MENTOR).get_json()
+    first = send_photo(client, admin, made["id"]).get_json()["avatar"]
+
+    from app.services import storage
+    was = storage._local_path(first.removeprefix("/api/media/"))
+    assert was.exists()
+    second = send_photo(client, admin, made["id"]).get_json()["avatar"]
+    assert second != first
+    assert not was.exists() and storage._local_path(second.removeprefix("/api/media/")).exists()
+
+
+def test_taking_the_photo_off_puts_the_initials_back(site):
+    client, admin = site
+    made = client.post("/api/admin/mentors", headers=admin, json=MENTOR).get_json()
+    url = send_photo(client, admin, made["id"]).get_json()["avatar"]
+
+    from app.services import storage
+    gone = client.delete(f"/api/admin/mentors/{made['id']}/photo", headers=admin)
+    assert gone.status_code == 200 and gone.get_json()["avatar"] is None
+    assert db.session.get(MentorProfile, made["id"]).user.avatar_url is None
+    assert not storage._local_path(url.removeprefix("/api/media/")).exists()
+
+
+def test_a_photo_needs_a_picture_and_a_mentor_that_exists(site):
+    client, admin = site
+    made = client.post("/api/admin/mentors", headers=admin, json=MENTOR).get_json()
+    assert client.post(f"/api/admin/mentors/{made['id']}/photo", headers=admin,
+                       data={}, content_type="multipart/form-data").status_code == 400
+    assert send_photo(client, admin, made["id"], data=BytesIO(b"not a picture")).status_code == 400
+    assert send_photo(client, admin, 9999).status_code == 404
+    assert db.session.get(MentorProfile, made["id"]).user.avatar_url is None  # nothing stuck to it
+
+
+def test_nobody_outside_the_team_sets_a_mentor_photo(site):
+    client, admin = site
+    made = client.post("/api/admin/mentors", headers=admin, json=MENTOR).get_json()
+    mentor = db.session.get(MentorProfile, made["id"]).user
+    theirs = {"Authorization": f"Bearer {create_access_token(str(mentor.id))}"}
+
+    assert client.post(f"/api/admin/mentors/{made['id']}/photo", headers=theirs,
+                       data={"image": (picture(), "face.jpg")}, content_type="multipart/form-data").status_code == 403
+    assert client.post(f"/api/admin/mentors/{made['id']}/photo",
+                       data={"image": (picture(), "face.jpg")}, content_type="multipart/form-data").status_code == 401
+    assert db.session.get(MentorProfile, made["id"]).user.avatar_url is None

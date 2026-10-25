@@ -7,8 +7,9 @@ Blog (area "blog")
     POST   /admin/blog/image                 upload a cover photo -> {url}
 Case studies (area "blog")
     GET    /admin/case-studies               every journey, hidden ones included
-    POST   /admin/case-studies               {name, route, course, quote}
-    PATCH  /admin/case-studies/<id>          any of those, plus {status, sortOrder}
+    POST   /admin/case-studies               {name, route, course, quote, story?}
+    PATCH  /admin/case-studies/<id>          any of those, plus {status, sortOrder, images}
+    POST   /admin/case-studies/<id>/images   add photographs (multipart "images", up to 8 in all)
     DELETE /admin/case-studies/<id>
 Community (area "community")
     GET    /admin/questions?q=&filter=&page= POST /admin/questions/<id> {pinned, removed}
@@ -46,6 +47,7 @@ from .admin import _remove, paged, record, team_member
 from .blogs import article, card
 from .contact import TOPICS
 from .faqs import answered
+from .users import MEDIA
 
 bp = Blueprint("admin_content", __name__)
 
@@ -540,17 +542,32 @@ def delete_faq(faq_id):
 
 # ---------------------------------------------------------------- case studies
 
-# What the team fills in, and how long each one may be
+# What the team fills in, and how long each one may be. The story is the longer read a student
+# sees when they open a journey; the four above it are what the card shows, so those stay required.
 FIELDS = {"name": 80, "route": 120, "course": 120, "quote": 2000}
+STORY_LIMIT = 4000
+MAX_PICTURES = 8
 
 
 def _case_json(c):
     return {"id": c.id, "name": c.name, "route": c.route, "course": c.course, "quote": c.quote,
+            "story": c.story or "", "images": [s.media_url(k) for k in (c.images or [])],
             "status": c.status, "sortOrder": c.sort_order}
 
 
 def _case(case_id):
     return db.session.get(CaseStudy, case_id) or abort(404, "We could not find that case study.")
+
+
+def _case_keys(c):
+    """This journey's pictures as storage keys. A case study written before pictures existed has
+    nothing in the column, so the empty case is answered here rather than at every call."""
+    return list(c.images or [])
+
+
+def _drop_pictures(keys):
+    for key in keys:
+        storage.delete(key)
 
 
 @bp.get("/admin/case-studies")
@@ -570,7 +587,8 @@ def add_case_study():
     if not all(values.values()):
         abort(400, "Fill in the name, the route, the course and the quote.")
     last = db.session.scalar(db.select(db.func.max(CaseStudy.sort_order))) or 0
-    c = CaseStudy(**values, status="published", sort_order=last + 1)
+    c = CaseStudy(**values, story=_text(data.get("story"), STORY_LIMIT) or None,
+                  images=[], status="published", sort_order=last + 1)
     db.session.add(c)
     db.session.commit()
     return jsonify(_case_json(c)), 201
@@ -585,6 +603,21 @@ def change_case_study(case_id):
     for field, limit in FIELDS.items():
         if field in data:
             setattr(c, field, _text(data[field], limit) or abort(400, f"The {field} cannot be empty."))
+    if "story" in data:  # the longer read is the one field the team may leave empty
+        c.story = _text(data["story"], STORY_LIMIT) or None
+    if "images" in data:
+        # The panel sends back the pictures it is keeping, in the order it wants them. Anything
+        # left out is taken off the page and out of storage; nothing new can arrive this way.
+        # It has to be a list: a string here would be read letter by letter, and every picture
+        # on the journey would be deleted as "not kept".
+        if not isinstance(data["images"], list):
+            abort(400, "Send the pictures to keep as a list.")
+        here = _case_keys(c)
+        kept = [k for k in (str(u or "").removeprefix(MEDIA) for u in data["images"]) if k in here]
+        if len(set(kept)) != len(kept):
+            abort(400, "That list has the same picture in it twice.")
+        _drop_pictures([k for k in here if k not in kept])
+        c.images = kept
     if data.get("status") in ("published", "hidden"):
         c.status = data["status"]
     if isinstance(data.get("sortOrder"), int):
@@ -593,12 +626,39 @@ def change_case_study(case_id):
     return jsonify(_case_json(c))
 
 
+@bp.post("/admin/case-studies/<int:case_id>/images")
+@jwt_required()
+def add_case_study_images(case_id):
+    """Add photographs to a journey. They go on the end, in the order they were chosen."""
+    team_member("blog")
+    c = _case(case_id)
+    files = request.files.getlist("images")
+    if not files:
+        abort(400, "Choose a picture.")
+    here = _case_keys(c)
+    if len(here) + len(files) > MAX_PICTURES:
+        abort(400, f"A case study holds up to {MAX_PICTURES} pictures. Take one off before adding another.")
+    added = []
+    try:
+        for upload in files:
+            added.append(storage.upload(images.prepare(upload, max_side=1600), "case-studies", "image/jpeg"))
+    except images.ImageError as e:
+        _drop_pictures(added)  # none of them go up if one of them cannot
+        abort(400, str(e))
+    c.images = here + added
+    db.session.commit()
+    return jsonify(_case_json(c)), 201
+
+
 @bp.delete("/admin/case-studies/<int:case_id>")
 @jwt_required()
 def delete_case_study(case_id):
     team_member("blog")
-    db.session.delete(_case(case_id))
+    c = _case(case_id)
+    keys = _case_keys(c)
+    db.session.delete(c)
     db.session.commit()
+    _drop_pictures(keys)  # after the commit: a file is only orphaned once the row is really gone
     return jsonify(deleted=True)
 
 
